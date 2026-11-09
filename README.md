@@ -66,15 +66,6 @@ anything left to do, such as giving Workers a Claude sign-in.
 - The `.AppImage` and `.deb` on each release are the desk app alone, for
   people who build the agent from source.
 
-## Connect Google and email
-
-- **Google** (Gmail, Drive, Calendar): Cobra has no Google app of its own, so
-  you make a free OAuth client in your own Google Cloud project, once, and
-  paste it in Settings → Integrations → Google. The steps are on that screen
-  and in [docs/google.md](docs/google.md). The sign-in stays on your computer.
-- **Other email** (iCloud, Zoho): Settings → Integrations → Mailboxes, with
-  an app password.
-
 ## Uninstall
 
 ```sh

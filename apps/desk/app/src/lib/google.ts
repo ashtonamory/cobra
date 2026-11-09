@@ -1,17 +1,18 @@
 /**
- * Settings → Integrations → Google, as words: whether a computer's agent can use Google
- * (`GET /integrations/google`, `GoogleIntegration` in packages/contracts/src/records.ts, agent
- * personRoutes.ts, googleAuth.ts and googleLocal.ts). Pure.
+ * Settings → Integrations → Google, as words: whether a computer's agent can use the account's
+ * Google connection (`GET /integrations/google`, `GoogleIntegration` in
+ * packages/contracts/src/records.ts, agent personRoutes.ts and googleAuth.ts; design: Connect for
+ * everyone). Pure.
  *
- * Cobra has no Google client of its own: the person makes one in their own Google Cloud project
- * (SETUP_STEPS), pastes the JSON Google gives them, and presses Connect Google. The agent answers
- * Google's sign-in page, the desk opens it in the browser, and Google returns to the agent on
- * loopback.
+ * The person connects Google once, on the account page the agent names (`accountUrl` in its
+ * answer). The desk holds a desk key, not an account session, so it cannot start a connect itself:
+ * Connect Google opens that page in the browser. An agent that names none has no Google sign-in
+ * of its own, and the desk says to add Google's MCP connector instead.
  *
- * Connected reads: under a connected computer, Calendar and Mail, each on when the agent's
- * `scopes` hold Google's read-only scope, else Turn on, which opens Google's page again with that
- * read added. Turning one off is Disconnect and connect again: Google cannot take one scope back
- * from a sign-in.
+ * Connected reads: under a connected computer,
+ * Calendar and Mail, each on when the agent's `scopes` hold Google's read-only scope, else Turn on,
+ * which opens the account page too (the person turns it on there). Turning one off is Disconnect
+ * and connect again: Google cannot take one scope back from a sign-in.
  *
  * `problem` is a string, not a list of values: one from a newer agent reads as an unknown problem
  * with Refresh, never as a broken page.
@@ -25,8 +26,8 @@ export const BLURB =
   "reads your calendar or mail only when you turn that on.";
 
 export type Tone = "ink" | "signal" | "muted";
-/** What the computer's block offers: the setup steps, Connect Google, nothing, or only Refresh. */
-export type Fix = "none" | "setup" | "connect" | "retry";
+/** What the computer's block offers: Connect Google (opens the account page), nothing, or only Refresh. */
+export type Fix = "none" | "connect" | "retry";
 
 export interface GoogleView {
   /** The status cell. */
@@ -49,34 +50,29 @@ export function googleView(status: Json, computer: string): GoogleView {
   }
   switch (problem) {
     case "no_cloud_link":
-      // An agent from before the Google sign-in (0.4.0 and older).
+      // Out of the box: no Google sign-in of its own. Google comes through MCP connectors.
       return {
-        word: "update the agent", tone: "muted", fix: "none", allows: [],
-        detail: `The agent on ${computer} has no Google sign-in. Update it to connect Google.`,
-      };
-    case "google_no_client":
-      return {
-        word: "not set up", tone: "signal", fix: "setup", allows: [],
-        detail: `${APP_NAME} uses a Google client that you make in your own Google account. Do the steps below once, then Connect Google.`,
+        word: "through a connector", tone: "muted", fix: "none", allows: [],
+        detail: `${APP_NAME} reaches Google through MCP connectors. Add the Gmail, Calendar or Drive connector, and the agents use its tools.`,
       };
     case "google_not_connected":
       return {
         word: "not connected", tone: "signal", fix: "connect", allows: [],
-        detail: "Connect Google, then sign in on the page that opens in your browser.",
+        detail: `Connect Google on your ${APP_NAME} account page; every computer linked to the account then uses it.`,
       };
     case "google_reconnect":
       return {
         word: "connect again", tone: "signal", fix: "connect", allows: [],
-        detail: "Google no longer accepts the sign-in it was given. Connect Google again.",
+        detail: "Google no longer accepts the sign-in it was given. Connect Google again on your account page.",
       };
     case "google_unavailable":
       return {
         word: "not reachable", tone: "muted", fix: "retry", allows: scopeLines(s.scopes),
-        detail: `Google did not give ${computer} a sign-in just now. Try again shortly.`,
+        detail: `The Google token broker did not hand ${computer} a sign-in just now. Try again shortly.`,
       };
     case null:
       // Not connected, and no reason given: an agent that has not asked yet.
-      return { word: "not connected", tone: "signal", fix: "connect", allows: [], detail: "Connect Google, then sign in on the page that opens in your browser." };
+      return { word: "not connected", tone: "signal", fix: "connect", allows: [], detail: `Connect Google on your ${APP_NAME} account page.` };
     default:
       return { word: "needs attention", tone: "signal", fix: "retry", allows: [], detail: `${computer} said: ${problem.replace(/_/g, " ")}.` };
   }
@@ -116,27 +112,15 @@ export function scopeLines(scopes: Json): string[] {
   return out;
 }
 
-/** Google's sign-in page as the agent answers it: only Google's own address is opened. */
-export function signInPage(url: Json): string | null {
-  const b = typeof url === "string" ? url.trim() : "";
-  return /^https:\/\/accounts\.google\.com\/[^\s]*$/.test(b) ? b : null;
+/**
+ * The page where the person connects Google: the one the agent names in its answer (`accountUrl`),
+ * on https, or on loopback (an agent that serves the sign-in itself). Null when it names none.
+ */
+export function accountPage(accountUrl: Json): string | null {
+  const b = typeof accountUrl === "string" ? accountUrl.trim() : "";
+  if (/^https:\/\/[^\s/]+(\/[^\s]*)?$/.test(b) || /^http:\/\/127\.0\.0\.1:\d+(\/[^\s]*)?$/.test(b)) return b;
+  return null;
 }
-
-// --- Setup: the person's own Google client ---------------------------------------------------
-
-export const CONSOLE_URL = "https://console.cloud.google.com/";
-
-/** The steps in Google Cloud, once. Google renames its menus from time to time; the words stay close. */
-export const SETUP_STEPS: string[] = [
-  `Open the Google Cloud console and sign in with the Google account ${APP_NAME} should use. Make a new project and name it ${APP_NAME}.`,
-  "Open APIs & Services → Library. Find and enable the Gmail API, the Google Drive API and the Google Calendar API.",
-  `Open Google Auth Platform (the OAuth consent screen) and press Get started. Give the app the name ${APP_NAME} and your email, and pick External.`,
-  "Under Audience, press Publish app. If you skip this, Google ends the sign-in after 7 days.",
-  `Under Clients, press Create client. Pick the type Desktop app, name it ${APP_NAME}, press Create, then Download JSON.`,
-  "Open the downloaded file, copy all of it, paste it below and press Save. Then press Connect Google.",
-];
-export const SETUP_NOTE =
-  `Google then says it has not verified the app. That is expected: the app is yours. Press Advanced, then Go to ${APP_NAME}.`;
 
 /** When the agent last asked the cloud (ms since the epoch), as a short line; empty before it ever did. */
 export function checkedLine(checkedAt: Json, now = Date.now()): string {
@@ -173,15 +157,16 @@ export const READ_SCOPES: Record<ReadName, string> = { calendar: "calendar.reado
 const READ_SHORT = new Set(Object.values(READ_SCOPES));
 
 export const CALENDAR_LINE = "Read your calendar so My day and Projects can plan around it.";
-export const MAIL_LINE = "Read your mail so Lead Outreach sees replies and My day can sort what came in, and tidy it in batches you allow.";
-export const READS_NOTE = "To turn one off, press Disconnect and connect again.";
+export const MAIL_LINE = "Read your mail so Lead Outreach sees replies and My day can sort what came in.";
+export const MAIL_TESTING_LINE = "Google still has this in testing, so it works only for invited testers.";
+export const READS_NOTE = "To turn one off, disconnect Google on your account page and connect again.";
 
 export interface ReadRow {
   name: ReadName;
   title: string;
   /** What it lets the computer's Foremen do. */
   line: string;
-  /** A note under the line; empty for now. */
+  /** Mail's testing note, else empty. */
   note: string;
   on: boolean;
   word: "on" | "off";
@@ -199,7 +184,7 @@ export function readRows(status: Json): ReadRow[] {
       name,
       title: name === "calendar" ? "Calendar" : "Mail",
       line: name === "calendar" ? CALENDAR_LINE : MAIL_LINE,
-      note: "",
+      note: name === "mail" ? MAIL_TESTING_LINE : "",
       on,
       word: on ? "on" : "off",
       tone: on ? "ink" : "muted",
@@ -212,13 +197,13 @@ export function readOn(status: Json, name: ReadName): boolean {
   return readRows(status).some((row) => row.name === name && row.on);
 }
 
-/** The toast when Connect Google (no read) or a read's Turn on opens Google's page. */
+/** The toast when Connect Google (no read) or a read's Turn on opens the account page. */
 export function watchToast(read: ReadName | null): string {
-  if (read === null) return "Sign in to Google on the page that opened; this computer is read again when you have";
+  if (read === null) return "Connect Google on the page that opened; this computer is read again when you have";
   return `Turn on ${read === "calendar" ? "Calendar" : "Mail"} on the page that opened; this computer is read again when you have`;
 }
 
-/** The line while the desk reads a computer again after Google's page opened. */
+/** The line while the desk reads a computer again after the account page opened. */
 export function watchLine(read: ReadName | null): string {
   if (read === null) return "Waiting for Google to be connected…";
   return `Waiting for ${read === "calendar" ? "Calendar" : "Mail"} to be turned on…`;
