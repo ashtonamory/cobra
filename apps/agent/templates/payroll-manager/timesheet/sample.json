@@ -1,0 +1,27 @@
+{
+  "_comment": "TemplateData for timesheet/index.html. Columns the template reads from each row: employee_name, regular_hours, overtime_hours, sick_hours, holiday_hours, source, notes. Values from args: period_label. Hours are decimal numbers.",
+  "business": {
+    "id": 1,
+    "legal_name": "Harbour Lane Bakery Ltd",
+    "trading_name": "Harbour Lane Bakery",
+    "address": "12 Harbour Lane\nWhitby YO21 3PT",
+    "email": "hello@harbourlanebakery.co.uk",
+    "phone": "01947 600 123",
+    "logo_path": null,
+    "accent_colour": "#1f3a5f",
+    "footer_text": "Harbour Lane Bakery Ltd is registered in England and Wales, company number 09876543.",
+    "pay_schedule": "fortnightly",
+    "currency": "GBP"
+  },
+  "rows": [
+    { "employee_name": "Priya Nair", "regular_hours": 74.5, "overtime_hours": 4, "sick_hours": 0, "holiday_hours": 0, "source": "sheet", "notes": "Saturday market on 10 October" },
+    { "employee_name": "Tom Askew", "regular_hours": 64, "overtime_hours": 0, "sick_hours": 0, "holiday_hours": 0, "source": "sheet", "notes": null },
+    { "employee_name": "Megan Doyle", "regular_hours": 67.5, "overtime_hours": 0, "sick_hours": 0, "holiday_hours": 7.5, "source": "file", "notes": "One day of holiday on 16 October" },
+    { "employee_name": "Sam Okafor", "regular_hours": 22.5, "overtime_hours": 0, "sick_hours": 7.5, "holiday_hours": 0, "source": "typed", "notes": "Off sick on 7 October" }
+  ],
+  "row": { "employee_name": "Priya Nair", "regular_hours": 74.5, "overtime_hours": 4, "sick_hours": 0, "holiday_hours": 0, "source": "sheet", "notes": "Saturday market on 10 October" },
+  "args": { "period_label": "5 to 18 October 2026" },
+  "now": "2026-10-23T09:00:00.000Z",
+  "project": { "id": "harbour-lane", "name": "Harbour Lane Bakery" },
+  "split": null
+}

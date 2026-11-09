@@ -1,0 +1,58 @@
+{
+  "title": "Keep the evening routine on late days",
+  "summary": [
+    "Make a short version of the routine for your late days.",
+    "Keep the full routine on the other days."
+  ],
+  "description": [
+    {
+      "sentences": [
+        "Your routine \"Evening reset\" has 4 steps and starts at 21:00 [1].",
+        "On 3 of the last 4 Thursdays, you completed tasks after 20:00 [2].",
+        "On these days, you did not start the routine."
+      ]
+    },
+    {
+      "sentences": [
+        "A long routine is difficult to start late in the day.",
+        "A short routine with 2 steps is easy to start, and it keeps the habit."
+      ]
+    }
+  ],
+  "procedure": [
+    {
+      "text": "Open Routines in Cobra.",
+      "result": "The list of your routines shows."
+    },
+    {
+      "text": "Make a new routine with the name \"Evening reset, short\"."
+    },
+    {
+      "text": "Add 2 steps: \"Set out clothes\" and \"Put phone on charger\"."
+    },
+    {
+      "text": "Set the days of the new routine to Thursday."
+    },
+    {
+      "text": "Open \"Evening reset\"."
+    },
+    {
+      "text": "Remove Thursday from its days.",
+      "result": "Each day has one evening routine.",
+      "note": [
+        "If your late days change, change the days of the two routines."
+      ]
+    }
+  ],
+  "diagrams": [],
+  "sources": [
+    {
+      "title": "Evening reset",
+      "cobra": "Routines → Evening reset"
+    }
+  ],
+  "technicalNames": [
+    "routine"
+  ],
+  "technicalVerbs": []
+}

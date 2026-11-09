@@ -1,0 +1,17 @@
+---
+import type { Post } from "../../../packages/contracts/src/website.ts";
+import { longDate } from "../data.ts";
+
+const { posts } = Astro.props as { posts: Omit<Post, "body">[] };
+---
+{posts.length === 0 ? <p class="muted">No posts yet.</p> : (
+  <ul class="posts">
+    {posts.map((p) => (
+      <li>
+        <a href={`/posts/${p.slug}/`}><strong>{p.title}</strong></a>
+        <time datetime={p.date} class="muted small">{longDate(p.date)}</time>
+        {p.description && <p>{p.description}</p>}
+      </li>
+    ))}
+  </ul>
+)}

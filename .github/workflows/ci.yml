@@ -1,0 +1,64 @@
+# The checks every pull request runs: deterministic, free and offline.
+#
+# private    no private text in the tracked files (scripts/check-private.sh).
+#            The personal terms come from the COBRA_PRIVATE_TERMS secret, so
+#            they are never in the repository. A fork's PR has no secrets and
+#            runs the generic check only.
+# workspace  typecheck and tests of the agent and the packages.
+# desk       typecheck and tests of the desktop app's web side.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  private:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/check-private.sh
+        env:
+          COBRA_PRIVATE_TERMS: ${{ secrets.COBRA_PRIVATE_TERMS }}
+
+  workspace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: sudo apt-get install -y --no-install-recommends tmux bubblewrap
+      - run: pnpm install --frozen-lockfile
+      # site-template is its own npm package (not in the workspace); the agent's site tests run its build.mjs --check.
+      - run: npm ci --prefix site-template --omit=dev --ignore-scripts --no-audit --no-fund
+      - run: pnpm check
+
+  desk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/desk/app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/desk/app/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npx tsc --noEmit
+      - run: npx vitest run

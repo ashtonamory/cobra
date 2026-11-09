@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Timesheet</title>
+{{! Timesheet: hours by employee for one pay period, with a totals row.
+
+    Columns this template reads from each row in `rows`:
+      employee_name, regular_hours, overtime_hours, sick_hours, holiday_hours,
+      source (sheet, file or typed), notes
+    Values it reads from `args`:
+      period_label (e.g. "5 to 18 October 2026").
+
+    No pay, bank, tax or address columns are referenced: this document is
+    about hours only. }}
+<style>
+  @page {
+    size: A4;
+    margin: 18mm;
+    /* Page numbers. Chromium 131 and later print page-margin boxes; an older
+       one shows nothing here and the document is still complete. */
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 8pt; color: #666; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.45;
+    color: #000;
+    background: #fff;
+    padding-bottom: 14mm;
+  }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12mm; padding-bottom: 6mm; border-bottom: 0.5pt solid #b8b8b8; }
+  .brand img { display: block; max-height: 18mm; max-width: 60mm; }
+  .brand .legal { font-size: 16pt; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+  .brand .trading { color: #444; margin-top: 1.5mm; }
+  .contact { text-align: right; font-size: 9.5pt; color: #333; white-space: pre-line; line-height: 1.5; }
+
+  h1 { font-size: 20pt; font-weight: 600; letter-spacing: -0.01em; margin: 10mm 0 1mm; color: var(--accent); }
+  .lead { color: #444; margin: 0 0 8mm; }
+
+  .facts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6mm 6mm; margin-bottom: 10mm; }
+  .fact .label { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 1mm; white-space: nowrap; }
+  .fact .value { font-size: 13pt; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  thead { display: table-header-group; }
+  th { text-align: left; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.06em; color: #555; font-weight: 600; padding: 0 0 2mm; border-bottom: 1pt solid var(--accent); }
+  th.num { text-align: right; }
+  td { padding: 2.2mm 0; border-bottom: 0.5pt solid #ddd; vertical-align: top; }
+  td + td, th + th { padding-left: 4mm; }
+  tr { break-inside: avoid; }
+  tfoot td { border-top: 0.75pt solid #000; border-bottom: none; font-weight: 600; padding-top: 3mm; }
+  .col-hours { width: 20mm; }
+  td.col-source { width: 18mm; color: #444; }
+  .col-notes { width: 42mm; }
+  td.col-notes { font-size: 9.5pt; color: #333; }
+  .legend { font-size: 9.5pt; color: #444; margin-top: 3mm; }
+
+  .footer { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; gap: 8mm; font-size: 8.5pt; color: #666; border-top: 0.5pt solid #ddd; padding-top: 2mm; }
+  .footer .generated { white-space: nowrap; }
+</style>
+</head>
+<body style="--accent: {{default business.accent_colour "#1f3a5f"}}">
+
+<header class="header">
+  <div class="brand">
+    {{#if business.logo_path}}
+      <img src="{{file business.logo_path}}" alt="{{business.legal_name}}">
+    {{else}}
+      <div class="legal">{{business.legal_name}}</div>
+    {{/if}}
+    {{#if business.trading_name}}<div class="trading">{{business.trading_name}}</div>{{/if}}
+  </div>
+  <div class="contact">{{business.address}}
+{{business.email}}
+{{business.phone}}</div>
+</header>
+
+<h1>Timesheet</h1>
+<p class="lead">Hours for {{default args.period_label "the pay period"}}</p>
+
+<section class="facts">
+  <div class="fact">
+    <div class="label">Employees</div>
+    <div class="value">{{count rows}}</div>
+  </div>
+  <div class="fact">
+    <div class="label">Regular</div>
+    <div class="value">{{hours (sum rows "regular_hours")}}</div>
+  </div>
+  <div class="fact">
+    <div class="label">Overtime</div>
+    <div class="value">{{hours (sum rows "overtime_hours")}}</div>
+  </div>
+  <div class="fact">
+    <div class="label">Sick</div>
+    <div class="value">{{hours (sum rows "sick_hours")}}</div>
+  </div>
+  <div class="fact">
+    <div class="label">Holiday</div>
+    <div class="value">{{hours (sum rows "holiday_hours")}}</div>
+  </div>
+</section>
+
+<table>
+  <thead>
+    <tr>
+      <th>Employee</th>
+      <th class="num col-hours">Regular</th>
+      <th class="num col-hours">Overtime</th>
+      <th class="num col-hours">Sick</th>
+      <th class="num col-hours">Holiday</th>
+      <th class="col-source">Source</th>
+      <th class="col-notes">Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each rows}}
+    <tr>
+      <td>{{this.employee_name}}</td>
+      <td class="num">{{hours this.regular_hours}}</td>
+      <td class="num">{{hours this.overtime_hours}}</td>
+      <td class="num">{{hours this.sick_hours}}</td>
+      <td class="num">{{hours this.holiday_hours}}</td>
+      <td class="col-source">{{#if (eq this.source "sheet")}}Sheet{{else}}{{#if (eq this.source "file")}}File{{else}}{{#if (eq this.source "typed")}}Typed{{else}}{{this.source}}{{/if}}{{/if}}{{/if}}</td>
+      <td class="col-notes">{{this.notes}}</td>
+    </tr>
+    {{/each}}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td>Totals</td>
+      <td class="num">{{hours (sum rows "regular_hours")}}</td>
+      <td class="num">{{hours (sum rows "overtime_hours")}}</td>
+      <td class="num">{{hours (sum rows "sick_hours")}}</td>
+      <td class="num">{{hours (sum rows "holiday_hours")}}</td>
+      <td colspan="2"></td>
+    </tr>
+  </tfoot>
+</table>
+<p class="legend">Hours are as recorded for the period. Source says where each line came from: a shared sheet, an uploaded file, or typed in by hand.</p>
+
+<footer class="footer">
+  <div class="text">{{business.footer_text}}</div>
+  <div class="generated">Generated on {{date now}}</div>
+</footer>
+
+</body>
+</html>

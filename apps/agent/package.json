@@ -1,0 +1,26 @@
+{
+  "name": "@cobra/agent",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "description": "The Cobra agent: one per computer. System stats, projects read off the screen, sessions, dispatch, git, files, alerts and push (src/agent), and the terminal gateway (src/gateway). MIT.",
+  "license": "MIT",
+  "scripts": {
+    "agent": "node src/agent/index.ts",
+    "term": "node src/gateway/index.ts"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.0.1",
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "node-pty": "^1.1.0",
+    "qrcode-terminal": "^0.12.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@cobra/contracts": "workspace:*",
+    "@types/ws": "^8.18.1"
+  }
+}

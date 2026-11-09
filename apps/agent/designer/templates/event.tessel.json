@@ -1,0 +1,246 @@
+{
+  "format": {
+    "name": "tessel",
+    "version": 1
+  },
+  "meta": {
+    "title": "Event",
+    "description": "A date, a title and the details, with a photo strip. DateDay + DateMonth: the day number and the short month (OCT). Headline: the event in 2 to 6 words. Details: time and place on one or two lines. CTA + CTAText: 2 or 3 words (RSVP, Book a spot). Photo: set its fills to a photo (fit crop), or delete it for text only. Logo (the business name in text; with a logo in the brand kit, delete it and place the logo image in its box)."
+  },
+  "tokens": {
+    "colors": {
+      "color.brand": "#1f3a5f",
+      "color.accent": "#f2a541",
+      "color.ink": "#14161a",
+      "color.paper": "#f7f3ec"
+    },
+    "fonts": {
+      "font.heading": "Montserrat",
+      "font.body": "Inter"
+    }
+  },
+  "pages": [
+    {
+      "id": "p_page000001",
+      "name": "Post",
+      "children": [
+        {
+          "id": "n_frame00001",
+          "name": "Design",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 1350,
+          "clip": true,
+          "fills": [
+            {
+              "type": "solid",
+              "color": "{color.brand}"
+            }
+          ],
+          "children": [
+            {
+              "id": "n_dateb10001",
+              "name": "DateBlock",
+              "kind": "rect",
+              "x": 72,
+              "y": 96,
+              "width": 220,
+              "height": 240,
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.accent}"
+                }
+              ],
+              "corner_radius": 28
+            },
+            {
+              "id": "n_dateda0002",
+              "name": "DateDay",
+              "kind": "text",
+              "x": 72,
+              "y": 112,
+              "width": 220,
+              "height": 150,
+              "content": "14",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.brand}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 800,
+                "font_size": 120,
+                "line_height": {
+                  "percent": 100
+                }
+              },
+              "align": "center",
+              "vertical_align": "middle"
+            },
+            {
+              "id": "n_datem00003",
+              "name": "DateMonth",
+              "kind": "text",
+              "x": 72,
+              "y": 256,
+              "width": 220,
+              "height": 60,
+              "content": "NOV",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.brand}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.body}",
+                "font_weight": 700,
+                "font_size": 40,
+                "letter_spacing": 6
+              },
+              "align": "center"
+            },
+            {
+              "id": "n_10g0xx0004",
+              "name": "Logo",
+              "kind": "text",
+              "x": 330,
+              "y": 96,
+              "width": 678,
+              "height": 70,
+              "content": "Happy Tails",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.paper}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 800,
+                "font_size": 34
+              },
+              "align": "right",
+              "vertical_align": "middle"
+            },
+            {
+              "id": "n_head110005",
+              "name": "Headline",
+              "kind": "text",
+              "x": 72,
+              "y": 390,
+              "width": 936,
+              "height": 260,
+              "content": "Puppy social & open day",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.paper}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 800,
+                "font_size": 104,
+                "line_height": {
+                  "percent": 100
+                }
+              }
+            },
+            {
+              "id": "n_deta110006",
+              "name": "Details",
+              "kind": "text",
+              "x": 72,
+              "y": 670,
+              "width": 936,
+              "height": 130,
+              "content": "Saturday 10am to 2pm\n12 Harbour Street, Brighton",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.paper}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.body}",
+                "font_weight": 400,
+                "font_size": 40,
+                "line_height": {
+                  "percent": 135
+                }
+              },
+              "opacity": 0.85
+            },
+            {
+              "id": "n_ctaxxx0007",
+              "name": "CTA",
+              "kind": "rect",
+              "x": 72,
+              "y": 820,
+              "width": 320,
+              "height": 84,
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.accent}"
+                }
+              ],
+              "corner_radius": 42
+            },
+            {
+              "id": "n_ctatex0008",
+              "name": "CTAText",
+              "kind": "text",
+              "x": 72,
+              "y": 820,
+              "width": 320,
+              "height": 84,
+              "content": "Book a spot",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.brand}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.body}",
+                "font_weight": 700,
+                "font_size": 32
+              },
+              "align": "center",
+              "vertical_align": "middle"
+            },
+            {
+              "id": "n_ph0t0x0009",
+              "name": "Photo",
+              "kind": "rect",
+              "x": 0,
+              "y": 960,
+              "width": 1080,
+              "height": 390,
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.accent}"
+                }
+              ],
+              "opacity": 0.9
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

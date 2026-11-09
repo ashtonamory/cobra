@@ -1,0 +1,17 @@
+---
+import type { TestimonialsSection } from "../../../packages/contracts/src/website.ts";
+import Paragraphs from "../components/Paragraphs.astro";
+
+const { section: s } = Astro.props as { section: TestimonialsSection };
+---
+{s.heading && <h2>{s.heading}</h2>}
+<ul class="cards quotes">
+  {s.items.map((item) => (
+    <li class="card">
+      <figure>
+        <blockquote><Paragraphs text={item.quote} /></blockquote>
+        <figcaption><strong>{item.name}</strong>{item.detail && <span class="muted">, {item.detail}</span>}</figcaption>
+      </figure>
+    </li>
+  ))}
+</ul>

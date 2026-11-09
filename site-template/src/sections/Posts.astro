@@ -1,0 +1,12 @@
+---
+import type { PostsSection } from "../../../packages/contracts/src/website.ts";
+import PostList from "../components/PostList.astro";
+import { postsByDate } from "../data.ts";
+
+const { section: s } = Astro.props as { section: PostsSection };
+const all = postsByDate();
+const shown = all.slice(0, s.limit ?? 3);
+---
+<h2>{s.heading ?? "News"}</h2>
+<PostList posts={shown} />
+{all.length > shown.length && <p><a href="/posts/">All posts</a></p>}

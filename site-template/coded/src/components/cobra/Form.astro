@@ -1,0 +1,83 @@
+---
+// Cobra's fixed part: every form on the site.
+// Never edit it; style it through its classes (.cobra-form, .cobra-form-choice,
+// .cobra-form-tick, .cobra-form-consent, .cobra-form-send).
+//
+// Cobra's contact form, posting to the site Worker's /api/inquiry (agent siteDeploy.ts):
+//   kind     "inquiry" (name, email, message; phone if `phone`) or "waitlist" (email; name if `name`)
+//   consent  {topic, label?}: an unticked box that joins the person to that email topic
+//
+// The site's own form, posting to /api/form/<id>:
+//   form     an id that src/content/forms.json declares, with its title and fields. Cobra
+//            draws each field; the site Worker keeps only those fields, checked to their
+//            type, and every answer lands with the person in the Space's People, each in a
+//            field named by its label. One field must be an email.
+//
+//   button   the send button's words
+//
+// "company" is a honeypot people never see. With Cloudflare's spam check on, the
+// build is given its sitekey and the form shows the check; Cobra adds its host to
+// the site's security rules then, and only then.
+type Field = { name: string; type: string; label?: string; required?: boolean; options?: string[]; value?: string; topic?: string };
+type OwnForm = { title: string; kind?: "inquiry" | "waitlist"; fields: Field[] };
+interface Props {
+  kind?: "inquiry" | "waitlist";
+  phone?: boolean;
+  name?: boolean;
+  consent?: { topic: string; label?: string };
+  form?: string;
+  button?: string;
+}
+const { kind = "inquiry", phone = false, name = true, consent, form } = Astro.props;
+const sitekey = import.meta.env.PUBLIC_COBRA_TURNSTILE;
+
+// The file is optional: a site made before own forms has none.
+const declared = (Object.values(import.meta.glob("../../content/forms.json", { eager: true, import: "default" }))[0] ?? {}) as Record<string, OwnForm>;
+const spec = form === undefined ? undefined : Object.hasOwn(declared, form) ? declared[form] : undefined;
+if (form !== undefined && !spec) throw new Error(`<Form form="${form}">: src/content/forms.json has no form "${form}"`);
+const button = Astro.props.button ?? ((spec?.kind ?? kind) === "waitlist" ? "Join the waitlist" : "Send");
+
+// How long an answer may be: the site Worker's limits (agent siteDeploy.ts FIELD_MAX, site-template design.mjs FIELD_TYPES).
+const MAX: Record<string, number> = { text: 500, email: 320, tel: 40, number: 40, date: 10, textarea: 5000, select: 200, radio: 200 };
+const labelOf = (f: Field) => f.label ?? f.name.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+const shown = (f: Field) => `${labelOf(f)}${f.required ? "" : " (optional)"}`;
+const auto = (f: Field) => (f.type === "email" ? "email" : f.type === "tel" ? "tel" : f.name === "name" || f.name === "full_name" ? "name" : undefined);
+const fields = (spec?.fields ?? []).filter((f) => f.type !== "hidden");
+---
+{spec ? (
+  <form class="cobra-form" method="post" action={`/api/form/${form}`}>
+    {fields.map((f) =>
+      f.type === "textarea" ? (
+        <label>{shown(f)} <textarea name={f.name} rows="5" maxlength={MAX.textarea} required={f.required}></textarea></label>
+      ) : f.type === "select" ? (
+        <label>{shown(f)} <select name={f.name} required={f.required}><option value="">Choose one</option>{f.options!.map((o) => <option value={o}>{o}</option>)}</select></label>
+      ) : f.type === "radio" || (f.type === "checkbox" && f.options) ? (
+        <fieldset class="cobra-form-choice"><legend>{shown(f)}</legend>{f.options!.map((o) => <label><input type={f.type} name={f.name} value={o} required={f.type === "radio" && f.required} /> {o}</label>)}</fieldset>
+      ) : f.type === "checkbox" ? (
+        <label class={f.topic ? "cobra-form-consent" : "cobra-form-tick"}><input type="checkbox" name={f.name} value="yes" required={f.required} /> {labelOf(f)}</label>
+      ) : (
+        <label>{shown(f)} <input name={f.name} type={f.type === "number" ? "text" : f.type} inputmode={f.type === "number" ? "decimal" : undefined} autocomplete={auto(f)} maxlength={MAX[f.type] ?? 500} required={f.required} /></label>
+      ),
+    )}
+    <label class="cobra-form-trap" aria-hidden="true">Company <input name="company" tabindex="-1" autocomplete="off" /></label>
+    {sitekey && <div class="cf-turnstile" data-sitekey={sitekey}></div>}
+    <button class="cobra-form-send" type="submit">{button}</button>
+  </form>
+) : (
+  <form class="cobra-form" method="post" action="/api/inquiry">
+    {kind === "waitlist" && <input type="hidden" name="kind" value="waitlist" />}
+    {(kind === "inquiry" || name) && <label>Name <input name="name" autocomplete="name" maxlength="200" required={kind === "inquiry"} /></label>}
+    <label>Email <input name="email" type="email" autocomplete="email" maxlength="320" required /></label>
+    {kind === "inquiry" && phone && <label>Phone (optional) <input name="phone" type="tel" autocomplete="tel" maxlength="40" /></label>}
+    {kind === "inquiry" && <label>Message <textarea name="message" rows="5" maxlength="5000" required></textarea></label>}
+    {consent && <label class="cobra-form-consent"><input type="checkbox" name="topic" value={consent.topic} /> {consent.label ?? `Send me ${consent.topic} by email. Unsubscribe any time.`}</label>}
+    <label class="cobra-form-trap" aria-hidden="true">Company <input name="company" tabindex="-1" autocomplete="off" /></label>
+    {sitekey && <div class="cf-turnstile" data-sitekey={sitekey}></div>}
+    <button class="cobra-form-send" type="submit">{button}</button>
+  </form>
+)}
+{sitekey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+<style>
+  .cobra-form-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .cobra-form-choice { border: 0; padding: 0; margin: 0; }
+</style>

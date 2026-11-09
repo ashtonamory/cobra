@@ -1,0 +1,15 @@
+{
+  "name": "@cobra/site-template",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test build.test.mjs check.test.mjs finish.test.mjs"
+  },
+  "dependencies": {
+    "astro": "7.4.4",
+    "mustache": "4.2.0",
+    "playwright-core": "1.63.0",
+    "ultrahtml": "1.7.0"
+  }
+}

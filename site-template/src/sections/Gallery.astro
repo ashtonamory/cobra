@@ -1,0 +1,9 @@
+---
+import type { GallerySection } from "../../../packages/contracts/src/website.ts";
+
+const { section: s } = Astro.props as { section: GallerySection };
+---
+{s.heading && <h2>{s.heading}</h2>}
+<ul class="gallery">
+  {s.images.map((image) => <li><img src={`/${image.src}`} alt={image.alt} loading="lazy" /></li>)}
+</ul>

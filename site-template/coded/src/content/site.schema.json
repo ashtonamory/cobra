@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "The site's words",
+  "description": "Everything the owner changes by chat (site_edit {content}). Add a field here when the site shows a new kind of fact; the code reads it from site.json, never from a page.",
+  "type": "object",
+  "required": ["name", "tagline"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "tagline": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "about": { "type": "string", "maxLength": 2000 },
+    "email": { "type": "string", "maxLength": 320 },
+    "phone": { "type": "string", "maxLength": 40 },
+    "address": { "type": "string", "maxLength": 300 },
+    "hours": {
+      "type": "array",
+      "maxItems": 14,
+      "items": {
+        "type": "object",
+        "required": ["days", "time"],
+        "additionalProperties": false,
+        "properties": { "days": { "type": "string", "maxLength": 60 }, "time": { "type": "string", "maxLength": 60 } }
+      }
+    },
+    "thanks": { "type": "string", "maxLength": 300 }
+  }
+}

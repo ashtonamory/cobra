@@ -1,0 +1,1005 @@
+{
+ "format": {
+  "name": "tessel",
+  "version": 1
+ },
+ "meta": {
+  "title": "Form reply email",
+  "description": "An email, 600 wide (never a post): the Email frame is the email's card and each child is a section, top to bottom. Restyle it in the brand with set_tokens (color.brand for the button and pill, color.ink, color.paper the card, color.page around it, color.night the footer; font.heading, font.body), put the business's name in Logo and FooterName (or replace Logo with the logo as an image layer named for its alt text) and its own words everywhere. {{field}} words are filled for each person; keep them. A layer named link:<address> links: rename it to the real address. Save it as a template with email_design_save, declaring its fields. The reply to a website form (transactional; the form hook fills it). Fields: reply_within (default \"one working day\") and signed (default \"The team\"). Subject \"Thanks for getting in touch, {{first_name|there}}\"; preheader \"We have your message.\""
+ },
+ "tokens": {
+  "colors": {
+   "color.brand": "#0A84FF",
+   "color.accent": "#F08C00",
+   "color.ink": "#0B1220",
+   "color.paper": "#FFFFFF",
+   "color.page": "#EEF2F6",
+   "color.body": "#2A3242",
+   "color.muted": "#5B6474",
+   "color.faint": "#8A93A3",
+   "color.line": "#E3E7ED",
+   "color.soft": "#F5F7FA",
+   "color.tint": "#EAF5FD",
+   "color.night": "#0B1220",
+   "color.white": "#FFFFFF",
+   "color.footer": "#C7CFDB"
+  },
+  "fonts": {
+   "font.heading": "Inter",
+   "font.body": "Inter"
+  }
+ },
+ "pages": [
+  {
+   "id": "p_page000001",
+   "name": "Email",
+   "children": [
+    {
+     "id": "n_ema11x0030",
+     "name": "Email",
+     "kind": "frame",
+     "x": 0,
+     "y": 0,
+     "width": 600,
+     "height": 100,
+     "clip": true,
+     "fills": [
+      {
+       "type": "solid",
+       "color": "{color.paper}"
+      }
+     ],
+     "corner_radius": 0,
+     "layout": {
+      "direction": "column",
+      "gap": 0,
+      "padding": [
+       0,
+       0,
+       0,
+       0
+      ],
+      "justify": "start",
+      "align": "start",
+      "width": "fixed",
+      "height": "hug"
+     },
+     "children": [
+      {
+       "id": "n_header0004",
+       "name": "Header",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "row",
+        "gap": 0,
+        "padding": [
+         28,
+         40,
+         0,
+         40
+        ],
+        "justify": "space_between",
+        "align": "center",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_10g0xx0001",
+         "name": "Logo",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 20,
+         "content": "Business name",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.ink}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 700,
+          "font_size": 20,
+          "line_height": {
+           "px": 24
+          },
+          "letter_spacing": -0.3
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         }
+        },
+        {
+         "id": "n_badgex0003",
+         "name": "Badge",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.tint}"
+          }
+         ],
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "row",
+          "gap": 0,
+          "padding": [
+           5,
+           10,
+           5,
+           10
+          ],
+          "justify": "start",
+          "align": "start",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_badget0002",
+           "name": "BadgeText",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 11,
+           "content": "Message received",
+           "sizing": "auto_width",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.brand}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 700,
+            "font_size": 11,
+            "line_height": {
+             "px": 13
+            },
+            "letter_spacing": 1,
+            "text_transform": "upper"
+           },
+           "layout_child": {
+            "width": "hug",
+            "height": "hug"
+           }
+          }
+         ],
+         "corner_radius": 999
+        }
+       ]
+      },
+      {
+       "id": "n_her0xx0008",
+       "name": "Hero",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 16,
+        "padding": [
+         34,
+         40,
+         8,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_head110005",
+         "name": "Headline",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 40,
+         "content": "Thanks, {{first_name|there}}.",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.ink}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 800,
+          "font_size": 40,
+          "line_height": {
+           "px": 44
+          },
+          "letter_spacing": -1.2
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "semantic": "h1"
+        },
+        {
+         "id": "n_w0rds10006",
+         "name": "Words1",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 16,
+         "content": "We have your message and will reply within {{reply_within}}.",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.body}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 16,
+          "line_height": {
+           "px": 25
+          }
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         }
+        },
+        {
+         "id": "n_w0rds20007",
+         "name": "Words2",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 16,
+         "content": "While you wait, here is what happens next.",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.body}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 16,
+          "line_height": {
+           "px": 25
+          }
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         }
+        }
+       ]
+      },
+      {
+       "id": "n_stepsx0021",
+       "name": "Steps",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 8,
+        "padding": [
+         22,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_step1x0012",
+         "name": "Step1",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [],
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "row",
+          "gap": 12,
+          "padding": [
+           12,
+           14,
+           12,
+           14
+          ],
+          "justify": "start",
+          "align": "center",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_step1d0010",
+           "name": "Step1Dot",
+           "kind": "frame",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 100,
+           "clip": false,
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.tint}"
+            }
+           ],
+           "layout_child": {
+            "width": "hug",
+            "height": "hug"
+           },
+           "layout": {
+            "direction": "row",
+            "gap": 0,
+            "padding": [
+             0,
+             9,
+             0,
+             9
+            ],
+            "justify": "start",
+            "align": "start",
+            "width": "hug",
+            "height": "hug"
+           },
+           "children": [
+            {
+             "id": "n_step1n0009",
+             "name": "Step1Number",
+             "kind": "text",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 12,
+             "content": "1",
+             "sizing": "auto_width",
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.brand}"
+              }
+             ],
+             "style": {
+              "font_family": "{font.body}",
+              "font_weight": 700,
+              "font_size": 12,
+              "line_height": {
+               "px": 26
+              }
+             },
+             "layout_child": {
+              "width": "hug",
+              "height": "hug"
+             },
+             "align": "center"
+            }
+           ],
+           "corner_radius": 13
+          },
+          {
+           "id": "n_step1w0011",
+           "name": "Step1Words",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 14,
+           "content": "We read your message, the same day.",
+           "sizing": "auto_height",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.body}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 400,
+            "font_size": 14,
+            "line_height": {
+             "px": 20
+            }
+           },
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           }
+          }
+         ],
+         "corner_radius": 12,
+         "strokes": [
+          {
+           "type": "solid",
+           "color": "{color.line}"
+          }
+         ],
+         "stroke_width": 1,
+         "stroke_align": "inside"
+        },
+        {
+         "id": "n_step2x0016",
+         "name": "Step2",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [],
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "row",
+          "gap": 12,
+          "padding": [
+           12,
+           14,
+           12,
+           14
+          ],
+          "justify": "start",
+          "align": "center",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_step2d0014",
+           "name": "Step2Dot",
+           "kind": "frame",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 100,
+           "clip": false,
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.tint}"
+            }
+           ],
+           "layout_child": {
+            "width": "hug",
+            "height": "hug"
+           },
+           "layout": {
+            "direction": "row",
+            "gap": 0,
+            "padding": [
+             0,
+             9,
+             0,
+             9
+            ],
+            "justify": "start",
+            "align": "start",
+            "width": "hug",
+            "height": "hug"
+           },
+           "children": [
+            {
+             "id": "n_step2n0013",
+             "name": "Step2Number",
+             "kind": "text",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 12,
+             "content": "2",
+             "sizing": "auto_width",
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.brand}"
+              }
+             ],
+             "style": {
+              "font_family": "{font.body}",
+              "font_weight": 700,
+              "font_size": 12,
+              "line_height": {
+               "px": 26
+              }
+             },
+             "layout_child": {
+              "width": "hug",
+              "height": "hug"
+             },
+             "align": "center"
+            }
+           ],
+           "corner_radius": 13
+          },
+          {
+           "id": "n_step2w0015",
+           "name": "Step2Words",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 14,
+           "content": "The right person writes back to you.",
+           "sizing": "auto_height",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.body}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 400,
+            "font_size": 14,
+            "line_height": {
+             "px": 20
+            }
+           },
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           }
+          }
+         ],
+         "corner_radius": 12,
+         "strokes": [
+          {
+           "type": "solid",
+           "color": "{color.line}"
+          }
+         ],
+         "stroke_width": 1,
+         "stroke_align": "inside"
+        },
+        {
+         "id": "n_step3x0020",
+         "name": "Step3",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [],
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "row",
+          "gap": 12,
+          "padding": [
+           12,
+           14,
+           12,
+           14
+          ],
+          "justify": "start",
+          "align": "center",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_step3d0018",
+           "name": "Step3Dot",
+           "kind": "frame",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 100,
+           "clip": false,
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.tint}"
+            }
+           ],
+           "layout_child": {
+            "width": "hug",
+            "height": "hug"
+           },
+           "layout": {
+            "direction": "row",
+            "gap": 0,
+            "padding": [
+             0,
+             9,
+             0,
+             9
+            ],
+            "justify": "start",
+            "align": "start",
+            "width": "hug",
+            "height": "hug"
+           },
+           "children": [
+            {
+             "id": "n_step3n0017",
+             "name": "Step3Number",
+             "kind": "text",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 12,
+             "content": "3",
+             "sizing": "auto_width",
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.brand}"
+              }
+             ],
+             "style": {
+              "font_family": "{font.body}",
+              "font_weight": 700,
+              "font_size": 12,
+              "line_height": {
+               "px": 26
+              }
+             },
+             "layout_child": {
+              "width": "hug",
+              "height": "hug"
+             },
+             "align": "center"
+            }
+           ],
+           "corner_radius": 13
+          },
+          {
+           "id": "n_step3w0019",
+           "name": "Step3Words",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 14,
+           "content": "If it helps, we set up a quick call.",
+           "sizing": "auto_height",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.body}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 400,
+            "font_size": 14,
+            "line_height": {
+             "px": 20
+            }
+           },
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           }
+          }
+         ],
+         "corner_radius": 12,
+         "strokes": [
+          {
+           "type": "solid",
+           "color": "{color.line}"
+          }
+         ],
+         "stroke_width": 1,
+         "stroke_align": "inside"
+        }
+       ]
+      },
+      {
+       "id": "n_s1gn0f0024",
+       "name": "SignOff",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 2,
+        "padding": [
+         24,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_s1gn0f0022",
+         "name": "SignOff1",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 15,
+         "content": "Talk soon,",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.body}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 15,
+          "line_height": {
+           "px": 22
+          }
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         }
+        },
+        {
+         "id": "n_s1gn0f0023",
+         "name": "SignOff2",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 15,
+         "content": "{{signed}}",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.body}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 15,
+          "line_height": {
+           "px": 22
+          }
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         }
+        }
+       ]
+      },
+      {
+       "id": "n_gapxxx0025",
+       "name": "Gap",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         36,
+         0,
+         0,
+         0
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": []
+      },
+      {
+       "id": "n_f00ter0029",
+       "name": "Footer",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [
+        {
+         "type": "solid",
+         "color": "{color.night}"
+        }
+       ],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 8,
+        "padding": [
+         28,
+         40,
+         28,
+         40
+        ],
+        "justify": "start",
+        "align": "center",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_f00ter0026",
+         "name": "FooterName",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 16,
+         "content": "Business name",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.white}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 700,
+          "font_size": 16,
+          "line_height": {
+           "px": 20
+          }
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         }
+        },
+        {
+         "id": "n_f00ter0027",
+         "name": "FooterLine",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 13,
+         "content": "One line about what the business does.",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.footer}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 13,
+          "line_height": {
+           "px": 18
+          }
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "align": "center"
+        },
+        {
+         "id": "n_addres0028",
+         "name": "Address",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 11,
+         "content": "{{address}}",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "#7D8798"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 11,
+          "line_height": {
+           "px": 17
+          }
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "align": "center"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

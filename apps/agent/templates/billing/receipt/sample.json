@@ -1,0 +1,61 @@
+{
+  "_comment": "TemplateData for billing/receipt/index.html: one payment, rendered with split: \"payment_id\". Columns read from `row`: payment_id, received_on, amount_cents, method, invoice_number, invoice_total_cents, invoice_paid_cents, balance_cents, customer_name, customer_address, customer_email. Optional: currency. No args. Money is whole cents. reference is a deliberate plant (payments.reference is sensitive): the template must never print it, and billingTemplates.test.ts checks that it does not.",
+  "business": {
+    "id": 1,
+    "legal_name": "Happy Tails Dog Walking Ltd",
+    "trading_name": "Happy Tails",
+    "address": "4 Mill Yard\nHebden Bridge HX7 8AD",
+    "email": "hello@happytails.example.com",
+    "phone": "01422 555 014",
+    "logo_path": null,
+    "accent_colour": "#2f5d50",
+    "footer_text": "Happy Tails Dog Walking Ltd is registered in England and Wales, company number 12345678.",
+    "currency": "GBP",
+    "tax_number": "GB 123 4567 89",
+    "tax_label": "VAT",
+    "payment_instructions": "Bank transfer to Happy Tails Dog Walking Ltd\nSort code 00-00-00 · Account 00000000",
+    "invoice_prefix": "MP-",
+    "next_number": 43,
+    "terms_days": 14,
+    "tax_rate_bp": 2000
+  },
+  "rows": [
+    {
+      "payment_id": 17,
+      "received_on": "2026-10-20",
+      "amount_cents": 10000,
+      "method": "bank",
+      "invoice_number": "MP-0042",
+      "invoice_total_cents": 30420,
+      "invoice_paid_cents": 10000,
+      "balance_cents": 20420,
+      "customer_name": "Hollins & Webb Veterinary Practice",
+      "customer_address": "21 Market Street\nTodmorden OL14 5AJ",
+      "customer_email": "accounts@hollinswebb.example.com",
+      "currency": "GBP",
+      "reference": "PLANTED-PAYREF-55120"
+    }
+  ],
+  "row": {
+    "payment_id": 17,
+    "received_on": "2026-10-20",
+    "amount_cents": 10000,
+    "method": "bank",
+    "invoice_number": "MP-0042",
+    "invoice_total_cents": 30420,
+    "invoice_paid_cents": 10000,
+    "balance_cents": 20420,
+    "customer_name": "Hollins & Webb Veterinary Practice",
+    "customer_address": "21 Market Street\nTodmorden OL14 5AJ",
+    "customer_email": "accounts@hollinswebb.example.com",
+    "currency": "GBP",
+    "reference": "PLANTED-PAYREF-55120"
+  },
+  "args": {},
+  "now": "2026-10-23T09:00:00.000Z",
+  "project": {
+    "id": "happy-tails",
+    "name": "Happy Tails"
+  },
+  "split": 17
+}

@@ -1,0 +1,21 @@
+---
+// The starting page: replace it with the picked concept (its export_code is the
+// starting point). Words come from src/content/site.json, never typed here.
+import Base from "../layouts/Base.astro";
+import Form from "../components/cobra/Form.astro";
+import site from "../content/site.json";
+---
+<Base>
+  <section class="hero">
+    <h1>{site.name}</h1>
+    <p class="lead">{site.tagline}</p>
+  </section>
+  {site.about && <section class="about"><p>{site.about}</p></section>}
+  {site.hours.length > 0 && (
+    <section class="hours"><h2>Hours</h2><ul>{site.hours.map((h) => <li><span>{h.days}</span> {h.time}</li>)}</ul></section>
+  )}
+  <section class="contact" id="contact">
+    <h2>Get in touch</h2>
+    <Form />
+  </section>
+</Base>

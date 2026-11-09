@@ -1,0 +1,17 @@
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <a class="home" href="/" aria-label="{{name}} home"><img class="pixel" src="/images/icon-bd.png" alt=""></a>
+  <nav aria-label="Sections">
+    <ul class="nav">
+      {{#nav}}<li><a href="{{href}}">{{label}}</a></li>{{/nav}}
+      {{#navCta}}<li><a class="cta" href="{{href}}">{{label}}</a></li>{{/navCta}}
+    </ul>
+    <details class="menu-toggle">
+      <summary aria-label="Menu"><span></span><span></span><span></span></summary>
+      <ul class="box">
+        {{#nav}}<li><a href="{{href}}">{{label}}</a></li>{{/nav}}
+        {{#navCta}}<li><a href="{{href}}">{{label}}</a></li>{{/navCta}}
+      </ul>
+    </details>
+  </nav>
+</header>

@@ -1,0 +1,235 @@
+# A release, from a version tag (v0.4.0): every package built on its own
+# kind of computer, macOS files signed and notarized (when the Apple secrets
+# are set; without them the Mac files are unsigned, for testers who open
+# them by hand, and the release notes say so), the desk's update feed,
+# SHA256SUMS, an attestation for every file, and a draft release that a
+# person reads and publishes. docs/releasing.md says how, and which secrets.
+#
+# Linux only for now: the macOS rows are left out of the matrices below
+# until macOS has been tested on a Mac (docs/mac-test.md). The macOS steps
+# stay; they run only on a macOS runner. To ship Mac files again, add the
+# darwin-arm64 and darwin-x64 agent rows and the macos desk row back.
+#
+# agent    the agent package for linux-x64, linux-arm64, darwin-arm64 and
+#          darwin-x64 (apps/agent/scripts/package.sh); on macOS its native
+#          files are signed with the Developer ID and notarized.
+# desk     the desktop app: .deb and AppImage for Linux (x64 and arm64), a
+#          universal .dmg for macOS, signed and notarized, and the signed
+#          update files the desk's updater checks.
+# publish  latest.json, SHA256SUMS, attestations, the draft release.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # The tag, the agent and the desk all name one version.
+      - run: node scripts/release/version.ts check "${GITHUB_REF_NAME#v}"
+
+  agent:
+    needs: version
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - target: linux-x64
+            runner: ubuntu-24.04
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: GNU tar, for a reproducible archive
+        if: runner.os == 'macOS'
+        run: brew install gnu-tar
+      - run: pnpm install --frozen-lockfile
+      - name: The Developer ID, in a keychain for this job only
+        if: runner.os == 'macOS'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          if [[ -z $APPLE_CERTIFICATE || -z $APPLE_API_KEY_P8 ]]; then
+            echo "::warning::No Apple secrets: this Mac package is unsigned (docs/releasing.md)"
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/release.keychain-db"
+          password=$(openssl rand -hex 24)
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/cert.p12"
+          umask 077
+          printf '%s' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/notary.p8"
+      - name: Package
+        env:
+          COBRA_SIGN_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          COBRA_NOTARY_KEY: ${{ runner.os == 'macOS' && format('{0}/notary.p8', runner.temp) || '' }}
+          COBRA_NOTARY_KEY_ID: ${{ secrets.APPLE_API_KEY }}
+          COBRA_NOTARY_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: bash apps/agent/scripts/package.sh ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-${{ matrix.target }}
+          path: |
+            apps/agent/release/*.tar.gz
+            apps/agent/release/*.tar.gz.sha256
+          if-no-files-found: error
+
+  desk:
+    needs: version
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: linux-x64
+            runner: ubuntu-22.04
+            args: --bundles deb,appimage
+          - name: linux-arm64
+            runner: ubuntu-22.04-arm
+            args: --bundles deb,appimage
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: apps/desk/app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/desk/app/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - name: Linux build libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - run: npm ci --no-audit --no-fund
+      - name: The App Store Connect key, for notarizing
+        if: runner.os == 'macOS'
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          if [[ -z $APPLE_API_KEY_P8 ]]; then
+            echo "::warning::No Apple secrets: the Mac app is ad-hoc signed, not notarized (docs/releasing.md)"
+            exit 0
+          fi
+          umask 077
+          printf '%s' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/notary.p8"
+      - name: Build
+        env:
+          # The updater's signatures (.sig beside each update file).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # macOS: the Tauri CLI imports the certificate, signs and notarizes.
+          APPLE_CERTIFICATE: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE || '' }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          APPLE_API_KEY: ${{ runner.os == 'macOS' && secrets.APPLE_API_KEY || '' }}
+          APPLE_API_ISSUER: ${{ runner.os == 'macOS' && secrets.APPLE_API_ISSUER || '' }}
+          APPLE_API_KEY_PATH: ${{ runner.os == 'macOS' && format('{0}/notary.p8', runner.temp) || '' }}
+        run: |
+          [[ -n $TAURI_SIGNING_PRIVATE_KEY ]] || { echo "::error::Set TAURI_SIGNING_PRIVATE_KEY (docs/releasing.md): the desk's updates are signed"; exit 1; }
+          # The feed is this repository's latest release, named here, not in the repository.
+          feed="https://github.com/$GITHUB_REPOSITORY/releases/latest/download/latest.json"
+          macos=""
+          if [[ $RUNNER_OS == macOS && ( -z $APPLE_CERTIFICATE || -z $APPLE_API_KEY ) ]]; then
+            # No Developer ID: ad-hoc signed ("-"), which Apple silicon needs
+            # to run it at all; a tester opens it with Open Anyway once.
+            unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_PATH
+            macos=",\"macOS\":{\"signingIdentity\":\"-\"}"
+          fi
+          npx tauri build ${{ matrix.args }} --config "{\"bundle\":{\"createUpdaterArtifacts\":true$macos},\"plugins\":{\"updater\":{\"endpoints\":[\"$feed\"]}}}"
+      - name: Collect
+        shell: bash
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          out="$RUNNER_TEMP/desk"
+          mkdir -p "$out"
+          for dir in src-tauri/target/release/bundle src-tauri/target/universal-apple-darwin/release/bundle; do
+            [[ -d $dir ]] || continue
+            find "$dir" -maxdepth 2 -type f \( -name '*.deb' -o -name '*.AppImage' -o -name '*.AppImage.sig' -o -name '*.dmg' \) -exec cp {} "$out/" \;
+            # The macOS update file is named Cobra.app.tar.gz whatever the version: named here.
+            for file in "$dir"/macos/*.app.tar.gz "$dir"/macos/*.app.tar.gz.sig; do
+              [[ -f $file ]] || continue
+              cp "$file" "$out/Cobra_${version}_universal.app.tar.gz${file##*.app.tar.gz}"
+            done
+          done
+          ls -l "$out"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desk-${{ matrix.name }}
+          path: ${{ runner.temp }}/desk/*
+          if-no-files-found: error
+
+  publish:
+    needs: [agent, desk]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: The desk's update feed
+        run: node scripts/release/updaterFeed.ts dist "${GITHUB_REF_NAME#v}" "$GITHUB_REPOSITORY"
+      - name: SHA256SUMS
+        working-directory: dist
+        run: |
+          rm -f ./*.sha256
+          sha256sum -- * > SHA256SUMS
+          cat SHA256SUMS
+      # Who built each file, from which commit, by which workflow: `gh attestation verify <file> -R <repo>`.
+      # Free on a public repository; a private one needs GitHub Enterprise.
+      - uses: actions/attest-build-provenance@v2
+        if: github.event.repository.visibility == 'public'
+        with:
+          subject-path: dist/*
+      - name: A draft release, for a person to read and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MAC_SIGNED: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_API_KEY_P8 != '' }}
+        run: |
+          notes="**Linux only.** Tested on Arch Linux (Omarchy). macOS is not supported yet."
+          if ls dist/*darwin* dist/*.dmg >/dev/null 2>&1 && [[ $MAC_SIGNED != true ]]; then
+            notes="**The Mac files in this release are not signed by Apple.** The first time you open the Cobra app, macOS stops it: go to System Settings → Privacy & Security and click Open Anyway. The agent package installed with curl needs nothing; downloaded in a browser, run \`xattr -dr com.apple.quarantine\` on its folder first. docs/mac-test.md has the details."
+          fi
+          gh release create "$GITHUB_REF_NAME" dist/* --draft --verify-tag --title "Cobra ${GITHUB_REF_NAME#v}" --notes "$notes" --generate-notes

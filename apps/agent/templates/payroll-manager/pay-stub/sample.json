@@ -1,0 +1,54 @@
+{
+  "_comment": "TemplateData for pay-stub/index.html. Columns the template reads from `row`: employee_name, employee_role, employee_id, period_starts, period_ends, pay_date, pay_type, rate_cents, hours, gross_cents, deductions_cents, net_cents, notes. Optional args.run_id. Money is whole cents. The bank_account value below is a deliberate plant: the template must never print it, and templates.test.ts checks that it does not.",
+  "business": {
+    "id": 1,
+    "legal_name": "Harbour Lane Bakery Ltd",
+    "trading_name": "Harbour Lane Bakery",
+    "address": "12 Harbour Lane\nWhitby YO21 3PT",
+    "email": "hello@harbourlanebakery.co.uk",
+    "phone": "01947 600 123",
+    "logo_path": null,
+    "accent_colour": "#1f3a5f",
+    "footer_text": "Harbour Lane Bakery Ltd is registered in England and Wales, company number 09876543.",
+    "pay_schedule": "fortnightly",
+    "currency": "GBP"
+  },
+  "rows": [
+    {
+      "employee_name": "Priya Nair",
+      "employee_role": "Head baker",
+      "employee_id": 3,
+      "period_starts": "2026-10-05",
+      "period_ends": "2026-10-18",
+      "pay_date": "2026-10-23",
+      "pay_type": "hourly",
+      "rate_cents": 1850,
+      "hours": 78.5,
+      "gross_cents": 150775,
+      "deductions_cents": 30155,
+      "net_cents": 120620,
+      "notes": "Includes the 4 overtime hours from the Saturday market.",
+      "bank_account": "PLANTED-BANK-00112233"
+    }
+  ],
+  "row": {
+    "employee_name": "Priya Nair",
+    "employee_role": "Head baker",
+    "employee_id": 3,
+    "period_starts": "2026-10-05",
+    "period_ends": "2026-10-18",
+    "pay_date": "2026-10-23",
+    "pay_type": "hourly",
+    "rate_cents": 1850,
+    "hours": 78.5,
+    "gross_cents": 150775,
+    "deductions_cents": 30155,
+    "net_cents": 120620,
+    "notes": "Includes the 4 overtime hours from the Saturday market.",
+    "bank_account": "PLANTED-BANK-00112233"
+  },
+  "args": { "run_id": 7 },
+  "now": "2026-10-23T09:00:00.000Z",
+  "project": { "id": "harbour-lane", "name": "Harbour Lane Bakery" },
+  "split": 3
+}

@@ -1,0 +1,19 @@
+---
+// Cobra's fixed part. Include it in every page's
+// <head>; never edit it. The site's address comes from the build (Cobra sets it).
+interface Props { title: string; description: string; image?: string }
+const { title, description, image } = Astro.props;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+const shared = image && Astro.site ? new URL(image, Astro.site).href : undefined;
+---
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<meta name="description" content={description} />
+{canonical && <link rel="canonical" href={canonical} />}
+<meta property="og:type" content="website" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+{canonical && <meta property="og:url" content={canonical} />}
+{shared && <meta property="og:image" content={shared} />}
+<meta name="twitter:card" content={shared ? "summary_large_image" : "summary"} />

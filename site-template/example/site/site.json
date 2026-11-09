@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "name": "Pine Street Yoga",
+  "tagline": "A small studio for every body",
+  "description": "Pine Street Yoga runs small yoga classes for beginners and regulars, seven days a week.",
+  "contact": { "email": "hello@pinestreet.example", "phone": "+1 (555) 010-2030", "address": "12 Pine Street, Springfield" },
+  "social": [{ "kind": "instagram", "url": "https://instagram.com/pinestreetyoga.example" }],
+  "thanks": "Thank you for writing. We answer every message within a day.",
+  "pages": [
+    {
+      "slug": "",
+      "title": "Home",
+      "sections": [
+        {
+          "kind": "hero",
+          "heading": "Yoga for every body",
+          "body": "Small classes, patient teachers and a warm room on Pine Street.\n\nYour first class is free.",
+          "image": { "src": "images/studio.jpg", "alt": "The studio with mats laid out" },
+          "cta": { "label": "See the classes", "href": "/classes/" }
+        },
+        {
+          "kind": "services",
+          "heading": "Classes",
+          "items": [
+            { "title": "Gentle", "body": "Slow stretches for beginners and stiff backs.", "image": { "src": "images/mats.jpg", "alt": "Rolled mats" } },
+            { "title": "Vinyasa", "body": "A flowing class that builds heat." },
+            { "title": "Yin", "body": "Long holds, quiet room, deep rest." }
+          ]
+        },
+        { "kind": "testimonials", "items": [{ "quote": "The first studio where I never felt out of place.", "name": "Dana", "detail": "member since 2024" }] },
+        { "kind": "posts", "heading": "From the studio", "limit": 3 },
+        { "kind": "contact", "heading": "Ask us anything", "body": "We answer every message within a day.", "button": "Send message" }
+      ]
+    },
+    {
+      "slug": "classes",
+      "title": "Classes and prices",
+      "description": "Class times and prices at Pine Street Yoga.",
+      "sections": [
+        {
+          "kind": "prices",
+          "heading": "Prices",
+          "items": [
+            { "name": "Drop-in", "price": "$20", "unit": "class" },
+            { "name": "Ten classes", "price": "$170", "body": "Use them within six months." },
+            { "name": "Monthly", "price": "$110", "unit": "month" }
+          ],
+          "note": "Cash or card. Students pay half."
+        },
+        {
+          "kind": "hours",
+          "days": [
+            { "day": "mon", "open": "07:00", "close": "20:30" },
+            { "day": "tue", "open": "07:00", "close": "20:30" },
+            { "day": "wed", "open": "07:00", "close": "20:30" },
+            { "day": "thu", "open": "07:00", "close": "20:30" },
+            { "day": "fri", "open": "07:00", "close": "18:00" },
+            { "day": "sat", "open": "09:00", "close": "13:00" },
+            { "day": "sun", "closed": true }
+          ],
+          "address": "12 Pine Street, Springfield",
+          "mapUrl": "https://maps.example.com/?q=12+Pine+Street"
+        },
+        { "kind": "booking", "heading": "Book a class", "body": "Pick a time that suits you.", "url": "https://booking.example.com/pinestreet", "button": "Book now" },
+        { "kind": "gallery", "heading": "The room", "images": [{ "src": "images/room.webp", "alt": "Warm light in the studio" }, { "src": "images/mats.jpg", "alt": "Mats ready for class" }] },
+        {
+          "kind": "faq",
+          "items": [
+            { "q": "Do I need my own mat?", "a": "No. We lend mats, blocks and straps." },
+            { "q": "I have never done yoga. Which class?", "a": "Start with Gentle. Tell the teacher it is your first time." }
+          ]
+        }
+      ]
+    }
+  ]
+}

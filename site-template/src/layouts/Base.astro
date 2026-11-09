@@ -1,0 +1,71 @@
+---
+import "../styles/site.css";
+import { absolute, data } from "../data.ts";
+import { pagePath } from "../../../packages/contracts/src/website.ts";
+
+type Props = { title: string; description?: string; path: string; image?: string };
+const { title, description, path, image } = Astro.props as Props;
+const { site, logo } = data;
+const canonical = absolute(path);
+const ogImage = image ? absolute(`/${image}`) : undefined;
+const SOCIAL: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", x: "X", linkedin: "LinkedIn", youtube: "YouTube", tiktok: "TikTok", other: "Link" };
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description ?? site.description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description ?? site.description} />
+    <meta property="og:type" content="website" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {canonical && <meta property="og:url" content={canonical} />}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <link rel="stylesheet" href="/brand.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="wrap header-row">
+        <a class="brand" href="/">
+          {logo ? <img class="logo" src={logo} alt={site.name} /> : <span class="brand-name">{site.name}</span>}
+        </a>
+        {site.pages.length > 1 && (
+          <nav aria-label="Pages">
+            <ul class="nav">
+              {site.pages.map((page) => (
+                <li><a href={pagePath(page.slug)} aria-current={pagePath(page.slug) === path ? "page" : undefined}>{page.title}</a></li>
+              ))}
+            </ul>
+          </nav>
+        )}
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <p class="footer-name">{site.name}</p>
+          {site.tagline && <p class="muted">{site.tagline}</p>}
+        </div>
+        {site.contact && (
+          <address class="footer-contact">
+            {site.contact.address && <span>{site.contact.address}</span>}
+            {site.contact.phone && <a href={`tel:${site.contact.phone.replace(/[^\d+]/g, "")}`}>{site.contact.phone}</a>}
+            {site.contact.email && <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>}
+          </address>
+        )}
+        {site.social && site.social.length > 0 && (
+          <ul class="social">
+            {site.social.map((s) => <li><a href={s.url} rel="noopener noreferrer me">{SOCIAL[s.kind]}</a></li>)}
+          </ul>
+        )}
+      </div>
+      <div class="wrap"><p class="muted small">© {new Date().getFullYear()} {site.name}</p></div>
+    </footer>
+  </body>
+</html>

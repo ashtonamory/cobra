@@ -1,0 +1,113 @@
+{
+  "_comment": "TemplateData for billing/statement/index.html: one customer's open invoices, one row per invoice ordered by issue date, rendered with split: \"customer_id\". Customer-level columns repeat on every row: customer_id, customer_name, customer_contact, customer_address, customer_email. Per invoice: invoice_number, issue_date, due_date, total_cents, paid_cents, balance_cents, days_overdue (0 when not yet due). Optional: currency. Argument: args.as_of. The total due is summed from the rows by the template. Money is whole cents. reference is a deliberate plant: the template must never print it.",
+  "business": {
+    "id": 1,
+    "legal_name": "Happy Tails Dog Walking Ltd",
+    "trading_name": "Happy Tails",
+    "address": "4 Mill Yard\nHebden Bridge HX7 8AD",
+    "email": "hello@happytails.example.com",
+    "phone": "01422 555 014",
+    "logo_path": null,
+    "accent_colour": "#2f5d50",
+    "footer_text": "Happy Tails Dog Walking Ltd is registered in England and Wales, company number 12345678.",
+    "currency": "GBP",
+    "tax_number": "GB 123 4567 89",
+    "tax_label": "VAT",
+    "payment_instructions": "Bank transfer to Happy Tails Dog Walking Ltd\nSort code 00-00-00 · Account 00000000",
+    "invoice_prefix": "MP-",
+    "next_number": 43,
+    "terms_days": 14,
+    "tax_rate_bp": 2000
+  },
+  "rows": [
+    {
+      "customer_id": 5,
+      "customer_name": "Hollins & Webb Veterinary Practice",
+      "customer_contact": "Dana Hollins",
+      "customer_address": "21 Market Street\nTodmorden OL14 5AJ",
+      "customer_email": "accounts@hollinswebb.example.com",
+      "invoice_number": "MP-0031",
+      "issue_date": "2026-08-28",
+      "due_date": "2026-09-11",
+      "total_cents": 21600,
+      "paid_cents": 0,
+      "balance_cents": 21600,
+      "days_overdue": 42,
+      "currency": "GBP",
+      "reference": "PLANTED-PAYREF-55120"
+    },
+    {
+      "customer_id": 5,
+      "customer_name": "Hollins & Webb Veterinary Practice",
+      "customer_contact": "Dana Hollins",
+      "customer_address": "21 Market Street\nTodmorden OL14 5AJ",
+      "customer_email": "accounts@hollinswebb.example.com",
+      "invoice_number": "MP-0037",
+      "issue_date": "2026-09-17",
+      "due_date": "2026-10-01",
+      "total_cents": 19440,
+      "paid_cents": 9440,
+      "balance_cents": 10000,
+      "days_overdue": 22,
+      "currency": "GBP",
+      "reference": "PLANTED-PAYREF-55120"
+    },
+    {
+      "customer_id": 5,
+      "customer_name": "Hollins & Webb Veterinary Practice",
+      "customer_contact": "Dana Hollins",
+      "customer_address": "21 Market Street\nTodmorden OL14 5AJ",
+      "customer_email": "accounts@hollinswebb.example.com",
+      "invoice_number": "MP-0042",
+      "issue_date": "2026-10-01",
+      "due_date": "2026-10-15",
+      "total_cents": 30420,
+      "paid_cents": 10000,
+      "balance_cents": 20420,
+      "days_overdue": 8,
+      "currency": "GBP",
+      "reference": "PLANTED-PAYREF-55120"
+    },
+    {
+      "customer_id": 5,
+      "customer_name": "Hollins & Webb Veterinary Practice",
+      "customer_contact": "Dana Hollins",
+      "customer_address": "21 Market Street\nTodmorden OL14 5AJ",
+      "customer_email": "accounts@hollinswebb.example.com",
+      "invoice_number": "MP-0045",
+      "issue_date": "2026-10-15",
+      "due_date": "2026-10-29",
+      "total_cents": 8640,
+      "paid_cents": 0,
+      "balance_cents": 8640,
+      "days_overdue": 0,
+      "currency": "GBP",
+      "reference": "PLANTED-PAYREF-55120"
+    }
+  ],
+  "row": {
+    "customer_id": 5,
+    "customer_name": "Hollins & Webb Veterinary Practice",
+    "customer_contact": "Dana Hollins",
+    "customer_address": "21 Market Street\nTodmorden OL14 5AJ",
+    "customer_email": "accounts@hollinswebb.example.com",
+    "invoice_number": "MP-0031",
+    "issue_date": "2026-08-28",
+    "due_date": "2026-09-11",
+    "total_cents": 21600,
+    "paid_cents": 0,
+    "balance_cents": 21600,
+    "days_overdue": 42,
+    "currency": "GBP",
+    "reference": "PLANTED-PAYREF-55120"
+  },
+  "args": {
+    "as_of": "2026-10-23"
+  },
+  "now": "2026-10-23T09:00:00.000Z",
+  "project": {
+    "id": "happy-tails",
+    "name": "Happy Tails"
+  },
+  "split": 5
+}

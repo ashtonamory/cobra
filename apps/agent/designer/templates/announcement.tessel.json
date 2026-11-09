@@ -1,0 +1,162 @@
+{
+  "format": {
+    "name": "tessel",
+    "version": 1
+  },
+  "meta": {
+    "title": "Announcement",
+    "description": "Bold words and no photo: news, hours, a reminder or a thank-you. Kicker: 1 to 3 words (NEWS, HEADS UP). Headline: at most about 8 words. Body: one or two short lines. Rule: a short accent bar; leave it. Logo (the business name in text; with a logo in the brand kit, delete it and place the logo image in its box)."
+  },
+  "tokens": {
+    "colors": {
+      "color.brand": "#1f3a5f",
+      "color.accent": "#f2a541",
+      "color.ink": "#14161a",
+      "color.paper": "#f7f3ec"
+    },
+    "fonts": {
+      "font.heading": "Montserrat",
+      "font.body": "Inter"
+    }
+  },
+  "pages": [
+    {
+      "id": "p_page000001",
+      "name": "Post",
+      "children": [
+        {
+          "id": "n_frame00001",
+          "name": "Design",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 1350,
+          "clip": true,
+          "fills": [
+            {
+              "type": "solid",
+              "color": "{color.brand}"
+            }
+          ],
+          "children": [
+            {
+              "id": "n_k1cker0001",
+              "name": "Kicker",
+              "kind": "text",
+              "x": 72,
+              "y": 140,
+              "width": 936,
+              "height": 60,
+              "content": "Heads up",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.accent}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.body}",
+                "font_weight": 700,
+                "font_size": 34,
+                "letter_spacing": 6,
+                "text_transform": "upper"
+              }
+            },
+            {
+              "id": "n_rv1exx0002",
+              "name": "Rule",
+              "kind": "rect",
+              "x": 72,
+              "y": 220,
+              "width": 140,
+              "height": 14,
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.accent}"
+                }
+              ],
+              "corner_radius": 7
+            },
+            {
+              "id": "n_head110003",
+              "name": "Headline",
+              "kind": "text",
+              "x": 72,
+              "y": 300,
+              "width": 936,
+              "height": 520,
+              "content": "We have new opening hours",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.paper}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 800,
+                "font_size": 124,
+                "line_height": {
+                  "percent": 100
+                }
+              }
+            },
+            {
+              "id": "n_b0dyxx0004",
+              "name": "Body",
+              "kind": "text",
+              "x": 72,
+              "y": 860,
+              "width": 936,
+              "height": 200,
+              "content": "From 1 December: Monday to Saturday, 8am to 6pm.\nSee you soon!",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.paper}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.body}",
+                "font_weight": 400,
+                "font_size": 42,
+                "line_height": {
+                  "percent": 135
+                }
+              },
+              "opacity": 0.85
+            },
+            {
+              "id": "n_10g0xx0005",
+              "name": "Logo",
+              "kind": "text",
+              "x": 72,
+              "y": 1180,
+              "width": 936,
+              "height": 90,
+              "content": "Happy Tails",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.paper}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 800,
+                "font_size": 40
+              },
+              "vertical_align": "middle"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

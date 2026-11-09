@@ -1,0 +1,32 @@
+---
+// The form posts to the site's own Worker (/api/inquiry, Phase 4), which
+// keeps the row in the owner's D1. The field names are the Worker's
+// (siteDeploy.ts WORKER_SOURCE): name, email, phone (optional) and message.
+// "topic" is the email consent tick box (branded email phase 3), never ticked
+// for the person: a tick joins them to that email topic in People.
+// "company" is a honeypot: people never see it, and the Worker drops a form
+// that fills it. With a Turnstile sitekey (Phase 4b) the form also shows
+// Cloudflare's spam check, whose token the Worker verifies; its script is the
+// only one on the site, and only then does the CSP let it in (build.mjs).
+import type { ContactSection } from "../../../packages/contracts/src/website.ts";
+import Paragraphs from "../components/Paragraphs.astro";
+import { data } from "../data.ts";
+
+const { section: s } = Astro.props as { section: ContactSection };
+const sitekey = data.turnstile;
+---
+<h2>{s.heading ?? "Get in touch"}</h2>
+<Paragraphs text={s.body} class="lead" />
+<form class="form" method="post" action="/api/inquiry">
+  <label>Name <input name="name" autocomplete="name" maxlength="200" required /></label>
+  <label>Email <input name="email" type="email" autocomplete="email" maxlength="320" required /></label>
+  <label>Phone (optional) <input name="phone" type="tel" autocomplete="tel" maxlength="40" /></label>
+  <label>Message <textarea name="message" rows="5" maxlength="5000" required></textarea></label>
+  {s.consent && (
+    <label class="consent"><input type="checkbox" name="topic" value={s.consent.topic} /> {s.consent.label ?? `Send me ${s.consent.topic} by email. Unsubscribe any time.`}</label>
+  )}
+  <label class="trap" aria-hidden="true">Company <input name="company" tabindex="-1" autocomplete="off" /></label>
+  {sitekey && <div class="cf-turnstile" data-sitekey={sitekey}></div>}
+  <button class="button" type="submit">{s.button ?? "Send"}</button>
+</form>
+{sitekey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}

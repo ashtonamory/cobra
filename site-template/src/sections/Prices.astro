@@ -1,0 +1,16 @@
+---
+import type { PricesSection } from "../../../packages/contracts/src/website.ts";
+import Paragraphs from "../components/Paragraphs.astro";
+
+const { section: s } = Astro.props as { section: PricesSection };
+---
+{s.heading && <h2>{s.heading}</h2>}
+<dl class="prices">
+  {s.items.map((item) => (
+    <div class="price-row">
+      <dt>{item.name}{item.body && <span class="muted price-body">{item.body}</span>}</dt>
+      <dd>{item.price}{item.unit && <span class="muted"> / {item.unit}</span>}</dd>
+    </div>
+  ))}
+</dl>
+<Paragraphs text={s.note} class="muted small" />

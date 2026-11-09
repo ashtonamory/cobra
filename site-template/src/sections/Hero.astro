@@ -1,0 +1,15 @@
+---
+import type { HeroSection } from "../../../packages/contracts/src/website.ts";
+import Paragraphs from "../components/Paragraphs.astro";
+
+const { section: s, first } = Astro.props as { section: HeroSection; first: boolean };
+const Heading = first ? "h1" : "h2";
+---
+<div class={`hero${s.image ? " hero-image" : ""}`}>
+  <div class="hero-text">
+    <Heading class="hero-heading">{s.heading}</Heading>
+    <Paragraphs text={s.body} class="lead" />
+    {s.cta && <a class="button" href={s.cta.href}>{s.cta.label}</a>}
+  </div>
+  {s.image && <img class="hero-img" src={`/${s.image.src}`} alt={s.image.alt} fetchpriority={first ? "high" : undefined} loading={first ? undefined : "lazy"} />}
+</div>

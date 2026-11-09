@@ -1,0 +1,43 @@
+[Unit]
+Description=Cobra agent (spaces, sessions, routines, alerts)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# install.sh writes @PREFIX@: the installed package, e.g. ~/.local/share/cobra-agent.
+# The package carries its own Node runtime, which runs the TypeScript sources
+# directly — no build step and no node_modules for the agent itself.
+# Home, never the package: `current` resolves to one build's folder when the
+# unit starts, and a tmux server this unit forks keeps that folder as its own
+# working directory for life. The installer prunes old builds, and from then
+# on tmux 3.7 starts every new pane there, whatever -c says, so `claude`
+# refuses to run ("The current working directory was deleted").
+WorkingDirectory=%h
+ExecStart=@PREFIX@/current/bin/node @PREFIX@/current/apps/agent/src/agent/index.ts
+Environment=COBRA_AGENT_PORT=@AGENT_PORT@
+# install.sh writes ports and the machine name here; the line above is the default.
+EnvironmentFile=-@CONFIG@/agent.env
+
+# It binds loopback only: the desk on this computer is its one client.
+Restart=always
+RestartSec=3
+
+# It reads /proc and drives tmux as this user. Nothing needs root.
+NoNewPrivileges=true
+
+# The agent starts tmux sessions (`start`, `dispatch`, new projects), and the
+# first one forks the tmux server inside this unit's cgroup, where it stays.
+# The default KillMode (control-group) then killed that server, and every
+# session on it, Claude included, whenever the agent restarted: on each
+# install.sh update, and on every crash restart. `process` signals only the
+# node process, the same as cobra-term.service. Restart freely; never `stop`
+# it while sessions matter.
+KillMode=process
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cobra-agent
+
+[Install]
+WantedBy=default.target

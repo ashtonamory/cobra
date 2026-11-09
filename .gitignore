@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+*.tsbuildinfo
+
+# agent release artifacts (apps/agent/scripts/package.sh)
+apps/agent/release/
+
+# desk (Tauri)
+apps/desk/app/src-tauri/target/
+apps/desk/app/src-tauri/gen/schemas/
+apps/desk/app/src-tauri/resources/agent/*.tar.gz*
+
+# secrets and keys: never commit
+.env*
+*.pem
+*.key
+*.p8
+*.p12
+
+# local files
+.DS_Store
+*.log
+npm-debug.*

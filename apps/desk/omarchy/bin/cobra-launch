@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# Open a terminal attached to a project's tmux session on this computer.
+#
+#   cobra-launch <tmux socket> <session> <path> [label]
+#
+# cobra-desktop runs it on Linux for SUPER+P, notifications and every
+# "Terminal" button, with the agent's tmux socket from its agent.env.
+#
+# The socket is the agent's (apps/agent/src/agent/tmuxHost.ts): `default` is
+# your own tmux server; anything else is `tmux -L <socket>` with the agent's
+# own tmux.conf, which only matters if this starts that server.
+#
+# The terminal is whatever Omarchy made the default (xdg-terminal-exec), foot
+# when that is missing.
+
+set -euo pipefail
+
+socket="${1:?tmux socket}"
+session="${2:?session}"
+# May legitimately be empty: an unregistered session has no configured path.
+path="${3-}"
+label="${4:-$session}"
+
+case "$socket" in
+  default) tmux="tmux" ;;
+  *[!A-Za-z0-9_-]*|"") echo "cobra-launch: bad tmux socket '$socket'" >&2; exit 1 ;;
+  *) tmux="tmux -L $socket -f \"\$HOME/.config/cobra-agent/tmux.conf\"" ;;
+esac
+case "$session" in
+  *[!A-Za-z0-9_.@-]*|"") echo "cobra-launch: bad session name '$session'" >&2; exit 1 ;;
+esac
+case "$path" in
+  *"'"*) echo "cobra-launch: a path with a quote in it: '$path'" >&2; exit 1 ;;
+esac
+
+# A grouped session (`new-session -t`) shares the base session's windows but
+# keeps its own size and current window. That is the whole point: tmux sizes a
+# session to its *smallest* attached client, so a plain attach would squeeze
+# this screen down to the phone's width whenever the phone is looking too.
+#
+# Two things about the cleanup line were established by testing against tmux
+# rather than read anywhere, and both are easy to "simplify" back into bugs:
+#   - `destroy-unattached` must be set AFTER the client attaches. Set on a
+#     session created with -d it reaps it instantly, before you arrive.
+#   - it must name the view with -t. Without the target it silently does not
+#     apply and the view session lingers after every detach.
+# Targets are `=`-anchored so a short name can never match a longer one.
+# An unregistered tmux session has no configured path. It already exists, so
+# the create branch is never taken for one; but `-c ''` would fail outright if
+# the session went away between the poll and the click, so the flag is omitted
+# rather than passed empty.
+if [ -n "$path" ]; then
+  create="${tmux} new-session -d -s '${session}' -c '${path}'"
+else
+  create="${tmux} new-session -d -s '${session}'"
+fi
+
+# If the inner command fails, hold the window open so the message is readable.
+# Without this a failure flashes its error and the terminal vanishes with it,
+# which is the one case actually worth seeing.
+script="
+${tmux} has-session -t '=${session}' 2>/dev/null || ${create}
+${tmux} new-session -A -s '${session}@desk' -t '=${session}' \
+  \; set-option -t '${session}@desk' destroy-unattached on
+status=\$?
+if [ \$status -ne 0 ]; then
+  echo
+  echo '--- exited '\$status'. press enter to close ---'
+  read _
+fi
+"
+
+title="${label}"
+
+# The terminal: Omarchy's default through xdg-terminal-exec, which hands the
+# app id and title to the terminal when its entry takes them (foot, the
+# default, does). The app id is what the Hyprland rules in ../hypr match.
+if command -v xdg-terminal-exec >/dev/null 2>&1; then
+  terminal=(xdg-terminal-exec "--app-id=cobra-terminal" "--title=$title" --)
+elif command -v foot >/dev/null 2>&1; then
+  terminal=(foot -a cobra-terminal -T "$title")
+else
+  echo "cobra-launch: no terminal: install xdg-terminal-exec or foot" >&2
+  exit 1
+fi
+
+# `setsid -f`, and neither exec nor wait. Three things depend on this line
+# and all three were bugs first:
+#
+#   1. It returns immediately. cobra-desktop reads the exit code to report a
+#      failed launch, which needs a prompt return.
+#   2. It does not propagate the terminal's exit status. Closing the window
+#      kills foot, which exits 1 whether or not anything went wrong, so an
+#      `exec` here made every normal close read as "launch failed (exit 1)".
+#   3. A new session detaches the terminal from the shell that spawned it, so
+#      restarting cobra-desktop (or omarchy-shell) never takes your open
+#      terminals with it.
+#
+# So this script's exit code means one thing only: whether it got as far as
+# opening a terminal. Everything after that is reported inside the terminal,
+# where there is room to read it (see the hold-open above).
+#
+# The terminal's stderr goes to /dev/null: foot warns about a protocol this
+# compositor lacks on every start, and with the process detached there is
+# nothing left to read it anyway.
+#
+# setsid alone was not enough for point 3: it leaves the process in this
+# unit's cgroup, and a tmux server the terminal starts lands there too. So the
+# terminal runs in a systemd scope of its own, as the compositor launches
+# apps, and a cobra-desktop restart can no longer take tmux (and every
+# session on it) down. Without systemd-run it falls back to setsid.
+detach=(setsid -f)
+if command -v systemd-run >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
+  detach=(setsid -f systemd-run --user --scope --collect --quiet --slice=app.slice --)
+fi
+"${detach[@]}" "${terminal[@]}" sh -c "$script" >/dev/null 2>&1
+
+exit 0

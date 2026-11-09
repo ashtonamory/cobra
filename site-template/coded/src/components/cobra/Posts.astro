@@ -1,0 +1,16 @@
+---
+// Cobra's fixed part: the newest posts, as a list
+// of links. Never edit it; style it through .cobra-posts. `limit`: how many.
+import { getCollection } from "astro:content";
+interface Props { limit?: number }
+const { limit } = Astro.props;
+const posts = (await getCollection("posts", ({ data }) => !data.draft)).sort((a, b) => b.data.date.localeCompare(a.data.date)).slice(0, limit ?? 1000);
+const day = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+---
+{posts.length > 0 && (
+  <ul class="cobra-posts">
+    {posts.map((post) => (
+      <li><a href={`/posts/${post.id}/`}>{post.data.title}</a> <time datetime={post.data.date}>{day(post.data.date)}</time>{post.data.description && <p>{post.data.description}</p>}</li>
+    ))}
+  </ul>
+)}

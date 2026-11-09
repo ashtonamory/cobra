@@ -1,0 +1,11 @@
+---
+import Base from "../layouts/Base.astro";
+import { data } from "../data.ts";
+---
+<Base title={`Page not found · ${data.site.name}`} path="/404/">
+  <section class="section"><div class="wrap narrow">
+    <h1>Page not found</h1>
+    <p class="lead">There is no page at this address.</p>
+    <p><a class="button" href="/">Go to the home page</a></p>
+  </div></section>
+</Base>

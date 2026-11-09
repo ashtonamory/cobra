@@ -1,0 +1,8 @@
+node_modules/
+dist/
+app/src-tauri/target/
+app/src-tauri/gen/schemas/
+app/src-tauri/resources/agent/*.tar.gz*
+*.log
+.DS_Store
+release/

@@ -1,0 +1,15 @@
+---
+import type { FaqSection } from "../../../packages/contracts/src/website.ts";
+import Paragraphs from "../components/Paragraphs.astro";
+
+const { section: s } = Astro.props as { section: FaqSection };
+---
+<h2>{s.heading ?? "Questions"}</h2>
+<div class="faq">
+  {s.items.map((item) => (
+    <details>
+      <summary>{item.q}</summary>
+      <Paragraphs text={item.a} />
+    </details>
+  ))}
+</div>

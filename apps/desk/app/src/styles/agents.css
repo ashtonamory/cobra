@@ -1,0 +1,69 @@
+/* Agents (pages/Agents.tsx, and the conversation parts Cobra's pane on Home shares, components/Chat.tsx; the desk's ui/chat.py and theme.py's chat rules): the inbox as a board
+   beside one conversation; bubbles, tool cards and the dock in the reading face. */
+
+.agents { flex: 1; display: grid; grid-template-columns: 260px 1fr; min-height: 0; }
+.agents.compact { grid-template-columns: 1fr; }
+.agents-side { overflow: auto; border-right: 1px solid var(--hair); padding: 4px 6px 24px; min-height: 0; }
+.agents.compact .agents-side { border-right: 0; }
+.agents .list-head { padding: 10px 6px 2px 6px; }
+.agents .inbox-row { display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 8px; min-width: 0; }
+.agents .inbox-row.clickable { cursor: pointer; }
+.agents .inbox-row.clickable:hover { background: rgb(var(--ink) / 0.05); }
+.agents .inbox-row.selected { background: rgb(10 132 255 / 0.2); }
+.agents .inbox-row .btime { width: auto; }
+.agents .sprite { flex: none; display: block; }
+
+.agents-chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; }
+.agents-chat.dropping::after { content: "Drop an image to attach it"; position: absolute; inset: 8px; border: 2px dashed var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / 0.6); font-family: var(--mono); pointer-events: none; }
+.agents-empty { flex: 1; display: flex; align-items: center; justify-content: center; }
+.agents .chat-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--hair); }
+.agents .chat-title { font-size: 1.25em; font-weight: 700; }
+:is(.agents, .cobra) .warning { color: var(--signal); }
+:is(.agents, .cobra) .success { color: var(--green); }
+
+.agents .chat-log { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; min-height: 0; }
+.agents .chat-log-inner { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding: 18px; min-width: 0; }
+:is(.agents, .cobra) .pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+:is(.agents, .cobra) .md-flow { white-space: pre-wrap; overflow-wrap: anywhere; }
+:is(.agents, .cobra) .md-flow code { font-family: var(--mono); font-size: 0.9em; }
+:is(.agents, .cobra) .md-flow a { color: inherit; text-decoration: underline; }
+:is(.agents, .cobra) .md-flow a.copylink { text-decoration: none; }
+:is(.agents, .cobra) .md-heading { font-weight: 700; }
+:is(.agents, .cobra) .md-heading.md-large { font-size: 1.2em; }
+:is(.agents, .cobra) .md-heading.md-medium { font-size: 1.08em; }
+:is(.agents, .cobra) .md-large { font-size: 1.15em; }
+
+/* Bubbles as Messages draws them (the phone's theme.bubble): yours in the system blue on the right, Cobra's in grey on the left. */
+.bubble { border-radius: 18px; padding: 9px 14px; max-width: min(72ch, 100%); }
+.bubble-assistant { background: var(--bubble-them); border-bottom-left-radius: 4px; align-self: flex-start; display: flex; flex-direction: column; gap: 8px; }
+.bubble-assistant .md-flow a:not(.copylink) { color: var(--link); }
+.bubble-user { background: var(--bubble-me); color: #fff; border-bottom-right-radius: 4px; align-self: flex-end; }
+.bubble-pending { opacity: 0.6; }
+:is(.agents, .cobra) .codeblock { background: var(--bg-dark); border-radius: 8px; padding: 6px 10px 10px 10px; display: flex; flex-direction: column; gap: 4px; }
+:is(.agents, .cobra) .codeblock .code { font-size: 0.85em; }
+:is(.agents, .cobra) .codecopy { align-self: flex-end; border: 0; cursor: pointer; padding: 2px 10px; border-radius: 6px; font-size: 0.75em; font-weight: 700; color: var(--accent); background: rgb(var(--blue-rgb) / 0.12); }
+:is(.agents, .cobra) .codecopy:hover { background: rgb(var(--blue-rgb) / 0.25); }
+:is(.agents, .cobra) .toolrun { font-family: var(--mono); font-size: 0.85em; background: var(--bg-dark); border-radius: 10px; padding: 7px 11px; color: rgb(var(--ink) / 0.75); align-self: flex-start; max-width: 100%; min-width: 0; }
+:is(.agents, .cobra) details.toolrun { align-self: stretch; }
+:is(.agents, .cobra) details.toolrun summary { cursor: pointer; }
+:is(.agents, .cobra) details.toolrun > div { margin-top: 6px; }
+:is(.agents, .cobra) .question { border: 1px solid var(--accent); border-radius: 12px; padding: 12px; background: var(--bg-light); display: flex; flex-direction: column; gap: 6px; }
+:is(.agents, .cobra) .question.asked { align-self: flex-start; gap: 4px; }
+:is(.agents, .cobra) .heading { font-weight: 700; }
+:is(.agents, .cobra) .btn.option { text-align: left; white-space: normal; padding: 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+:is(.agents, .cobra) .question .check { cursor: pointer; }
+
+:is(.agents, .cobra) .dock { padding: 0 18px 4px; }
+:is(.agents, .cobra) .dialog-banner { background: rgb(var(--signal-rgb) / 0.14); border-radius: 10px; padding: 10px 12px; }
+:is(.agents, .cobra) .tail { font-family: var(--mono); font-size: 0.85em; color: rgb(var(--ink) / 0.65); }
+
+.agents .compose { display: flex; flex-direction: column; gap: 6px; padding: 12px; }
+.agents .attachment { align-self: flex-start; margin-left: 12px; border: 1px solid rgb(var(--ink) / 0.18); border-radius: 10px; padding: 4px; background: var(--bg-light); max-width: 100%; }
+.agents .attachment img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; flex: none; }
+.agents .btn.round { border-radius: 99px; }
+
+/* Cobra's thread (lib/threadRules.ts): earlier conversations faded under the line that says how each began, a digest as one of her messages, and the agent's own status lines as quiet notes. */
+:is(.agents, .cobra) .thread-said { display: flex; flex-direction: column; }
+:is(.agents, .cobra) .thread-said.earlier, :is(.agents, .cobra) .thread-marker.earlier { opacity: 0.55; }
+:is(.agents, .cobra) .thread-marker { align-self: center; font-size: 0.75em; font-weight: 600; color: var(--dim); padding: 4px 0; }
+:is(.agents, .cobra) .thread-note { align-self: flex-start; font-size: 0.8em; max-width: min(72ch, 100%); padding: 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; }

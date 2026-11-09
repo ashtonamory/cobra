@@ -1,0 +1,59 @@
+/* The Fleet page and the Security audit (the desk's theme.py rules for .panel, .verdict, .mcard,
+   .gauge-v, .power-row, .usage-card, .reset-note, levelbar and .dot). */
+.fleet { display: flex; flex-direction: column; gap: 20px; }
+.panel { border-top: 1px solid var(--hair-strong); }
+
+.verdict { display: flex; flex-direction: column; gap: 6px; padding: 14px 4px; }
+.verdict-head { font-size: 1.2em; font-weight: 700; text-transform: none; }
+.v-warn .verdict-head, .v-bad .verdict-head { background: rgb(var(--signal-rgb) / 0.3); padding: 0 6px; border-radius: 4px; }
+.verdict-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+
+.fleet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; align-items: start; }
+.mcard { display: flex; flex-direction: column; gap: 10px; padding: 14px; min-width: 0; }
+.mcard-title { font-weight: 700; letter-spacing: 1px; }
+.mcard-live { display: flex; flex-direction: column; gap: 10px; transition: opacity 0.2s; }
+.gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.gauge { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.gauge-v { font-family: var(--mono); font-size: 1.45em; font-weight: 800; font-feature-settings: "tnum"; }
+.lbar { height: 5px; background: rgb(var(--ink) / 0.1); border-radius: 99px; overflow: hidden; }
+.lbar > div { height: 100%; background: rgb(var(--ink) / 0.85); }
+.lbar.hot > div { background: var(--signal); }
+.facts { font-size: 0.88em; color: var(--dim); overflow-wrap: anywhere; }
+.alert-row { display: flex; align-items: flex-start; gap: 8px; }
+.alert-row .text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.power-row { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--hair); padding-top: 9px; }
+
+.spark { display: block; width: 100%; }
+.spark-base { fill: rgb(var(--ink) / 0.12); }
+
+.usage-card { padding: 14px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px 24px; align-items: start; }
+.limit { display: flex; flex-direction: column; gap: 2px; }
+.reset-note { margin-left: 138px; font-size: 0.85em; }
+.bar-tok-empty { fill: rgb(var(--ink) / 0.14); }
+.bar-tok-past { fill: var(--accent); opacity: 0.6; }
+.bar-tok-today { fill: var(--accent); }
+.weekdays { display: grid; gap: 5px; text-align: center; }
+
+.devices { display: flex; flex-direction: column; }
+.device { display: flex; align-items: center; gap: 8px; padding: 6px 4px; }
+.devices > .device + .device { border-top: 1px solid var(--hair); }
+.device .icon { width: 1.4em; text-align: center; color: var(--dim); }
+.device .off { color: var(--dimmer); }
+.device .self { font-weight: 700; }
+.device .needs { color: var(--fg); font-weight: 700; }
+.dot { width: 7px; height: 7px; border-radius: 99px; flex: none; display: inline-block; }
+.dot-ok { background: #30d158; }
+.dot-relay { background: #ff9f0a; }
+.dot-warn { background: var(--yellow); }
+.dot-off { background: var(--muted); }
+.dot-urgent { background: var(--red); }
+.error { color: var(--red); }
+
+/* the Security audit dialog */
+.dialog.audit { width: min(760px, 94vw); height: min(820px, 90vh); padding: 0; gap: 0; }
+.audit-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--hair); }
+.audit-head h2 { flex: 1; }
+.audit-body { flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.audit-detail { -webkit-line-clamp: unset; display: block; user-select: text; }
+.spinner { width: 12px; height: 12px; border: 2px solid var(--hair-strong); border-top-color: var(--fg); border-radius: 99px; animation: spin 0.8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }

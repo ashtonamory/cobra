@@ -1,0 +1,140 @@
+/* The desk CRM board (components/CrmBoard.tsx, design docs/cobra-desk-crm.tessel.json): Cobra's own tokens only, light and dark. */
+
+.crm { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.crm-icon { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.crm-icon.small { width: 11px; height: 11px; }
+
+/* The toolbar. */
+.crm-toolbar { position: relative; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.crm-search { display: flex; align-items: center; gap: 8px; width: 300px; max-width: 100%; padding: 6px 12px; border: 1px solid var(--card-line); border-radius: 99px; background: var(--card); color: var(--dim); }
+.crm-search:focus-within { border-color: var(--accent); }
+.crm-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--fg); font: inherit; }
+.crm-pick { display: inline-flex; align-items: center; gap: 2px; padding: 4px 10px; border: 1px solid var(--accent); border-radius: 99px; background: rgb(var(--blue-rgb) / 0.12); color: var(--fg); font-size: 0.85em; cursor: pointer; }
+.crm-pick span { color: var(--dim); }
+.crm-tool { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border: 1px solid var(--card-line); border-radius: 99px; background: var(--card); color: var(--fg); cursor: pointer; font-size: 0.9em; }
+.crm-tool:hover, .crm-tool.on { border-color: var(--hair-strong); background: var(--bg-light); }
+.crm-add { padding: 5px 14px; border: 0; border-radius: 99px; background: var(--fg); color: var(--bg); font-weight: 700; cursor: pointer; font-size: 0.9em; }
+.crm-add:hover { opacity: 0.88; }
+
+/* Filters. */
+.crm-filters { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; width: 340px; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 14px; border: 1px solid var(--hair-strong); border-radius: 14px; background: var(--bg-dark); box-shadow: 0 8px 28px rgb(0 0 0 / 0.45); }
+.crm-filter-group { display: flex; flex-direction: column; gap: 4px; }
+.crm-check { display: flex; align-items: center; gap: 8px; padding: 4px 2px; cursor: pointer; }
+.crm-check input { accent-color: var(--accent); }
+.crm-pills { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
+.crm-pill { padding: 3px 10px; border: 1px solid var(--card-line); border-radius: 99px; background: var(--card); color: var(--fg); cursor: pointer; font-size: 0.85em; }
+.crm-pill.on { border-color: var(--accent); background: rgb(var(--blue-rgb) / 0.14); }
+.crm-filter-foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--hair); padding-top: 10px; }
+.crm-link { border: 0; background: none; color: var(--link); cursor: pointer; padding: 0; }
+
+/* The band: the bars, the gauge and the numbers. */
+.crm-band { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(180px, 1fr) minmax(170px, 0.9fr); gap: 10px; }
+.crm-band > * { border: 1px solid var(--card-line); border-radius: 14px; background: var(--card); }
+.crm-band-chart { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; min-width: 0; }
+.crm-band-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.crm-band-title { font-weight: 700; }
+.crm-range { display: flex; gap: 2px; padding: 2px; border-radius: 99px; background: var(--bg-light); border: 1px solid var(--hair); flex: none; }
+.crm-range button { border: 0; background: none; color: var(--dim); padding: 3px 10px; border-radius: 99px; cursor: pointer; font-size: 0.8em; }
+.crm-range button.on { background: var(--fg); color: var(--bg); font-weight: 700; }
+.crm-legend { display: flex; gap: 14px; font-size: 0.8em; color: var(--dim); }
+.crm-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.crm-key { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+.crm-key.solid { background: var(--chart-1); }
+.crm-key.hatched { background: repeating-linear-gradient(45deg, var(--green) 0 2px, transparent 2px 4px); border: 1px solid var(--green); }
+.crm-bars { display: block; width: 100%; height: 130px; overflow: visible; }
+.crm-grid { stroke: var(--hair); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.crm-axis { fill: var(--dimmer); font-size: 10px; }
+.crm-value { fill: var(--dim); font-size: 10px; font-weight: 600; }
+.crm-value.good { fill: var(--green); }
+.crm-bar { fill: var(--chart-1); }
+.crm-bar-hatched { stroke: var(--green); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.crm-hatch-line { stroke: var(--green); stroke-width: 2; }
+.crm-gauge { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 12px; }
+.crm-gauge svg { width: 100%; max-width: 190px; }
+.crm-tick { stroke: var(--hair-strong); stroke-width: 2.4; stroke-linecap: round; }
+.crm-tick.lit { stroke: var(--green); }
+.crm-gauge-words { display: flex; flex-direction: column; align-items: center; text-align: center; margin-top: -34px; }
+.crm-gauge-words b { font-size: 1.7em; }
+.crm-gauge-words .dim { font-size: 0.8em; }
+.crm-tiles { display: flex; flex-direction: column; border: 0 !important; background: none !important; gap: 10px; }
+.crm-tile { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; border: 1px solid var(--card-line); border-radius: 14px; background: var(--card); color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
+.crm-tile:hover:not(:disabled) { border-color: var(--hair-strong); }
+.crm-tile:disabled { cursor: default; }
+.crm-tile.on { border-color: var(--accent); background: rgb(var(--blue-rgb) / 0.1); }
+.crm-tile-value { font-size: 1.6em; line-height: 1.1; }
+.crm-tile-label { font-weight: 600; font-size: 0.9em; }
+.crm-arrow { color: var(--dim); }
+.crm-tile-caption { color: var(--dim); font-size: 0.8em; }
+.crm-tile-caption.t-bad { color: var(--red); }
+.crm-tile-caption.t-good { color: var(--green); }
+.crm-tile-caption.t-warn { color: var(--signal); }
+.crm-tile-on { color: var(--accent); font-size: 0.75em; font-weight: 600; }
+
+/* The lanes: each scrolls on its own; an empty one is a thin strip that widens under a dragged card. */
+.crm-board { display: flex; gap: 10px; overflow-x: auto; align-items: stretch; padding-bottom: 8px; height: calc(100vh - 220px); min-height: 420px; }
+.crm-lane { flex: none; width: 272px; display: flex; flex-direction: column; min-height: 0; border-radius: 14px; background: var(--bg-light); border: 1px solid transparent; transition: width 0.15s ease, border-color 0.15s ease; }
+.crm-lane.over { border-color: var(--accent); background: rgb(var(--blue-rgb) / 0.08); }
+.crm-lane.closed .crm-lane-head h3 { color: var(--dim); }
+.crm-lane.thin { width: 40px; align-items: center; gap: 8px; padding: 10px 0; color: var(--dim); }
+.crm-thin-count { font-weight: 700; font-size: 0.85em; }
+.crm-thin-name { writing-mode: vertical-rl; font-size: 0.85em; white-space: nowrap; }
+.crm-lane-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; }
+.crm-lane-head h3 { margin: 0; font-size: 0.95em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-count { padding: 1px 8px; border-radius: 99px; background: var(--card); color: var(--dim); font-size: 0.8em; font-weight: 600; }
+.crm-cards { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px 8px 10px; }
+.crm-none { padding: 8px 4px; font-size: 0.85em; }
+.crm-drop { display: flex; flex-direction: column; gap: 2px; padding: 14px 12px; border: 1.5px dashed var(--accent); border-radius: 12px; color: var(--fg); font-size: 0.85em; }
+.crm-drop span { color: var(--dim); font-size: 0.9em; }
+
+/* A card. */
+.crm-card { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--card-line); border-radius: 12px; background: var(--card); cursor: grab; user-select: none; touch-action: none; }
+.crm-card:hover { border-color: var(--hair-strong); }
+.crm-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.crm-card.lifted { opacity: 0.35; }
+.crm-card.ringed { border-color: rgb(var(--blue-rgb) / 0.55); }
+.crm-card-top { display: flex; align-items: flex-start; gap: 6px; }
+.crm-card-title { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+.crm-dots { flex: none; border: 0; background: none; color: var(--dim); cursor: pointer; padding: 0 4px; border-radius: 6px; line-height: 1.2; }
+.crm-dots:hover { background: rgb(var(--ink) / 0.1); }
+.crm-card-who { color: var(--dim); font-size: 0.85em; }
+.crm-card-why { color: var(--dim); font-size: 0.82em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
+.crm-card-why.full { -webkit-line-clamp: 5; }
+.crm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.crm-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; background: var(--bg-light); color: var(--dim); font-size: 0.75em; font-weight: 600; }
+.crm-chip.t-good { color: var(--green); background: rgb(var(--ink) / 0.06); }
+.crm-chip.t-warn { color: var(--signal); background: rgb(var(--signal-rgb) / 0.12); }
+.crm-chip.t-bad { color: var(--red); background: rgb(var(--ink) / 0.06); }
+.crm-ghost { position: fixed; z-index: 60; pointer-events: none; transform: rotate(2deg); }
+.crm-ghost .crm-card { box-shadow: 0 12px 30px rgb(0 0 0 / 0.4); border-color: var(--accent); cursor: grabbing; }
+
+/* A card opened in place: inverted, like the selected range. */
+.crm-card.open { background: var(--fg); color: var(--bg); border-color: var(--fg); cursor: default; user-select: text; gap: 6px; }
+.crm-card.open .crm-card-who, .crm-card.open .crm-card-why, .crm-card.open .crm-dots { color: color-mix(in srgb, var(--bg) 62%, var(--fg)); }
+.crm-card.open .crm-dots:hover { background: color-mix(in srgb, var(--bg) 12%, var(--fg)); }
+.crm-fold { border: 0; background: none; color: inherit; font: inherit; font-weight: 700; text-align: left; padding: 0; cursor: pointer; }
+.crm-facts { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--bg) 18%, var(--fg)); border-bottom: 1px solid color-mix(in srgb, var(--bg) 18%, var(--fg)); }
+.crm-fact { display: flex; align-items: center; gap: 8px; font-size: 0.85em; min-width: 0; }
+.crm-fact span:last-child { overflow-wrap: anywhere; }
+.crm-fact-name { color: color-mix(in srgb, var(--bg) 62%, var(--fg)); text-transform: capitalize; }
+.crm-show { border: 0; background: none; color: inherit; text-decoration: underline; cursor: pointer; padding: 0; font: inherit; }
+.crm-lines { display: flex; flex-direction: column; gap: 3px; font-size: 0.8em; }
+.crm-line { display: flex; gap: 8px; }
+.crm-line-when { flex: none; width: 58px; color: color-mix(in srgb, var(--bg) 62%, var(--fg)); }
+.crm-line-what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-card.open .crm-chip { background: color-mix(in srgb, var(--bg) 10%, var(--fg)); color: color-mix(in srgb, var(--bg) 70%, var(--fg)); }
+.crm-card.open .crm-chip.t-warn { color: var(--on-signal); background: var(--signal); }
+.crm-open-buttons { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.crm-open-buttons button { padding: 6px 10px; border-radius: 99px; font: inherit; font-size: 0.85em; font-weight: 600; cursor: pointer; }
+.crm-ask { border: 0; background: var(--bg); color: var(--fg); }
+.crm-open-pair { display: flex; gap: 6px; }
+.crm-open-pair button { flex: 1; border: 1px solid color-mix(in srgb, var(--bg) 35%, var(--fg)); background: none; color: var(--bg); }
+
+/* Undo. */
+.crm-undo { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 55; display: flex; align-items: center; gap: 12px; min-width: 340px; max-width: 90vw; padding: 10px 12px 10px 16px; border-radius: 14px; background: var(--fg); color: var(--bg); box-shadow: 0 10px 30px rgb(0 0 0 / 0.35); }
+.crm-undo button { border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit; font-weight: 700; }
+.crm-undo-count { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 11px; border: 1.5px solid color-mix(in srgb, var(--bg) 40%, var(--fg)); font-size: 0.75em; font-weight: 700; }
+
+@media (max-width: 900px) {
+  .crm-band { grid-template-columns: 1fr 1fr; }
+  .crm-band-chart { grid-column: 1 / -1; }
+}

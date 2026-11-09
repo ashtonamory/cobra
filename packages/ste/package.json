@@ -1,0 +1,16 @@
+{
+  "name": "@cobra/ste",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fixtures/*": "./src/fixtures/*"
+  },
+  "bin": {
+    "ste-check": "./src/cli.ts"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  }
+}

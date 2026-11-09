@@ -1,0 +1,22 @@
+---
+import type { Section } from "../../../packages/contracts/src/website.ts";
+import Hero from "../sections/Hero.astro";
+import Services from "../sections/Services.astro";
+import Prices from "../sections/Prices.astro";
+import Testimonials from "../sections/Testimonials.astro";
+import Gallery from "../sections/Gallery.astro";
+import Faq from "../sections/Faq.astro";
+import Contact from "../sections/Contact.astro";
+import Hours from "../sections/Hours.astro";
+import Booking from "../sections/Booking.astro";
+import Posts from "../sections/Posts.astro";
+
+const { section, index } = Astro.props as { section: Section; index: number };
+const parts = { hero: Hero, services: Services, prices: Prices, testimonials: Testimonials, gallery: Gallery, faq: Faq, contact: Contact, hours: Hours, booking: Booking, posts: Posts };
+const Part = parts[section.kind];
+---
+<section class={`section section-${section.kind}${index % 2 ? " tint" : ""}`} id={section.kind === "contact" ? "contact" : undefined}>
+  <div class="wrap">
+    <Part section={section as never} first={index === 0} />
+  </div>
+</section>

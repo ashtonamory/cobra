@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=Cobra
+Comment=Your business and life on this computer: what needs you, projects, money, email, routines
+Exec=cobra-desktop
+Icon=cobra-desktop
+Terminal=false
+Categories=Office;Development;
+StartupWMClass=cobra-desktop
+Keywords=agent;claude;tmux;crm;money;
+Actions=pick;ops;
+
+[Desktop Action pick]
+Name=Find a session
+Exec=cobra-desktop pick
+
+[Desktop Action ops]
+Name=Ops
+Exec=cobra-desktop ops

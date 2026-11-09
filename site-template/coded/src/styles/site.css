@@ -1,0 +1,21 @@
+/* The starting look: replace it with the picked concept's. */
+:root { --ink: #1c1c1a; --paper: #faf8f4; --line: #dcd6cb; color: var(--ink); background: var(--paper); font-family: system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+img, iframe, video { max-width: 100%; }
+img, video { height: auto; }
+main, .top, .foot { max-width: 64rem; margin: 0 auto; padding: 1.25rem; }
+.mark { color: var(--ink); text-decoration: none; font-weight: 600; }
+.hero { padding: 4rem 0 2rem; }
+h1 { font-size: clamp(2.2rem, 7vw, 4rem); font-weight: 500; margin: 0 0 0.5rem; }
+.lead { font-size: 1.25rem; max-width: 36rem; }
+.hours ul { list-style: none; padding: 0; }
+.hours span { display: inline-block; min-width: 10rem; opacity: 0.7; }
+.cobra-form { display: grid; gap: 1rem; max-width: 32rem; }
+.cobra-form label { display: grid; gap: 0.3rem; }
+.cobra-form input, .cobra-form textarea, .cobra-form select { font: inherit; padding: 0.6rem; border: 1px solid var(--line); background: #fff; }
+.cobra-form-choice { display: grid; gap: 0.4rem; }
+.cobra-form-choice label, .cobra-form-tick { display: flex !important; align-items: center; gap: 0.5rem; }
+.cobra-form-consent { display: flex !important; gap: 0.5rem; align-items: center; }
+.cobra-form-send { justify-self: start; padding: 0.7rem 1.4rem; border: 1px solid var(--ink); background: transparent; color: var(--ink); font: inherit; cursor: pointer; }
+.foot { border-top: 1px solid var(--line); margin-top: 3rem; opacity: 0.8; }

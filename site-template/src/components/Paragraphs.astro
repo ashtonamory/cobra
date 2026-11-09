@@ -1,0 +1,6 @@
+---
+import { paragraphs } from "../../../packages/contracts/src/website.ts";
+
+const { text, class: className } = Astro.props as { text?: string; class?: string };
+---
+{paragraphs(text).map((p) => <p class={className}>{p}</p>)}

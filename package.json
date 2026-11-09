@@ -1,0 +1,17 @@
+{
+  "name": "cobra",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test 'packages/**/*.test.ts' 'apps/agent/**/*.test.ts' 'apps/agent/hooks/*.test.mjs' 'scripts/**/*.test.ts'",
+    "check": "pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,20 @@
+---
+import Head from "../components/cobra/Head.astro";
+import site from "../content/site.json";
+import "../styles/site.css";
+interface Props { title?: string; description?: string }
+const { title = site.name, description = site.tagline } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <Head title={title} description={description} />
+  </head>
+  <body>
+    <header class="top"><a class="mark" href="/">{site.name}</a></header>
+    <main id="main"><slot /></main>
+    <footer class="foot">
+      <p>{site.name}{site.address && ` · ${site.address}`}{site.phone && ` · ${site.phone}`}</p>
+    </footer>
+  </body>
+</html>

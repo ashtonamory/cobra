@@ -1,0 +1,29 @@
+---
+import type { HoursSection } from "../../../packages/contracts/src/website.ts";
+import { DAYS } from "../../../packages/contracts/src/website.ts";
+import Paragraphs from "../components/Paragraphs.astro";
+import { clock, dayName } from "../data.ts";
+
+const { section: s } = Astro.props as { section: HoursSection };
+const days = [...s.days].sort((a, b) => DAYS.indexOf(a.day) - DAYS.indexOf(b.day));
+---
+<h2>{s.heading ?? "Hours"}</h2>
+<div class="hours">
+  <table>
+    <tbody>
+      {days.map((d) => (
+        <tr>
+          <th scope="row">{dayName(d.day)}</th>
+          <td>{d.closed ? "Closed" : `${clock(d.open!)} – ${clock(d.close!)}`}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+  {(s.address || s.mapUrl) && (
+    <div>
+      {s.address && <address>{s.address}</address>}
+      {s.mapUrl && <a href={s.mapUrl} rel="noopener noreferrer">Open the map</a>}
+    </div>
+  )}
+</div>
+<Paragraphs text={s.note} class="muted small" />

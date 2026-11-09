@@ -1,0 +1,65 @@
+/*
+ * The two small windows: the picker and the needs-you popup (the desk's
+ * theme.py .picker and .popup-* rules). Scoped by the class each surface puts
+ * on <body>, so the main window's look is untouched.
+ */
+
+/* -- the picker: 640×460, a search box, the list, the keys ---------------- */
+body.surface-picker { background: var(--bg); }
+body.surface-picker #root { height: 100%; }
+.picker { height: 100%; display: flex; flex-direction: column; background: var(--bg); border: 1px solid var(--card-line); border-radius: 14px; overflow: hidden; }
+.picker-head { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--hair-strong); flex: none; cursor: default; }
+.picker-entry { flex: 1; min-width: 0; font-size: 16px; background: transparent; border: none; outline: none; padding: 10px 6px; user-select: text; }
+.picker-entry::placeholder { color: var(--dimmer); }
+.picker-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-bottom: 4px; }
+.picker-group { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--dim); padding: 8px 14px 2px; }
+.picker-row { display: flex; align-items: center; gap: 12px; padding: 7px 14px; cursor: pointer; min-width: 0; }
+.picker-row:hover { background: rgb(var(--ink) / 0.04); }
+.picker-row.sel { background: rgb(var(--blue-rgb) / 0.16); color: var(--fg); }
+.picker-branch { max-width: 180px; }
+.picker-foot { display: flex; gap: 18px; flex: none; background: var(--bg-dark); padding: 8px 14px; font-size: 11px; color: rgb(var(--ink) / 0.7); white-space: pre; cursor: default; }
+
+/* -- the popup: Cobra's one card, 400 wide, sized by what it lists ------ */
+body.surface-popup { background: var(--bg); }
+body.surface-popup #root { height: auto; }
+.popup { display: flex; flex-direction: column; }
+.popup-scroll { overflow-y: auto; }
+/* One rounded card, as the phone draws them: Cobra on its head, each item under a hairline. */
+.popup-cobra { background: var(--card); border: 1px solid var(--card-line); border-radius: var(--radius); overflow: hidden; }
+.popup-cobra-head { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 14px; border-bottom: 1px solid var(--hair); }
+.popup-cobra-words { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.popup-cobra-name { font-weight: 700; font-size: 14px; }
+.popup-cobra-line { font-size: 13px; color: var(--signal); font-weight: 600; }
+.popup-card { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; min-width: 0; }
+.popup-card + .popup-card { border-top: 1px solid var(--hair); }
+.popup-card.compact { gap: 5px; padding: 8px 14px; }
+.popup-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.popup-head .spacer { flex: 1; }
+.popup-card .n-title { font-size: 14px; font-weight: 700; color: var(--fg); min-width: 0; }
+.popup-card .n-body { font-size: 14px; color: rgb(var(--ink) / 0.87); white-space: pre-wrap; overflow-wrap: anywhere; }
+.popup-card .n-line { font-size: 13px; color: rgb(var(--ink) / 0.7); }
+.popup-card .tail { font-family: var(--mono); font-size: 0.85em; color: rgb(var(--ink) / 0.65); overflow-wrap: anywhere; }
+.popup-card .clamp-2, .popup-card .clamp-4, .popup-card .clamp-6 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.popup-card .clamp-2 { -webkit-line-clamp: 2; }
+.popup-card .clamp-4 { -webkit-line-clamp: 4; }
+.popup-card .clamp-6 { -webkit-line-clamp: 6; }
+.popup-card .request { font-size: 13px; }
+.popup-kind { font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px; color: var(--accent); flex: none; }
+.popup-card.popup-approval .popup-kind { color: var(--signal); }
+.popup-age { font-size: 11px; color: rgb(var(--ink) / 0.5); font-feature-settings: "tnum"; flex: none; }
+.popup-age.stale { color: var(--signal); font-weight: 700; }
+.popup-buttons { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.popup-buttons .spacer { flex: 1; }
+.popup .btn { min-height: 26px; padding: 2px 14px; }
+.popup-card.compact .btn { min-height: 22px; padding: 0 11px; font-size: 12px; }
+.popup .btn.popup-close { min-height: 0; padding: 0 6px; color: var(--dim); }
+.popup-card .btn.popup-link { color: var(--accent); }
+
+/* -- the Cobra box: 560×440, Cobra's pane in a rounded panel ------------- */
+body.surface-cobra { background: var(--bg); }
+body.surface-cobra #root { height: 100%; }
+.cobra-box { height: 100%; display: flex; background: var(--bg); border: 1px solid var(--card-line); border-radius: 14px; overflow: hidden; }
+.cobra-box .cobra-head { padding: 8px 10px 8px 12px; }
+.cobra-box .cobra-log-inner { padding: 12px 14px; }
+.cobra-box .cobra-compose { padding: 10px 12px; }
+.cobra-box-needs { display: flex; align-items: center; gap: 8px; margin: 0 12px; padding: 8px 12px; border-radius: 12px; background: rgb(var(--signal-rgb) / 0.14); color: var(--fg); font-weight: 600; }

@@ -1,0 +1,92 @@
+{
+  "title": "Start the agent at boot, before login",
+  "summary": [
+    "The Cobra agent is a systemd user service.",
+    "systemd starts user services at boot only when lingering is on for your user.",
+    "Turn on lingering to start the agent before you log in [1]."
+  ],
+  "description": [
+    {
+      "sentences": [
+        "A user service runs in your user manager, not in the system manager.",
+        "The user manager starts when you log in and stops when your last session closes [2]."
+      ]
+    },
+    {
+      "sentences": [
+        "Lingering changes this.",
+        "With lingering on, the user manager starts at boot and continues after you log out [1].",
+        "Then the agent starts at boot, and your phone can connect to it before you log in."
+      ]
+    },
+    {
+      "sentences": [
+        "The agent installer tells you about this when lingering is off [3]."
+      ]
+    }
+  ],
+  "procedure": [
+    {
+      "text": "Open a terminal on the Legion.",
+      "result": "A shell prompt shows."
+    },
+    {
+      "text": "Type this command: `loginctl show-user $USER --property=Linger`",
+      "result": "The output shows `Linger=no`."
+    },
+    {
+      "text": "Type this command: `sudo loginctl enable-linger $USER`",
+      "result": "No output shows. This is correct.",
+      "before": [
+        {
+          "kind": "CAUTION",
+          "sentences": [
+            "Do not restart the Legion while a Claude session runs in the agent.",
+            "If you restart it, the session stops and you can lose work that you did not save."
+          ]
+        }
+      ]
+    },
+    {
+      "text": "Do step 2 again.",
+      "result": "The output shows `Linger=yes`."
+    },
+    {
+      "text": "Restart the Legion."
+    },
+    {
+      "text": "Before you log in, open Fleet in Cobra on your phone.",
+      "result": "The Legion shows online in less than 1 minute.",
+      "note": [
+        "You do this procedure one time for each computer.",
+        "The change stays after you restart."
+      ]
+    }
+  ],
+  "diagrams": [
+    {
+      "kind": "flowchart",
+      "caption": "Boot sequence",
+      "mermaid": "flowchart TD\n  B[\"Legion starts\"] --> L{\"Lingering on?\"}"
+    }
+  ],
+  "sources": [
+    {
+      "title": "loginctl(1)",
+      "url": "https://www.freedesktop.org/software/systemd/man/latest/loginctl.html"
+    }
+  ],
+  "technicalNames": [
+    "systemd",
+    "lingering",
+    "user manager",
+    "user service",
+    "system manager",
+    "terminal",
+    "shell prompt"
+  ],
+  "technicalVerbs": [
+    "log in",
+    "log out"
+  ]
+}

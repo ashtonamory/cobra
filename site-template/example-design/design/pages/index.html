@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+    {{> head}}
+</head>
+<body>
+{{> header}}
+<main id="main">
+  {{#hero}}
+  <section class="hero" aria-label="Title">
+    <div class="hero-art">
+      {{#image}}<img class="pixel" src="/{{src}}" alt="{{alt}}" fetchpriority="high">{{/image}}
+    </div>
+    <div class="wrap">
+      <div class="hero-ui">
+        <div class="box dialogue">
+          <p class="box tag">{{speaker}}</p>
+          <h1 class="visually-hidden">{{name}}</h1>
+          <p>{{line}}</p>
+        </div>
+        <nav class="box choices" aria-label="Start">
+          <ul>
+            {{#menu}}<li><a href="{{href}}"><span class="arrow"></span>{{label}}</a></li>{{/menu}}
+          </ul>
+        </nav>
+      </div>
+      <p class="hero-sub">{{sub}}</p>
+    </div>
+  </section>
+  {{/hero}}
+
+  {{#standoff}}
+  <section class="standoff" id="story" aria-labelledby="standoff-heading">
+    <div class="wrap">
+      <div class="gba">
+        <span class="pad"></span>
+        <div class="bezel">{{#image}}<img class="pixel" src="/{{src}}" alt="{{alt}}" loading="lazy">{{/image}}</div>
+        <span class="btn a"></span><span class="btn b"></span>
+      </div>
+      <div>
+        <p class="kicker">{{kicker}}</p>
+        <h2 id="standoff-heading">{{heading}}</h2>
+        <p class="body">{{body}}</p>
+        <ul class="stats">
+          {{#stats}}
+          <li>
+            <span>{{label}}</span>
+            <progress class="meter {{tone}}" max="100" value="{{value}}" aria-label="{{label}} {{value}} of 100"></progress>
+            <span class="note">{{note}}</span>
+          </li>
+          {{/stats}}
+        </ul>
+      </div>
+    </div>
+  </section>
+  {{/standoff}}
+
+  {{#crew}}
+  <section class="crew" id="crew" aria-labelledby="crew-heading">
+    <div class="wrap">
+      <p class="kicker">{{kicker}}</p>
+      <h2 id="crew-heading">{{heading}}</h2>
+      <ul class="party">
+        {{#members}}
+        <li class="box member">
+          <div class="top">
+            {{#image}}<img class="pixel face" src="/{{image}}" alt="{{name}}'s portrait" loading="lazy">{{/image}}
+            {{^image}}<div class="face unknown" role="img" aria-label="Unknown face">?</div>{{/image}}
+            <div class="meta">
+              <h3>{{name}}</h3>
+              <p class="level">{{level}}</p>
+            </div>
+          </div>
+          <div class="nerve"><b>NRV</b><progress class="meter" max="100" value="{{nerve}}" aria-label="Nerve {{nerve}} of 100"></progress></div>
+          <p>{{line}}</p>
+        </li>
+        {{/members}}
+      </ul>
+    </div>
+  </section>
+  {{/crew}}
+
+  {{#islands}}
+  <section class="islands" id="islands" aria-labelledby="islands-heading">
+    <div class="wrap">
+      <p class="kicker">{{kicker}}</p>
+      <h2 id="islands-heading">{{heading}}</h2>
+      <div class="map">
+        {{#shown}}
+        <figure>
+          <img class="pixel" src="/{{image}}" alt="{{alt}}" loading="lazy">
+          <figcaption>{{name}}<span>{{sub}}</span></figcaption>
+        </figure>
+        {{/shown}}
+        <div class="more">
+          <ol>{{#more}}<li>{{.}}</li>{{/more}}</ol>
+          <p>{{finale}}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  {{/islands}}
+
+  {{#waitlist}}
+  <section class="waitlist" id="waitlist" aria-labelledby="waitlist-heading">
+    <div class="wrap">
+      <div class="box panel">
+        <h2 class="box tag" id="waitlist-heading">{{tag}}</h2>
+        <p class="line">{{line}}</p>
+        {{> form}}
+      </div>
+    </div>
+  </section>
+  {{/waitlist}}
+</main>
+{{> footer}}
+</body>
+</html>

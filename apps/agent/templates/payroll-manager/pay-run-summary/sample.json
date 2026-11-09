@@ -1,0 +1,27 @@
+{
+  "_comment": "TemplateData for pay-run-summary/index.html. Columns the template reads from each row: employee_name, pay_type, hours, gross_cents, deductions_cents, net_cents. Values from args: period_label, pay_date, status. Money is whole cents. accent_colour is left unset here so the default deep blue shows.",
+  "business": {
+    "id": 1,
+    "legal_name": "Harbour Lane Bakery Ltd",
+    "trading_name": "Harbour Lane Bakery",
+    "address": "12 Harbour Lane\nWhitby YO21 3PT",
+    "email": "hello@harbourlanebakery.co.uk",
+    "phone": "01947 600 123",
+    "logo_path": null,
+    "accent_colour": null,
+    "footer_text": "Harbour Lane Bakery Ltd is registered in England and Wales, company number 09876543.",
+    "pay_schedule": "fortnightly",
+    "currency": "GBP"
+  },
+  "rows": [
+    { "employee_name": "Priya Nair", "pay_type": "hourly", "hours": 78.5, "gross_cents": 150775, "deductions_cents": 30155, "net_cents": 120620 },
+    { "employee_name": "Tom Askew", "pay_type": "hourly", "hours": 64, "gross_cents": 96000, "deductions_cents": 19200, "net_cents": 76800 },
+    { "employee_name": "Megan Doyle", "pay_type": "salary", "hours": 75, "gross_cents": 192308, "deductions_cents": 46154, "net_cents": 146154 },
+    { "employee_name": "Sam Okafor", "pay_type": "hourly", "hours": 30, "gross_cents": 37500, "deductions_cents": 0, "net_cents": 37500 }
+  ],
+  "row": { "employee_name": "Priya Nair", "pay_type": "hourly", "hours": 78.5, "gross_cents": 150775, "deductions_cents": 30155, "net_cents": 120620 },
+  "args": { "period_label": "5 to 18 October 2026", "pay_date": "2026-10-23", "status": "reviewed" },
+  "now": "2026-10-23T09:00:00.000Z",
+  "project": { "id": "harbour-lane", "name": "Harbour Lane Bakery" },
+  "split": null
+}

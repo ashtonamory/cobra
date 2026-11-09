@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "cobra.desk",
+  "name": "Cobra",
+  "version": "1.0.0",
+  "author": "Cobra",
+  "description": "How many coding sessions are waiting on you. Click for Cobra's window, right-click for the session picker.",
+  "kinds": ["bar-widget"],
+  "activation": "on-demand",
+  "entryPoints": { "barWidget": "BarWidget.qml" },
+  "barWidget": {
+    "displayName": "Cobra",
+    "description": "Needs-you count; opens cobra-desktop.",
+    "category": "System",
+    "aliases": ["cobra", "desk", "claude", "agents"],
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

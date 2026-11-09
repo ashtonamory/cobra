@@ -1,0 +1,106 @@
+/* The Finance rail (components/FinanceRail.tsx, FinanceCharts.tsx; docs/cobra-finance-v2.tessel.json `color.fin*`):
+   one calm teal for the hero series and what is lit, greys for the rest, set for each theme as app.css sets its own. */
+:root, :root[data-theme="dark"] {
+  --fin: #3fb6a8; --fin-strong: #6fd6c8; --fin-soft: #11302c; --on-fin: #04201d;
+  --fin-grey: #3b4341; --fin-grey2: #2a302f; --fin-flow: #7d8a88;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --fin: #1f7f75; --fin-strong: #16655d; --fin-soft: #e0f1ee; --on-fin: #ffffff;
+    --fin-grey: #cdd8d6; --fin-grey2: #e6edeb; --fin-flow: #9fb0ad;
+  }
+}
+:root[data-theme="light"] {
+  --fin: #1f7f75; --fin-strong: #16655d; --fin-soft: #e0f1ee; --on-fin: #ffffff;
+  --fin-grey: #cdd8d6; --fin-grey2: #e6edeb; --fin-flow: #9fb0ad;
+}
+
+.fin { display: flex; gap: 16px; align-items: flex-start; min-width: 0; }
+.fin .btn.primary { background: var(--fin); color: var(--on-fin); }
+.fin .btn:not(.primary) { color: var(--fin-strong); }
+.fin-rail { position: sticky; top: 0; flex: 0 0 168px; display: flex; flex-direction: column; gap: 2px; padding: 10px 8px; border: 1px solid var(--hair-strong); border-radius: 12px; background: var(--card); }
+.fin-rail-title { padding: 2px 10px 8px; }
+.fin-rail-item { text-align: left; border: 0; background: none; color: var(--fg); padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 0.95em; }
+.fin-rail-item:hover { background: rgb(var(--ink) / 0.06); }
+.fin-rail-item.on { background: var(--fin-soft); color: var(--fin-strong); font-weight: 700; box-shadow: inset 3px 0 0 var(--fin); }
+.fin-page { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.fin-page-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fin-page-title { margin: 0; font-size: 1.3em; flex: 1; }
+.fin-months { justify-content: flex-end; }
+.fin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 10px; }
+.fin-card { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border: 1px solid var(--hair-strong); border-radius: 12px; background: var(--card); min-width: 0; }
+.fin-card.wide { grid-column: 1 / -1; }
+.fin-card.bare { padding: 0; border: 0; background: none; }
+.fin-card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fin-search { width: 180px; }
+.fin-see-all { align-self: flex-start; color: var(--fin-strong); }
+.fin .dash-tile-value { font-variant-numeric: tabular-nums; }
+
+/* Ring: the score lit in teal on a grey track, its checks beside it. */
+.fin-ring { display: flex; align-items: center; gap: 16px; }
+.fin-ring-svg { width: 120px; height: 120px; flex: none; }
+.fin-ring-track { fill: none; stroke: var(--fin-grey); stroke-width: 9; }
+.fin-ring-lit { fill: none; stroke: var(--fin); stroke-width: 9; stroke-linecap: round; }
+.fin-ring-value { fill: var(--fg); font-size: 24px; font-weight: 800; }
+.fin-ring-label { fill: var(--dim); font-size: 11px; font-weight: 600; }
+.fin-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+.fin-check { display: flex; gap: 8px; align-items: flex-start; }
+.fin-check > .grow { display: flex; flex-direction: column; }
+.fin-check-title { font-weight: 600; }
+.fin-check-mark { width: 18px; height: 18px; border-radius: 9px; flex: none; display: grid; place-items: center; font-size: 11px; font-weight: 800; background: rgb(var(--ink) / 0.1); color: var(--dim); }
+.fin-check.t-good .fin-check-mark { background: var(--fin-soft); color: var(--fin-strong); }
+.fin-check.t-warn .fin-check-mark { background: rgb(var(--signal-rgb) / 0.18); color: var(--signal); }
+.fin-check.t-bad .fin-check-mark { background: rgb(229 72 77 / 0.18); color: #e5484d; }
+
+/* River: grey bands, the kept or saved one teal; nodes named with their amounts. */
+.fin-river { width: 100%; height: auto; display: block; }
+.fin-band { fill: var(--fin-flow); opacity: 0.22; }
+.fin-band.hero { fill: var(--fin); opacity: 0.42; }
+.fin-band:hover { opacity: 0.55; }
+.fin-node { fill: var(--fg); }
+.fin-node.hero { fill: var(--fin); }
+.fin-node-name { fill: var(--fg); font-size: 13px; font-weight: 600; }
+.fin-node-name.hero { fill: var(--fin-strong); }
+.fin-node-value { fill: var(--dim); font-weight: 500; }
+
+/* Calendar: the month as a grid; a day with a bill tinted teal. */
+.fin-cal { display: flex; flex-direction: column; gap: 8px; }
+.fin-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.fin-cal-head { font-size: 0.75em; font-weight: 700; color: var(--dim); text-align: center; padding-bottom: 2px; }
+.fin-cal-day { min-height: 64px; border-radius: 8px; background: rgb(var(--ink) / 0.04); padding: 4px 6px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fin-cal-day.blank { background: none; }
+.fin-cal-day.due { background: var(--fin-soft); }
+.fin-cal-day.today { box-shadow: inset 0 0 0 1.5px var(--fin); }
+.fin-cal-date { font-size: 0.78em; color: var(--dim); font-weight: 700; }
+.fin-cal-item { display: flex; flex-direction: column; font-size: 0.75em; line-height: 1.2; }
+.fin-cal-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fin-strong); }
+.fin-cal-amount { color: var(--fg); font-variant-numeric: tabular-nums; }
+
+/* Table: right-aligned numbers, tones on the cells that carry them. */
+.fin-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.fin-table th { font-size: 0.75em; color: var(--dim); font-weight: 700; text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--hair-strong); }
+.fin-table td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--hair); }
+.fin-table .left { text-align: left; }
+.fin-table tr.click { cursor: pointer; }
+.fin-table tr.click:hover td { background: rgb(var(--ink) / 0.04); }
+.fin-table td.t-good { color: var(--fin-strong); }
+.fin-table td.t-bad { color: #e5484d; }
+.fin-table tr.t-warn td:first-child { box-shadow: inset 3px 0 0 var(--signal); }
+
+/* The statement drop. */
+.fin-drop { flex-direction: row; align-items: center; gap: 12px; border-style: dashed; border-color: var(--fin); background: var(--fin-soft); }
+.fin-drop > .grow { display: flex; flex-direction: column; gap: 2px; }
+.fin-drop-icon { width: 32px; height: 32px; border-radius: 16px; display: grid; place-items: center; background: var(--fin); color: var(--on-fin); font-weight: 800; flex: none; }
+.fin-accounts { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* All money (pages/AllMoney.tsx) and Home's Money card. */
+.all-money { padding: 16px 20px; overflow: auto; height: 100%; box-sizing: border-box; }
+.fin-zero { stroke: var(--hair-strong); stroke-width: 1; }
+.fin-kept { display: flex; flex-direction: column; gap: 8px; }
+.fin-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.9em; }
+.fin-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.fin-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.fin-household .dash-tiles { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.money-today { display: flex; flex-direction: column; gap: 6px; }
+.money-today-row { display: flex; flex-wrap: wrap; gap: 6px 16px; font-variant-numeric: tabular-nums; }
+.money-today .bad { color: #e5484d; }

@@ -1,0 +1,1127 @@
+{
+ "format": {
+  "name": "tessel",
+  "version": 1
+ },
+ "meta": {
+  "title": "Newsletter email",
+  "description": "An email, 600 wide (never a post): the Email frame is the email's card and each child is a section, top to bottom. Restyle it in the brand with set_tokens (color.brand for the button and pill, color.ink, color.paper the card, color.page around it, color.night the footer; font.heading, font.body), put the business's name in Logo and FooterName (or replace Logo with the logo as an image layer named for its alt text) and its own words everywhere. {{field}} words are filled for each person; keep them. A layer named link:<address> links: rename it to the real address. Save it as a template with email_design_save, declaring its fields. A newsletter (marketing with a topic, sent with email_campaign): a headline and lede, a Photo (a grey box: replace it with an image layer of the person's photo, named for its alt text, or delete it), a feature with a button, two stories side by side that stack on a phone (Stories: semantic columns), a closing line. No fields beyond the person's. Marketing: keep Unsubscribe and {{address}} in the footer."
+ },
+ "tokens": {
+  "colors": {
+   "color.brand": "#0A84FF",
+   "color.accent": "#F08C00",
+   "color.ink": "#0B1220",
+   "color.paper": "#FFFFFF",
+   "color.page": "#EEF2F6",
+   "color.body": "#2A3242",
+   "color.muted": "#5B6474",
+   "color.faint": "#8A93A3",
+   "color.line": "#E3E7ED",
+   "color.soft": "#F5F7FA",
+   "color.tint": "#EAF5FD",
+   "color.night": "#0B1220",
+   "color.white": "#FFFFFF",
+   "color.footer": "#C7CFDB"
+  },
+  "fonts": {
+   "font.heading": "Inter",
+   "font.body": "Inter"
+  }
+ },
+ "pages": [
+  {
+   "id": "p_page000001",
+   "name": "Email",
+   "children": [
+    {
+     "id": "n_ema11x0035",
+     "name": "Email",
+     "kind": "frame",
+     "x": 0,
+     "y": 0,
+     "width": 600,
+     "height": 100,
+     "clip": true,
+     "fills": [
+      {
+       "type": "solid",
+       "color": "{color.paper}"
+      }
+     ],
+     "corner_radius": 0,
+     "layout": {
+      "direction": "column",
+      "gap": 0,
+      "padding": [
+       0,
+       0,
+       0,
+       0
+      ],
+      "justify": "start",
+      "align": "start",
+      "width": "fixed",
+      "height": "hug"
+     },
+     "children": [
+      {
+       "id": "n_header0004",
+       "name": "Header",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "row",
+        "gap": 0,
+        "padding": [
+         28,
+         40,
+         0,
+         40
+        ],
+        "justify": "space_between",
+        "align": "center",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_10g0xx0001",
+         "name": "Logo",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 20,
+         "content": "Business name",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.ink}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 700,
+          "font_size": 20,
+          "line_height": {
+           "px": 24
+          },
+          "letter_spacing": -0.3
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         }
+        },
+        {
+         "id": "n_badgex0003",
+         "name": "Badge",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.tint}"
+          }
+         ],
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "row",
+          "gap": 0,
+          "padding": [
+           5,
+           10,
+           5,
+           10
+          ],
+          "justify": "start",
+          "align": "start",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_badget0002",
+           "name": "BadgeText",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 11,
+           "content": "News",
+           "sizing": "auto_width",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.brand}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 700,
+            "font_size": 11,
+            "line_height": {
+             "px": 13
+            },
+            "letter_spacing": 1,
+            "text_transform": "upper"
+           },
+           "layout_child": {
+            "width": "hug",
+            "height": "hug"
+           }
+          }
+         ],
+         "corner_radius": 999
+        }
+       ]
+      },
+      {
+       "id": "n_her0xx0007",
+       "name": "Hero",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 16,
+        "padding": [
+         34,
+         40,
+         8,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_head110005",
+         "name": "Headline",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 40,
+         "content": "This month at Business name",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.ink}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 800,
+          "font_size": 40,
+          "line_height": {
+           "px": 44
+          },
+          "letter_spacing": -1.2
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "semantic": "h1"
+        },
+        {
+         "id": "n_w0rds10006",
+         "name": "Words1",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 16,
+         "content": "Hi {{first_name|there}}, one short line on what this issue holds.",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.body}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 16,
+          "line_height": {
+           "px": 25
+          }
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         }
+        }
+       ]
+      },
+      {
+       "id": "n_ph0t0w0009",
+       "name": "PhotoWrap",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         18,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_ph0t0x0008",
+         "name": "Photo",
+         "kind": "rect",
+         "x": 0,
+         "y": 0,
+         "width": 520,
+         "height": 260,
+         "fills": [
+          {
+           "type": "solid",
+           "color": "#D9DEE5"
+          }
+         ],
+         "corner_radius": 14,
+         "layout_child": {
+          "width": "fixed",
+          "height": "fixed"
+         }
+        }
+       ]
+      },
+      {
+       "id": "n_featvr0013",
+       "name": "Feature",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 8,
+        "padding": [
+         30,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_featvr0010",
+         "name": "FeatureEyebrow",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 11,
+         "content": "Feature",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.brand}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 700,
+          "font_size": 11,
+          "line_height": {
+           "px": 14
+          },
+          "letter_spacing": 1.2,
+          "text_transform": "upper"
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         }
+        },
+        {
+         "id": "n_featvr0011",
+         "name": "FeatureTitle",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 28,
+         "content": "The one thing worth reading",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.ink}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 800,
+          "font_size": 28,
+          "line_height": {
+           "px": 32
+          },
+          "letter_spacing": -0.8
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "semantic": "h2"
+        },
+        {
+         "id": "n_featvr0012",
+         "name": "FeatureWords",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 15,
+         "content": "Two or three sentences on it, in the business's own words.",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.muted}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 15,
+          "line_height": {
+           "px": 22
+          }
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         }
+        }
+       ]
+      },
+      {
+       "id": "n_act10n0016",
+       "name": "Action",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         8,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_11nkht0015",
+         "name": "link:https://example.com/news",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.brand}"
+          }
+         ],
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "row",
+          "gap": 0,
+          "padding": [
+           14,
+           28,
+           14,
+           28
+          ],
+          "justify": "start",
+          "align": "start",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_bvtt0n0014",
+           "name": "ButtonLabel",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 16,
+           "content": "Read more",
+           "sizing": "auto_width",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.white}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 700,
+            "font_size": 16,
+            "line_height": {
+             "px": 20
+            }
+           },
+           "layout_child": {
+            "width": "hug",
+            "height": "hug"
+           }
+          }
+         ],
+         "corner_radius": 999,
+         "semantic": "button"
+        }
+       ]
+      },
+      {
+       "id": "n_st0r1e0026",
+       "name": "StoriesWrap",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         34,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_st0r1e0025",
+         "name": "Stories",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [],
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "row",
+          "gap": 14,
+          "padding": [
+           0,
+           0,
+           0,
+           0
+          ],
+          "justify": "start",
+          "align": "start",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_st0ry10020",
+           "name": "Story1",
+           "kind": "frame",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 100,
+           "clip": false,
+           "fills": [],
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           },
+           "layout": {
+            "direction": "column",
+            "gap": 6,
+            "padding": [
+             16,
+             16,
+             16,
+             16
+            ],
+            "justify": "start",
+            "align": "start",
+            "width": "hug",
+            "height": "hug"
+           },
+           "children": [
+            {
+             "id": "n_st0ry10017",
+             "name": "Story1Title",
+             "kind": "text",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 17,
+             "content": "A second story",
+             "sizing": "auto_height",
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.ink}"
+              }
+             ],
+             "style": {
+              "font_family": "{font.heading}",
+              "font_weight": 700,
+              "font_size": 17,
+              "line_height": {
+               "px": 22
+              }
+             },
+             "layout_child": {
+              "width": "fill",
+              "height": "hug"
+             }
+            },
+            {
+             "id": "n_st0ry10018",
+             "name": "Story1Words",
+             "kind": "text",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 14,
+             "content": "A sentence or two about it.",
+             "sizing": "auto_height",
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.muted}"
+              }
+             ],
+             "style": {
+              "font_family": "{font.body}",
+              "font_weight": 400,
+              "font_size": 14,
+              "line_height": {
+               "px": 20
+              }
+             },
+             "layout_child": {
+              "width": "fill",
+              "height": "hug"
+             }
+            },
+            {
+             "id": "n_11nkht0019",
+             "name": "link:https://example.com/story-1",
+             "kind": "text",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 14,
+             "content": "Read it \u2192",
+             "sizing": "auto_width",
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.brand}"
+              }
+             ],
+             "style": {
+              "font_family": "{font.body}",
+              "font_weight": 700,
+              "font_size": 14,
+              "line_height": {
+               "px": 20
+              }
+             },
+             "layout_child": {
+              "width": "hug",
+              "height": "hug"
+             }
+            }
+           ],
+           "corner_radius": 14,
+           "strokes": [
+            {
+             "type": "solid",
+             "color": "{color.line}"
+            }
+           ],
+           "stroke_width": 1,
+           "stroke_align": "inside"
+          },
+          {
+           "id": "n_st0ry20024",
+           "name": "Story2",
+           "kind": "frame",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 100,
+           "clip": false,
+           "fills": [],
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           },
+           "layout": {
+            "direction": "column",
+            "gap": 6,
+            "padding": [
+             16,
+             16,
+             16,
+             16
+            ],
+            "justify": "start",
+            "align": "start",
+            "width": "hug",
+            "height": "hug"
+           },
+           "children": [
+            {
+             "id": "n_st0ry20021",
+             "name": "Story2Title",
+             "kind": "text",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 17,
+             "content": "A third story",
+             "sizing": "auto_height",
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.ink}"
+              }
+             ],
+             "style": {
+              "font_family": "{font.heading}",
+              "font_weight": 700,
+              "font_size": 17,
+              "line_height": {
+               "px": 22
+              }
+             },
+             "layout_child": {
+              "width": "fill",
+              "height": "hug"
+             }
+            },
+            {
+             "id": "n_st0ry20022",
+             "name": "Story2Words",
+             "kind": "text",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 14,
+             "content": "A sentence or two about it.",
+             "sizing": "auto_height",
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.muted}"
+              }
+             ],
+             "style": {
+              "font_family": "{font.body}",
+              "font_weight": 400,
+              "font_size": 14,
+              "line_height": {
+               "px": 20
+              }
+             },
+             "layout_child": {
+              "width": "fill",
+              "height": "hug"
+             }
+            },
+            {
+             "id": "n_11nkht0023",
+             "name": "link:https://example.com/story-2",
+             "kind": "text",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 14,
+             "content": "Read it \u2192",
+             "sizing": "auto_width",
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.brand}"
+              }
+             ],
+             "style": {
+              "font_family": "{font.body}",
+              "font_weight": 700,
+              "font_size": 14,
+              "line_height": {
+               "px": 20
+              }
+             },
+             "layout_child": {
+              "width": "hug",
+              "height": "hug"
+             }
+            }
+           ],
+           "corner_radius": 14,
+           "strokes": [
+            {
+             "type": "solid",
+             "color": "{color.line}"
+            }
+           ],
+           "stroke_width": 1,
+           "stroke_align": "inside"
+          }
+         ],
+         "semantic": "columns"
+        }
+       ]
+      },
+      {
+       "id": "n_c10s1n0028",
+       "name": "Closing",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         30,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "center",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_c10s1n0027",
+         "name": "ClosingWords",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 15,
+         "content": "Thanks for reading. Reply any time: a person reads every email.",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.body}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 15,
+          "line_height": {
+           "px": 22
+          }
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "align": "center"
+        }
+       ]
+      },
+      {
+       "id": "n_gapxxx0029",
+       "name": "Gap",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         40,
+         0,
+         0,
+         0
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": []
+      },
+      {
+       "id": "n_f00ter0034",
+       "name": "Footer",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [
+        {
+         "type": "solid",
+         "color": "{color.night}"
+        }
+       ],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 8,
+        "padding": [
+         28,
+         40,
+         28,
+         40
+        ],
+        "justify": "start",
+        "align": "center",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_f00ter0030",
+         "name": "FooterName",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 16,
+         "content": "Business name",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.white}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 700,
+          "font_size": 16,
+          "line_height": {
+           "px": 20
+          }
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         }
+        },
+        {
+         "id": "n_f00ter0031",
+         "name": "FooterLine",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 13,
+         "content": "One line about what the business does.",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.footer}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 13,
+          "line_height": {
+           "px": 18
+          }
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "align": "center"
+        },
+        {
+         "id": "n_addres0032",
+         "name": "Address",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 11,
+         "content": "{{address}}",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "#7D8798"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 11,
+          "line_height": {
+           "px": 17
+          }
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "align": "center"
+        },
+        {
+         "id": "n_11nkvn0033",
+         "name": "link:{{unsubscribe_url}}",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 11,
+         "content": "Unsubscribe",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "#7D8798"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 11,
+          "line_height": {
+           "px": 17
+          },
+          "decoration": "underline"
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

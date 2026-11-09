@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+    {{> head}}
+</head>
+<body>
+{{> header}}
+<main id="main">
+  {{#notFound}}
+  <div class="wrap scene">
+    <div class="box dialogue"><h1 class="visually-hidden">Not found</h1><p>{{line}}</p></div>
+    <nav class="box choices" aria-label="Back"><ul><li><a href="/"><span class="arrow"></span>{{back}}</a></li></ul></nav>
+  </div>
+  {{/notFound}}
+</main>
+{{> footer}}
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Invoice</title>
+{{! Invoice: one invoice, one row per invoice line ordered by position.
+
+    Data: `rows` are the invoice's lines (invoice_lines joined with invoices
+    and customers); the invoice-level columns repeat on every line, and `row`
+    (the first line) is where the template reads them. Render one file per
+    invoice with split: "invoice_id", so each file sees only its own lines.
+
+    Columns this template reads:
+      invoice-level (from `row`): invoice_id, invoice_number, status,
+        issue_date, due_date, customer_name, customer_contact,
+        customer_email, customer_address, subtotal_cents, tax_cents,
+        total_cents, paid_cents, balance_cents, notes
+      per line (from each row): line_description, quantity, unit,
+        unit_price_cents, tax_rate_percent, line_cents, line_tax_cents
+      tax by rate (per line, from window functions over the invoice's
+        lines): rate_first, rate_net_cents, rate_tax_cents
+      optional: currency (the invoice's; the business's when null)
+
+    The engine cannot subtract, divide or group, so the query gives it
+    balance_cents (total_cents - paid_cents), tax_rate_percent
+    (tax_rate_bp / 100.0) and the three rate_ columns. Without rate_first the
+    totals show one tax line instead of one per rate.
+
+    Never referenced here: the customer's own notes, cc_email, a payment's
+    reference, and the business's numbering and default rates. }}
+<style>
+  @page {
+    size: A4;
+    margin: 18mm;
+    /* Page numbers. Chromium 131 and later print page-margin boxes; an older
+       one shows nothing here and the document is still complete. */
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 8pt; color: #666; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.45;
+    color: #000;
+    background: #fff;
+    padding-bottom: 14mm; /* room for the fixed footer */
+  }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Header: brand left, contact right, a quiet rule under both */
+  .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12mm; padding-bottom: 6mm; border-bottom: 0.5pt solid #b8b8b8; }
+  .brand img { display: block; max-height: 18mm; max-width: 60mm; }
+  .brand .legal { font-size: 16pt; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+  .brand .trading { color: #444; margin-top: 1.5mm; }
+  .contact { text-align: right; font-size: 9.5pt; color: #333; white-space: pre-line; line-height: 1.5; }
+
+  h1 { font-size: 20pt; font-weight: 600; letter-spacing: -0.01em; margin: 10mm 0 1mm; color: var(--accent); }
+  .lead { color: #444; margin: 0 0 8mm; }
+  .mark { display: inline-block; border: 1pt solid var(--accent); color: var(--accent); border-radius: 2pt; padding: 0 2mm; font-size: 10pt; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: 3pt; margin-left: 3mm; }
+  .mark.void { border-color: #b3261e; color: #b3261e; }
+
+  /* A void invoice: one large mark across the page, behind nothing */
+  .void-stamp { position: fixed; top: 95mm; left: 0; right: 0; text-align: center; font-size: 96pt; font-weight: 700; letter-spacing: 0.12em; color: #b3261e; opacity: 0.18; transform: rotate(-24deg); pointer-events: none; }
+  .void-note, .draft-note { margin: 0 0 8mm; border-left: 2pt solid #b3261e; padding: 2mm 0 2mm 5mm; color: #b3261e; font-weight: 600; }
+  .draft-note { border-color: #999; color: #444; }
+
+  /* Bill to and the invoice's facts: two quiet columns of label over value */
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm 12mm; margin-bottom: 10mm; }
+  .fact .label { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 1mm; }
+  .fact .value strong { font-size: 13pt; font-weight: 600; }
+  .fact .sub { color: #444; }
+  .fact .address { color: #222; white-space: pre-line; }
+  .details { display: grid; grid-template-columns: auto 1fr; gap: 1mm 6mm; }
+  .details dt { color: #666; }
+  .details dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  thead { display: table-header-group; }
+  th { text-align: left; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.06em; color: #555; font-weight: 600; padding: 0 0 2mm; border-bottom: 1pt solid var(--accent); }
+  th.num { text-align: right; }
+  td { padding: 2.2mm 0; border-bottom: 0.5pt solid #ddd; vertical-align: top; }
+  td + td, th + th { padding-left: 4mm; }
+  tr { break-inside: avoid; }
+  .col-qty { width: 16mm; }
+  .col-price { width: 34mm; }
+  .col-rate { width: 16mm; }
+  .col-money { width: 30mm; }
+  td .per { color: #555; font-size: 9.5pt; }
+
+  /* Under the lines: how to pay and the notes on the left, the totals on the
+     right with the balance the one bold line */
+  .summary { display: grid; grid-template-columns: 1fr 88mm; gap: 10mm; margin-top: 6mm; break-inside: avoid; }
+  .totals { width: 100%; border-collapse: collapse; }
+  .totals td { border-bottom: none; padding: 1.2mm 0; }
+  .totals td + td { padding-left: 4mm; }
+  .totals td.label { color: #333; }
+  .totals tr.total td { border-top: 0.75pt solid #000; font-weight: 600; padding-top: 2.5mm; }
+  .totals tr.balance td { border-top: 1.5pt solid var(--accent); font-size: 13pt; font-weight: 700; padding-top: 3mm; }
+  .totals tr.balance td.label { color: #000; }
+
+  .pay { border-left: 2pt solid var(--accent); padding: 2mm 0 2mm 5mm; }
+  .pay .title { font-weight: 600; margin-bottom: 1mm; }
+  .pay p { margin: 0 0 2mm; font-size: 10pt; color: #222; }
+  .pay .how { white-space: pre-line; font-variant-numeric: tabular-nums; }
+  .paid-note { margin: 2mm 0 0; font-size: 10pt; font-weight: 600; color: #222; }
+
+  .notes { margin: 6mm 0 0; font-size: 10pt; white-space: pre-line; }
+  .notes .label { font-weight: 600; }
+
+  .footer { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; gap: 8mm; font-size: 8.5pt; color: #666; border-top: 0.5pt solid #ddd; padding-top: 2mm; }
+  .footer .generated { white-space: nowrap; }
+</style>
+</head>
+<body style="--accent: {{default business.accent_colour "#1f3a5f"}}">
+
+{{#if (eq row.status "void")}}<div class="void-stamp">VOID</div>{{/if}}
+
+<header class="header">
+  <div class="brand">
+    {{#if business.logo_path}}
+      <img src="{{file business.logo_path}}" alt="{{business.legal_name}}">
+    {{else}}
+      <div class="legal">{{business.legal_name}}</div>
+    {{/if}}
+    {{#if business.trading_name}}<div class="trading">{{business.trading_name}}</div>{{/if}}
+  </div>
+  <div class="contact">{{business.address}}
+{{business.email}}
+{{business.phone}}</div>
+</header>
+
+<h1>{{#if row.invoice_number}}Invoice {{row.invoice_number}}{{else}}Draft invoice{{/if}}{{#if (eq row.status "void")}}<span class="mark void">Void</span>{{/if}}{{#if (eq row.status "part_paid")}}<span class="mark">Part paid</span>{{/if}}{{#if (eq row.status "paid")}}<span class="mark">Paid</span>{{/if}}</h1>
+<p class="lead">Issued {{date row.issue_date}} · Due {{date row.due_date}}</p>
+
+{{#if (eq row.status "void")}}
+<p class="void-note">This invoice has been voided. It is not payable, and its number is not used again.</p>
+{{/if}}
+{{#if (eq row.status "draft")}}
+<p class="draft-note">This is a draft, not yet issued. It is not a request for payment.</p>
+{{/if}}
+
+<section class="facts">
+  <div class="fact">
+    <div class="label">Bill to</div>
+    <div class="value"><strong>{{row.customer_name}}</strong></div>
+    {{#if row.customer_contact}}<div class="sub">Attn: {{row.customer_contact}}</div>{{/if}}
+    {{#if row.customer_address}}<div class="address">{{row.customer_address}}</div>{{/if}}
+    {{#if row.customer_email}}<div class="sub">{{row.customer_email}}</div>{{/if}}
+  </div>
+  <div class="fact">
+    <div class="label">Invoice details</div>
+    <dl class="details">
+      <dt>Invoice number</dt><dd>{{default row.invoice_number "Not yet issued"}}</dd>
+      <dt>Issue date</dt><dd>{{date row.issue_date}}</dd>
+      <dt>Due date</dt><dd>{{date row.due_date}}</dd>
+      {{#if business.tax_number}}<dt>{{default business.tax_label "Tax"}} number</dt><dd>{{business.tax_number}}</dd>{{/if}}
+    </dl>
+  </div>
+</section>
+
+<table class="lines">
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th class="num col-qty">Qty</th>
+      <th class="num col-price">Unit price</th>
+      {{#if row.tax_cents}}<th class="num col-rate">{{default business.tax_label "Tax"}}</th>{{/if}}
+      <th class="num col-money">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each rows}}
+    <tr>
+      <td>{{this.line_description}}</td>
+      <td class="num">{{number this.quantity}}</td>
+      <td class="num">{{money this.unit_price_cents this.currency}}{{#if this.unit}} <span class="per">{{#if (eq this.unit "each")}}each{{else}}per {{this.unit}}{{/if}}</span>{{/if}}</td>
+      {{#if row.tax_cents}}<td class="num">{{number this.tax_rate_percent}}%</td>{{/if}}
+      <td class="num">{{money this.line_cents this.currency}}</td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+
+<section class="summary">
+<div class="left">
+{{#unless (eq row.status "void")}}{{#unless (eq row.status "draft")}}
+  {{#if (eq row.balance_cents 0)}}
+<p class="paid-note">Paid in full. Thank you.</p>
+  {{else}}
+<aside class="pay">
+  <div class="title">How to pay</div>
+  <p>Please pay {{money row.balance_cents row.currency}} by {{date row.due_date}}{{#if row.invoice_number}}, quoting {{row.invoice_number}}{{/if}}.</p>
+  {{#if business.payment_instructions}}<p class="how">{{business.payment_instructions}}</p>{{/if}}
+</aside>
+  {{/if}}
+{{/unless}}{{/unless}}
+
+{{#if row.notes}}
+<p class="notes"><span class="label">Notes:</span> {{row.notes}}</p>
+{{/if}}
+</div>
+<table class="totals">
+  <tbody>
+    <tr><td class="label">Subtotal</td><td class="num">{{money row.subtotal_cents row.currency}}</td></tr>
+    {{#if row.tax_cents}}
+      {{#if row.rate_first}}
+        {{#each rows}}{{#if this.rate_first}}
+    <tr class="tax-rate"><td class="label">{{default business.tax_label "Tax"}} at {{number this.tax_rate_percent}}% on {{money this.rate_net_cents this.currency}}</td><td class="num">{{money this.rate_tax_cents this.currency}}</td></tr>
+        {{/if}}{{/each}}
+      {{else}}
+    <tr class="tax-rate"><td class="label">{{default business.tax_label "Tax"}}</td><td class="num">{{money row.tax_cents row.currency}}</td></tr>
+      {{/if}}
+    {{/if}}
+    <tr class="total"><td class="label">Total</td><td class="num">{{money row.total_cents row.currency}}</td></tr>
+    {{#if row.paid_cents}}<tr><td class="label">Paid</td><td class="num">−{{money row.paid_cents row.currency}}</td></tr>{{/if}}
+    {{#unless (eq row.status "void")}}
+    <tr class="balance"><td class="label">Balance due</td><td class="num">{{money row.balance_cents row.currency}}</td></tr>
+    {{/unless}}
+  </tbody>
+</table>
+</section>
+
+<footer class="footer">
+  <div class="text">{{business.footer_text}}</div>
+  <div class="generated">Generated on {{date now}}</div>
+</footer>
+
+</body>
+</html>

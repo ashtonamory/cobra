@@ -1,0 +1,206 @@
+/*
+ * Notebook (pages/Notebook.tsx): a cream ruled Moleskine on the
+ * desk's black. The paper keeps its own colours in both themes, as paper does. Rules every 26 px,
+ * text 26 px high sitting on them (Layout rule 2); the date in small caps over the title (rule 1).
+ * Fonts are OFL (assets/fonts/licenses), bundled by Vite.
+ */
+@font-face { font-family: "NB Lora"; src: url("../assets/fonts/Lora.ttf") format("truetype"); font-weight: 400 700; font-style: normal; font-display: block; }
+@font-face { font-family: "NB Cormorant"; src: url("../assets/fonts/CormorantGaramond.ttf") format("truetype"); font-weight: 300 700; font-display: block; }
+@font-face { font-family: "NB Instrument"; src: url("../assets/fonts/InstrumentSerif-Regular.ttf") format("truetype"); font-weight: 400; font-display: block; }
+/* The name the canvas measures with (Notebook.tsx BODY_FONT). */
+@font-face { font-family: "Lora"; src: url("../assets/fonts/Lora.ttf") format("truetype"); font-weight: 400 700; font-display: block; }
+
+.nb-page {
+  --nb-paper: #f7f1e3;
+  --nb-rule: #c3d3e2;
+  --nb-margin: #e1a3a0;
+  --nb-ink: #2a2723;
+  --nb-pencil: #7b7364;
+  --nb-heading: #8a2e2b;
+  --nb-stamp: #4d6797;
+  --nb-tick: #284a8c;
+  --nb-hilite: #f5df6b;
+  --nb-cover: #1c1b1a;
+  --nb-ribbon: #8a2e2b;
+  --nb-leather: #6b4026;
+  --nb-leather-dark: #4a2b19;
+  --nb-gold: #d8b46a;
+  --nb-shelf: #2a1f17;
+  --tab-yellow: #f2cc4f;
+  --tab-coral: #ee8b6c;
+  --tab-mint: #82c9a6;
+  --tab-blue: #8db6e6;
+  --tab-lilac: #b9a2e0;
+  --tab-rose: #e79bb4;
+  --tab-sage: #b5c98a;
+  --tab-sand: #d9b98c;
+  --tab-teal: #7cc4c4;
+  --tab-slate: #a7b0bf;
+  display: flex;
+  gap: 28px;
+  padding: 18px 22px 18px;
+  overflow: hidden;
+}
+.nb-page .tab-yellow { --tab: var(--tab-yellow); }
+.nb-page .tab-coral { --tab: var(--tab-coral); }
+.nb-page .tab-mint { --tab: var(--tab-mint); }
+.nb-page .tab-blue { --tab: var(--tab-blue); }
+.nb-page .tab-lilac { --tab: var(--tab-lilac); }
+.nb-page .tab-rose { --tab: var(--tab-rose); }
+.nb-page .tab-sage { --tab: var(--tab-sage); }
+.nb-page .tab-sand { --tab: var(--tab-sand); }
+.nb-page .tab-teal { --tab: var(--tab-teal); }
+.nb-page .tab-slate { --tab: var(--tab-slate); }
+
+/* --- the rail --------------------------------------------------------------------------- */
+.nb-rail { width: 272px; flex: none; overflow-y: auto; overflow-x: hidden; padding-right: 4px; display: flex; flex-direction: column; }
+.nb-title { font-size: 1.75em; font-weight: 800; letter-spacing: 0.2px; line-height: 1.15; }
+.nb-sub { color: var(--dim); margin: 6px 0 14px; }
+.nb-search { position: relative; display: flex; align-items: center; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; height: 38px; padding: 0 10px; gap: 8px; }
+.nb-search input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--fg); font: inherit; }
+.nb-search-icon { color: var(--dim); font-size: 1.15em; }
+.nb-clear { background: none; border: none; color: var(--dim); cursor: pointer; padding: 2px 4px; }
+.nb-chips { display: flex; flex-wrap: wrap; gap: 6px 6px; margin: 12px 0 16px; }
+.nb-chip { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 999px; padding: 5px 11px; background: var(--card); color: var(--fg); font: inherit; font-weight: 600; font-size: 0.92em; cursor: pointer; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nb-chip.on { background: var(--fg); color: var(--bg); }
+.nb-tabmark { display: inline-block; width: 8px; height: 11px; border-radius: 2px; background: var(--tab); flex: none; }
+.nb-tabmark.end { position: absolute; right: -16px; top: 8px; }
+.nb-label { font-size: 0.78em; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase; color: var(--dim); margin: 18px 0 8px; }
+.nb-label.flat { margin: 0; }
+.nb-hint { color: var(--dimmer); font-size: 0.84em; line-height: 1.4; margin: 8px 0 2px; }
+
+.nb-month { padding: 0 4px; }
+.nb-month-head { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
+.nb-month-head .grow { flex: 1; }
+.nb-arrow { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 1.1em; padding: 0 6px; }
+.nb-arrow:disabled { color: var(--dimmer); cursor: default; }
+.nb-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.72em; font-weight: 700; color: var(--dim); margin-bottom: 4px; }
+.nb-shelf-row { display: grid; grid-template-columns: repeat(7, 1fr); height: 62px; border-bottom: 3px solid var(--nb-shelf); margin-bottom: 4px; }
+.nb-cell { position: relative; display: flex; justify-content: center; align-items: flex-end; background: none; border: none; padding: 0 0 1px; cursor: pointer; }
+.nb-cell:disabled { cursor: default; }
+.nb-cell.out { visibility: hidden; }
+.nb-spine { position: relative; display: block; height: 54px; border-radius: 2px 2px 0 0; background: linear-gradient(90deg, #2c2a27, #3d3a36 40%, #24221f); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.05); }
+.nb-spine.kept-day { height: 48px; opacity: 0.72; }
+.nb-spine.open { outline: 2px solid var(--accent); outline-offset: 2px; }
+.nb-cell:not(:disabled):hover .nb-spine { filter: brightness(1.35); }
+.nb-spine-ribbon { position: absolute; top: -4px; left: 50%; width: 4px; margin-left: -2px; height: 18px; background: var(--nb-ribbon); }
+.nb-spine-slot { display: block; width: 12px; height: 54px; border: 1px dashed rgb(var(--ink) / 0.14); border-bottom: none; border-radius: 2px 2px 0 0; }
+.nb-spine-none { display: block; width: 4px; height: 6px; }
+.nb-cell-day { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-family: "NB Cormorant", Georgia, serif; font-size: 10px; color: var(--nb-gold); pointer-events: none; }
+.nb-cell:disabled .nb-cell-day { color: var(--dimmer); }
+
+.nb-volumes { display: flex; gap: 10px; align-items: flex-end; padding: 0 4px; border-bottom: 4px solid var(--nb-shelf); }
+.nb-volume { width: 44px; height: 92px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 0; border: none; border-radius: 3px 3px 0 0; cursor: pointer; background: linear-gradient(90deg, var(--nb-leather-dark), var(--nb-leather) 45%, var(--nb-leather-dark)); color: var(--nb-gold); font-family: "NB Cormorant", Georgia, serif; }
+.nb-volume.on { outline: 2px solid var(--accent); outline-offset: 2px; }
+.nb-gilt { width: 100%; height: 2px; background: var(--nb-gold); opacity: 0.8; }
+.nb-gilt.low { margin-top: auto; margin-bottom: 12px; }
+.nb-volume-kind { font-size: 9px; letter-spacing: 0.8px; }
+.nb-volume-name { font-size: 15px; line-height: 1; }
+
+.nb-binder-row { display: flex; align-items: center; }
+.nb-binder { position: relative; width: 180px; height: 96px; flex: none; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 0 0 0 30px; border: none; border-radius: 8px; cursor: pointer; text-align: left; background: linear-gradient(135deg, #2d3d55, #22324a); color: #e9e1cf; }
+.nb-rings { position: absolute; left: 10px; top: 18px; bottom: 18px; display: flex; flex-direction: column; justify-content: space-between; }
+.nb-rings i { width: 9px; height: 9px; border-radius: 50%; background: #d8dbe0; }
+.nb-binder-name { font-family: "NB Instrument", Georgia, serif; font-size: 21px; line-height: 1.1; }
+.nb-binder-sub { font-family: "NB Lora", Georgia, serif; font-size: 11.5px; opacity: 0.8; margin-top: 4px; }
+.nb-binder-tabs { display: flex; flex-direction: column; gap: 4px; margin-left: -4px; min-width: 0; }
+.nb-binder-tab { border: none; border-radius: 0 4px 4px 0; background: var(--tab); color: #2a2723; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; padding: 3px 8px; cursor: pointer; max-width: 92px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.nb-binder-tab.top { border-radius: 5px 5px 0 0; padding: 6px 14px 5px; font-size: 10.5px; opacity: 0.7; max-width: 160px; }
+.nb-binder-tab.top.on { opacity: 1; padding-top: 9px; }
+.nb-flagged { display: flex; align-items: center; gap: 10px; background: none; border: none; color: var(--fg); font: inherit; padding: 5px 0; cursor: pointer; text-align: left; min-width: 0; }
+.nb-flagged .nb-tabmark { height: 16px; }
+
+.nb-results { display: flex; flex-direction: column; gap: 8px; }
+.nb-slip { position: relative; display: flex; flex-direction: column; gap: 6px; text-align: left; border: none; border-radius: 3px; padding: 10px 12px 10px 16px; background: var(--nb-paper); color: var(--nb-ink); cursor: pointer; box-shadow: 0 1px 0 rgb(0 0 0 / 0.4); }
+.nb-slip:hover { filter: brightness(1.04); }
+.nb-slip-edge { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--tab); border-radius: 3px 0 0 3px; }
+.nb-slip-head { display: flex; gap: 24px; align-items: baseline; justify-content: space-between; min-width: 0; }
+.nb-slip-where { font-family: "NB Cormorant", Georgia, serif; font-variant: small-caps; letter-spacing: 0.8px; color: var(--nb-heading); font-size: 13px; white-space: nowrap; }
+.nb-slip-co { font-size: 11px; color: var(--nb-pencil); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.nb-slip-line { font-family: "NB Lora", Georgia, serif; font-size: 13.5px; line-height: 20px; }
+.nb-slip-line mark, .nb-hilite { background: linear-gradient(transparent 22%, var(--nb-hilite) 22%, var(--nb-hilite) 88%, transparent 88%); color: inherit; }
+
+/* --- the stage and the book ---------------------------------------------------------- */
+.nb-stage { flex: 1; min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+.nb-empty { color: var(--dim); text-align: center; font-family: "NB Lora", Georgia, serif; line-height: 1.6; }
+.nb-empty-title { font-family: "NB Instrument", Georgia, serif; font-size: 30px; color: var(--fg); margin-bottom: 4px; }
+.nb-book { position: relative; perspective: 2400px; flex: none; }
+.nb-cover { position: absolute; inset: -9px -9px -9px -9px; background: var(--nb-cover); border-radius: 10px; box-shadow: 0 20px 40px rgb(0 0 0 / 0.55); }
+.nb-stack { position: absolute; top: 2px; bottom: -3px; width: 50%; background: repeating-linear-gradient(0deg, #e9e0cb 0 1px, #f4ecd9 1px 3px); border-radius: 3px; }
+.nb-stack.left { left: -3px; }
+.nb-stack.right { right: -3px; }
+.nb-gutter { position: absolute; top: 0; bottom: 0; left: 50%; width: 70px; margin-left: -35px; pointer-events: none; z-index: 5; background: linear-gradient(90deg, transparent, rgb(60 45 25 / 0.08) 30%, rgb(40 30 15 / 0.32) 50%, rgb(60 45 25 / 0.08) 70%, transparent); }
+.nb-ribbon { position: absolute; left: 50%; margin-left: 12px; bottom: -30px; width: 13px; height: 40px; background: var(--nb-ribbon); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); z-index: 6; }
+.nb-band { position: absolute; right: -16px; top: 0; bottom: 0; width: 6px; background: #121110; border-radius: 3px; z-index: 6; }
+.nb-flags { position: absolute; right: -14px; top: 0; z-index: 7; }
+.nb-flag { position: absolute; right: 0; width: 18px; height: 40px; border: none; border-radius: 0 4px 4px 0; background: var(--tab); box-shadow: 1px 1px 2px rgb(0 0 0 / 0.35); cursor: pointer; }
+
+/* --- the paper ---------------------------------------------------------------------------- */
+.nb-paper { position: absolute; top: 0; background: var(--nb-paper); color: var(--nb-ink); overflow: hidden; font-family: "NB Lora", "Lora", Georgia, serif; font-size: 15px; z-index: 1; }
+.nb-paper.left { left: 0; border-radius: 4px 0 0 4px; }
+.nb-paper.right { left: 50%; border-radius: 0 4px 4px 0; }
+.nb-paper.blank { background: #efe7d4; }
+.nb-rules { position: absolute; left: 0; right: 0; background: repeating-linear-gradient(180deg, var(--nb-rule) 0 1px, transparent 1px 26px); }
+.nb-margin { position: absolute; top: 0; bottom: 0; left: 40px; width: 1px; background: var(--nb-margin); }
+.nb-paper.left .nb-margin { box-shadow: -4px 0 0 -3px var(--nb-margin); }
+.nb-date { position: absolute; top: 30px; left: 52px; right: 30px; font-family: "NB Cormorant", Georgia, serif; font-variant: small-caps; text-transform: lowercase; letter-spacing: 2px; font-size: 14px; line-height: 16px; color: var(--nb-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nb-page-title { position: absolute; top: 52px; left: 52px; right: 30px; font-family: "NB Instrument", Georgia, serif; font-size: 25px; line-height: 28px; color: var(--nb-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nb-number { position: absolute; bottom: 14px; font-family: "NB Lora", Georgia, serif; font-size: 12px; color: var(--nb-pencil); }
+.nb-paper.left .nb-number { right: 26px; }
+.nb-paper.right .nb-number { right: 26px; }
+.nb-dayonly { position: absolute; bottom: 12px; left: 52px; right: 60px; font-style: italic; color: var(--nb-pencil); font-size: 12px; line-height: 16px; }
+
+.nb-row { position: absolute; height: 26px; line-height: 26px; padding-top: 1px; white-space: nowrap; box-sizing: border-box; }
+/* A word longer than the line (a path, a URL) is cut at the edge rather than run over it. */
+.nb-row .nb-text { display: block; overflow: hidden; text-overflow: ellipsis; }
+.nb-row.pencil { color: var(--nb-pencil); }
+.nb-row.italic { font-style: italic; }
+.nb-row.right { text-align: right; }
+/* A note that may take two ruled rows: it wraps on the rules. */
+.nb-row.wrap { white-space: normal; height: auto; }
+.nb-bullet { position: absolute; top: 1px; width: 16px; text-align: left; }
+.nb-row.heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding-bottom: 3px; }
+.nb-heading { font-family: "NB Cormorant", Georgia, serif; font-variant: small-caps; text-transform: lowercase; letter-spacing: 2.2px; color: var(--nb-heading); font-size: 14.5px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.nb-stamp { flex: none; font-family: var(--mono); font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--nb-stamp); border: 1.3px solid var(--nb-stamp); border-radius: 3px; padding: 0 5px; line-height: 14px; transform: rotate(-2.5deg); opacity: 0.82; margin-bottom: 2px; }
+.nb-row.thread { overflow: visible; }
+.nb-row.thread.done .nb-text { text-decoration: line-through; text-decoration-color: var(--nb-pencil); color: var(--nb-pencil); }
+.nb-box { position: absolute; left: 0; top: 7px; width: 13px; height: 13px; border: 1.4px solid var(--nb-ink); border-radius: 2px; background: none; padding: 0; cursor: pointer; }
+.nb-box svg { position: absolute; left: -1px; top: -6px; width: 17px; height: 17px; fill: none; stroke: var(--nb-tick); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.nb-row.contents { display: flex; align-items: center; gap: 10px; }
+.nb-row.contents .nb-tabmark { width: 9px; height: 10px; }
+.nb-contents-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: none; max-width: 60%; }
+.nb-leader { flex: 1; min-width: 24px; border-bottom: 1px solid rgb(123 115 100 / 0.5); margin-top: 8px; }
+.nb-pp { flex: none; color: var(--nb-pencil); }
+
+/* --- turning a leaf -------------------------------------------------------------------- */
+.nb-leaf { position: absolute; top: 0; transform-style: preserve-3d; z-index: 4; }
+.nb-leaf.next { transform-origin: left center; animation: nb-turn-next 520ms cubic-bezier(0.45, 0.05, 0.3, 1) forwards; }
+.nb-leaf.prev { transform-origin: right center; animation: nb-turn-prev 520ms cubic-bezier(0.45, 0.05, 0.3, 1) forwards; }
+.nb-leaf-face { position: absolute; inset: 0; backface-visibility: hidden; }
+.nb-leaf-face.back { transform: rotateY(180deg); }
+.nb-leaf-face .nb-paper { left: 0; }
+.nb-leaf-face.front::after, .nb-leaf-face.back::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; animation: nb-shade 520ms ease-in-out forwards; }
+.nb-leaf.in { transform-origin: left center; animation: nb-turn-in 520ms cubic-bezier(0.45, 0.05, 0.3, 1) forwards; }
+.nb-book.single .nb-paper { left: 0; border-radius: 4px; }
+.nb-book.single .nb-stack.left, .nb-book.single .nb-gutter { display: none; }
+.nb-book.single .nb-stack.right { width: 100%; }
+.nb-book.single .nb-ribbon { left: auto; right: 40px; margin-left: 0; }
+@keyframes nb-turn-in { from { transform: rotateY(-180deg); } to { transform: rotateY(0deg); } }
+@keyframes nb-turn-next { from { transform: rotateY(0deg); } to { transform: rotateY(-180deg); } }
+@keyframes nb-turn-prev { from { transform: rotateY(0deg); } to { transform: rotateY(180deg); } }
+@keyframes nb-shade { 0% { background: rgb(0 0 0 / 0); } 50% { background: rgb(40 25 10 / 0.22); } 100% { background: rgb(0 0 0 / 0); } }
+@media (prefers-reduced-motion: reduce) { .nb-leaf { animation-duration: 1ms !important; } }
+
+.nb-foot { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 44px; color: var(--dim); }
+.nb-foot-mid { font-size: 0.88em; color: var(--dimmer); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.nb-turn { background: none; border: none; color: var(--fg); font: inherit; cursor: pointer; white-space: nowrap; min-width: 80px; text-align: left; }
+.nb-turn.right { text-align: right; }
+.nb-turn:disabled { color: var(--dimmer); cursor: default; }
+.nb-binder-switch { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 6px 4px; margin-bottom: 18px; }
+
+/* --- the right-click menu -------------------------------------------------------------- */
+.nb-menu { position: fixed; z-index: 50; width: 280px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 6px; box-shadow: 0 12px 32px rgb(0 0 0 / 0.5); }
+.nb-menu-quote { font-family: "NB Lora", Georgia, serif; font-style: italic; color: var(--dim); font-size: 0.88em; line-height: 1.4; padding: 6px 8px 8px; border-bottom: 1px solid var(--hair); margin-bottom: 4px; }
+.nb-menu-item { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--fg); font: inherit; padding: 7px 8px; border-radius: 8px; cursor: pointer; }
+.nb-menu-item:hover { background: var(--hair); }
+.nb-menu-item.ask { color: var(--cobra); font-weight: 600; }

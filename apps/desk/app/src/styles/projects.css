@@ -1,0 +1,32 @@
+/* Projects, the project page, New project and Tidy (the desk's board-page dialogs). */
+
+/* the filter and the two buttons above the board, outside the scroll */
+.pj-top { display: flex; align-items: center; gap: 8px; padding: 16px 24px 0; }
+.pj-top input[type="search"] { min-width: 120px; }
+
+/* the project page's header bar */
+.pj-head { display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--hair); }
+.pj-title { font-weight: 700; max-width: 100%; }
+
+/* a dialog with a header bar */
+.pj-sheet { padding: 0; gap: 0; max-height: 90vh; }
+.pj-sheet-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px 20px; border-bottom: 1px solid var(--hair); }
+.pj-sheet-body { padding: 16px 20px 20px; overflow: auto; min-height: 0; }
+
+/* Adw.ToggleGroup */
+.pj-toggles { display: flex; flex-wrap: wrap; gap: 2px; padding: 2px; background: rgb(var(--ink) / 0.06); border-radius: 8px; align-self: flex-start; max-width: 100%; }
+.pj-toggle { background: transparent; border: 0; border-radius: 6px; padding: 4px 12px; cursor: pointer; white-space: nowrap; color: var(--dim); }
+.pj-toggle:hover { color: var(--fg); }
+.pj-toggle.on { background: rgb(var(--ink) / 0.14); color: var(--fg); }
+
+/* a single-choice list (New project's repositories) */
+.pj-list { background: var(--bg-light); border: 1px solid var(--hair); border-radius: 10px; padding: 0 8px; max-height: 46vh; overflow: auto; }
+.pj-pick.picked { background: rgb(var(--blue-rgb) / 0.16); }
+.pj-pick.picked:hover { background: rgb(var(--blue-rgb) / 0.22); }
+.pj-one-line { -webkit-line-clamp: 1; }
+
+.pj-error { color: var(--red); white-space: pre-wrap; }
+
+.pj-spinner { width: 14px; height: 14px; flex: none; border-radius: 99px; border: 2px solid rgb(var(--ink) / 0.18); border-top-color: var(--fg); animation: pj-spin 0.8s linear infinite; display: inline-block; }
+@keyframes pj-spin { to { transform: rotate(360deg); } }
+.pj-error { color: var(--signal); overflow-wrap: anywhere; }

@@ -1,0 +1,182 @@
+{
+  "format": {
+    "name": "tessel",
+    "version": 1
+  },
+  "meta": {
+    "title": "Quote or review",
+    "description": "Words in the spotlight: a customer review, a testimonial or a saying. Quote: the words, at most about 25. Attribution: who said it (Sarah, regular since 2019). Stars: delete it when it is not a review. Logo (the business name in text; with a logo in the brand kit, delete it and place the logo image in its box)."
+  },
+  "tokens": {
+    "colors": {
+      "color.brand": "#1f3a5f",
+      "color.accent": "#f2a541",
+      "color.ink": "#14161a",
+      "color.paper": "#f7f3ec"
+    },
+    "fonts": {
+      "font.heading": "Montserrat",
+      "font.body": "Inter"
+    }
+  },
+  "pages": [
+    {
+      "id": "p_page000001",
+      "name": "Post",
+      "children": [
+        {
+          "id": "n_frame00001",
+          "name": "Design",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 1350,
+          "clip": true,
+          "fills": [
+            {
+              "type": "solid",
+              "color": "{color.paper}"
+            }
+          ],
+          "children": [
+            {
+              "id": "n_qv0tem0001",
+              "name": "QuoteMark",
+              "kind": "text",
+              "x": 72,
+              "y": 60,
+              "width": 300,
+              "height": 300,
+              "content": "\u201c",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.accent}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 800,
+                "font_size": 360,
+                "line_height": {
+                  "percent": 100
+                }
+              }
+            },
+            {
+              "id": "n_qv0tex0002",
+              "name": "Quote",
+              "kind": "text",
+              "x": 72,
+              "y": 330,
+              "width": 936,
+              "height": 560,
+              "content": "The kindest groomers in town. Biscuit comes home happy every single time.",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.ink}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 700,
+                "font_size": 72,
+                "line_height": {
+                  "percent": 115
+                }
+              }
+            },
+            {
+              "id": "n_starsx0003",
+              "name": "Stars",
+              "kind": "text",
+              "x": 72,
+              "y": 900,
+              "width": 600,
+              "height": 70,
+              "content": "\u2605\u2605\u2605\u2605\u2605",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.accent}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.body}",
+                "font_weight": 400,
+                "font_size": 52,
+                "letter_spacing": 6
+              }
+            },
+            {
+              "id": "n_attr1b0004",
+              "name": "Attribution",
+              "kind": "text",
+              "x": 72,
+              "y": 980,
+              "width": 936,
+              "height": 60,
+              "content": "Sarah, a regular since 2019",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.ink}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.body}",
+                "font_weight": 500,
+                "font_size": 36
+              },
+              "opacity": 0.75
+            },
+            {
+              "id": "n_bandxx0005",
+              "name": "Band",
+              "kind": "rect",
+              "x": 0,
+              "y": 1170,
+              "width": 1080,
+              "height": 180,
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.brand}"
+                }
+              ]
+            },
+            {
+              "id": "n_10g0xx0006",
+              "name": "Logo",
+              "kind": "text",
+              "x": 72,
+              "y": 1170,
+              "width": 936,
+              "height": 180,
+              "content": "Happy Tails",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.paper}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 800,
+                "font_size": 44
+              },
+              "vertical_align": "middle"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

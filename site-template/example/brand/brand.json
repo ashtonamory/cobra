@@ -1,0 +1,6 @@
+{
+  "colors": { "brand": "#2E6B5E", "accent": "#C8642B", "ink": "#1E2321", "paper": "#FBF8F2" },
+  "fonts": { "heading": "Playfair Display", "body": "Inter" },
+  "logo": "logo.png",
+  "allowedAt": "2026-10-31T12:00:00.000Z"
+}

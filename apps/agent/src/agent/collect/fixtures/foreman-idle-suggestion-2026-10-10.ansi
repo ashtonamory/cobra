@@ -1,0 +1,75 @@
+
+[38;5;114m●[39m MCP task kksrmk4t (cobra-orch/job_run) completed.
+
+  [38;5;246mCalled cobra-orch (ctrl+o to expand)[39m
+
+[38;5;231m●[39m Thanks, the capture came through, and it's useful, just not the state we were after. It ran while I
+  was still working: the "Musing…" line shows that. "test words for this" was already in the box. So it
+  shows a busy Foreman with text typed, not an idle one. And [38;5;153m~/fm-typed.ansi[39m doesn't exist, so the
+  second command didn't run or wrote somewhere else.
+
+  The capture also turned up something new. [1mThe current Claude Code no longer shows "esc to interrupt" [0m
+  [1mwhile it works.[0m The agent relies on that to tell a busy session from an idle one. So a working Foreman
+  can read as idle, and that matters for item 4 as well.
+
+  I've sent #3's Worker the capture to use as a test fixture. With it go fixes for the busy check, for a
+  pasted-text placeholder case, and a small leak guard. The background reviews otherwise came back
+  clean: no escape codes leak to the phone or desk, and typed text never reads as empty.
+
+  [1mI[0m [1mstill[0m [1mneed[0m [1mone[0m [1mtrue[0m [1midle[0m [1mcapture.[0m After this reply finishes, wait until a grey line like "Cooked for
+  5s · done 4:20 PM" appears above the box. Leave the box alone, then run this in your other terminal:
+
+  [38;5;153mtmux[39m [38;5;153mcapture-pane[39m [38;5;153m-e[39m [38;5;153m-p[39m [38;5;153m-t[39m [38;5;153m'=cobra-integrated_fm:'[39m [38;5;153m>[39m [38;5;153m~/fm-idle2.ansi[39m
+
+  Tell me when it's done. You can skip the typed capture, because the first file already covers it.
+
+  [1mReport[0m [1mfor[0m [1mthe[0m [1mLead[0m [1m(Sat[0m [1m10[0m [1mOct,[0m [1m~16:20[0m [1mEDT)[0m
+  - [1mDone:[0m
+    - #3 reviewed: no ANSI leaks, and typed text is never read as empty. Follow-up fixes are sent: the
+      busy check (the current Claude Code no longer shows "esc to interrupt") and a real-capture
+      fixture.
+    - #1 is working.
+    - #2 is merged (#219).
+  - [1mPRs:[0m #219 (merged).
+  - [1mBlocked:[0m
+    - #3 waits on the person's idle capture ([38;5;153m~/fm-idle2.ansi[39m) and its Worker's fixes.
+    - #1 may still wait on the [38;5;153mapi.expo.dev[39m permission.
+    - #4 waits for #3 to merge.
+
+[38;5;246m✻[39m [38;5;246mSautéed for 4m 32s · done 4:16 PM[39m
+
+[38;5;246m[48;5;237m❯ [38;5;231m[cobra] Worker cobra-integrated_7 waits for the person (permission). worker_read [39m
+  [38;5;231mcobra-integrated_7 after=507[39m
+
+[49m  [38;5;246mCalled cobra-orch (ctrl+o to expand)[39m
+
+[38;5;231m●[39m #1's Worker is asking your OK to open two screenshots it just took of the new desk map, saved in its
+  own scratch folder. They don't leave the machine; it only wants to look at the result. I'd [1mAllow[0m both.
+
+  Progress on #1:
+  - [1mPhone:[0m the tree renders well in the web harness. It shows Lead → project → Workers with model and
+    state, and a tinted "waits on you" cell.
+  - [1mDesk:[0m the widget is built, and it's checking the open, collapsed and narrow layouts from those
+    screenshots.
+  - [1mDesk[0m [1mtests:[0m the suite crashes with the same no-display sandbox issue as before.
+
+  [1mReport[0m [1mfor[0m [1mthe[0m [1mLead[0m [1m(Sat[0m [1m10[0m [1mOct,[0m [1m~16:23[0m [1mEDT)[0m
+  - [1mDone:[0m #1 has its phone tree rendered and its desk widget built and being checked. #3's follow-up
+    fixes are in progress. #2 is merged (#219).
+  - [1mPRs:[0m #219 (merged).
+  - [1mBlocked:[0m
+    - #1 waits for the person's OK to read its own screenshots.
+    - #3 waits on the person's idle capture ([38;5;153m~/fm-idle2.ansi[39m).
+    - #4 waits for #3 to merge.
+
+[38;5;246m✻[39m [38;5;246mSautéed for 8s · done 4:17 PM[39m
+
+[38;5;246m※[39m [1m[38;5;246mrecap: [0;3m[38;5;246mWe're working through four Cobra fixes: #2 is merged, #3 (Lead briefing bug) and #1 [0m
+  [3m[38;5;246m(expandable work map) are in progress. Next, approve #1's screenshot request on your phone and run the
+[0m  [3m[38;5;246midle capture to ~/fm-idle2.ansi.[0m
+
+[38;5;244m────────────────────────────────────────────────────────────────────────────────────────────────────────
+[39m❯ [2midle[0m [2mcapture[0m [2mdone[0m
+[38;5;244m────────────────────────────────────────────────────────────────────────────────────────────────────────
+[39m  [38;5;246m⏸[39m [38;5;246mmanual[39m [38;5;246mmode[39m [38;5;246mon[39m [38;5;246m·[39m [38;5;246m?[39m [38;5;246mfor[39m [38;5;246mshortcuts[39m [38;5;246m·[39m [38;5;246m←[39m [38;5;246m3[39m [38;5;246magents[39m           [38;5;220mUpdate[39m [38;5;220mavailable![39m [38;5;220mRun:[39m [1m[38;5;220mmise[0m [1m[38;5;220mupgrade[0m [1m[38;5;220mclaude[0m
+

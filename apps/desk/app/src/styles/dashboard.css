@@ -1,0 +1,160 @@
+/* A trade's dashboards on the project page (components/Dashboard.tsx). */
+
+.dash { display: flex; flex-direction: column; gap: 12px; }
+.dash-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.dash-tile { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--hair-strong); border-radius: 10px; background: var(--bg-light); }
+.dash-tile-label { color: var(--dim); font-size: 0.8em; font-weight: 600; }
+.dash-tile-value { display: flex; align-items: center; gap: 6px; font-size: 1.6em; font-weight: 700; }
+.dash-dot { width: 8px; height: 8px; border-radius: 4px; flex: none; background: var(--dim); }
+.dash-dot.t-warn { background: var(--signal); }
+.dash-dot.t-bad { background: #e5484d; }
+.dash-dot.t-good { background: #3fa66b; }
+.dash-tabs { display: flex; gap: 4px; padding: 2px; border-radius: 99px; background: var(--bg-light); border: 1px solid var(--hair-strong); align-self: flex-start; flex-wrap: wrap; }
+.dash-tab { border: 0; background: none; color: var(--dim); padding: 5px 14px; border-radius: 99px; cursor: pointer; font-size: 0.85em; }
+.dash-tab.on { background: var(--fg); color: var(--bg); font-weight: 700; }
+.dash-back { align-self: flex-start; border: 0; background: none; color: var(--fg); cursor: pointer; padding: 0; font-size: 0.95em; }
+.dash-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dash-title { margin: 0; font-size: 1.2em; flex: 1; min-width: 120px; }
+.dash-search { width: 200px; }
+.dash-empty { padding: 12px 0; }
+.dash-rows { display: flex; flex-direction: column; }
+.dash-row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--hair); border-left: 3px solid transparent; padding-left: 8px; }
+.dash-row.t-warn { border-left-color: var(--signal); }
+.dash-row.t-bad { border-left-color: #e5484d; }
+.dash-row.t-good { border-left-color: #3fa66b; }
+.dash-row-main { flex: 1; display: flex; align-items: center; gap: 10px; padding: 9px 0; min-width: 0; }
+.dash-row-main.click, .dash-card.click { cursor: pointer; }
+.dash-row-title { font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dash-when { font-size: 0.8em; }
+.dash-badge { padding: 1px 8px; border-radius: 99px; background: var(--bg-light); font-size: 0.8em; font-weight: 600; }
+.dash-board { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; align-items: flex-start; }
+.dash-lane { flex: none; width: 220px; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 12px; background: var(--bg-light); }
+.dash-lane-head { display: flex; justify-content: space-between; }
+.dash-card { padding: 8px 10px; border: 1px solid var(--hair-strong); border-radius: 10px; background: var(--bg); }
+.dash-block { margin-bottom: 16px; }
+.dash-block-title { margin-bottom: 4px; }
+.dash-field { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--hair); }
+.dash-field-label { width: 110px; flex: none; }
+.dash-form-field { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.dash-error { color: #e5484d; margin-top: 10px; }
+
+/* The board: a trade's charts above its tabs (components/BoardCharts.tsx). Colours are the --chart-* tokens. */
+.chart-board { display: flex; flex-direction: column; gap: 10px; }
+.chart-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.chart-compare { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: 0.85em; cursor: pointer; }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.kpi { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--hair-strong); border-radius: 12px; background: var(--card); }
+.kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.kpi-label { color: var(--dim); font-size: 0.8em; font-weight: 600; }
+.kpi-spark polyline { fill: none; stroke: var(--dim); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.kpi-value { font-size: 1.7em; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi-foot { display: flex; gap: 6px; align-items: baseline; font-size: 0.8em; min-height: 1.2em; }
+.kpi-change { font-weight: 700; color: var(--dim); }
+.kpi-change.good { color: var(--green); }
+.kpi-change.bad { color: var(--red); }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 8px; }
+.chart-card { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid var(--hair-strong); border-radius: 12px; background: var(--card); min-width: 0; }
+.chart-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.chart-card-head .dim { font-size: 0.8em; }
+.chart-empty { padding: 28px 0; text-align: center; }
+.chart-plot { position: relative; width: 100%; min-width: 0; }
+.chart-plot svg, .chart-donut svg { display: block; overflow: visible; }
+.ch-fit { width: 100%; height: auto; }
+.ch-grid { stroke: var(--hair); stroke-width: 1; }
+.ch-base { stroke: var(--hair-strong); stroke-width: 1; }
+.ch-tick { fill: var(--dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.ch-label { fill: var(--fg); font-size: 12px; }
+.ch-value { fill: var(--fg); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ch-value.zero { fill: var(--dimmer); font-weight: 400; }
+.ch-center { fill: var(--fg); font-size: 18px; font-weight: 700; }
+.ch-center-sub { fill: var(--dim); font-size: 11px; }
+.ch-band { fill: rgb(var(--ink) / 0.05); }
+.ch-track { fill: rgb(var(--ink) / 0.05); }
+.ch-hit { fill: transparent; }
+.chart-board .click { cursor: pointer; }
+.ch-s0 { fill: var(--chart-1); stroke: var(--chart-1); color: var(--chart-1); }
+.ch-s1 { fill: var(--chart-2); stroke: var(--chart-2); color: var(--chart-2); }
+.ch-s2 { fill: var(--chart-3); stroke: var(--chart-3); color: var(--chart-3); }
+.ch-s3 { fill: var(--chart-4); stroke: var(--chart-4); color: var(--chart-4); }
+.ch-s4 { fill: var(--chart-5); stroke: var(--chart-5); color: var(--chart-5); }
+.ch-other { fill: var(--chart-other); stroke: var(--chart-other); color: var(--chart-other); }
+.ch-l0 { fill: var(--chart-l0); }
+.ch-l1 { fill: var(--chart-l1); }
+.ch-l2 { fill: var(--chart-l2); }
+.ch-l3 { fill: var(--chart-l3); }
+.chart-board path { stroke: none; }
+.ch-ghost { fill-opacity: 0.28; }
+.ch-faded { opacity: 0.4; }
+.ch-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.ch-line-ghost { stroke-dasharray: 4 4; opacity: 0.55; }
+.ch-dot { stroke: var(--card); stroke-width: 2; }
+.ch-swatch { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 3px; background: currentColor; }
+.ch-swatch.line { height: 3px; border-radius: 2px; }
+.ch-swatch.ghost { background: rgb(var(--ink) / 0.25); }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8em; color: var(--dim); }
+.chart-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.chart-legend-value { color: var(--fg); font-variant-numeric: tabular-nums; }
+.chart-tip { position: absolute; top: 8px; z-index: 2; min-width: 170px; padding: 8px 10px; border-radius: 10px; background: var(--bg); border: 1px solid var(--hair-strong); box-shadow: 0 6px 20px rgb(0 0 0 / 0.25); font-size: 0.85em; pointer-events: none; display: flex; flex-direction: column; gap: 4px; }
+.chart-tip-row { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+.chart-donut { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.chart-parts { flex: 1; min-width: 180px; display: flex; flex-direction: column; }
+.chart-part { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border: 0; border-radius: 8px; background: none; text-align: left; cursor: pointer; font-variant-numeric: tabular-nums; }
+.chart-part:disabled { cursor: default; color: inherit; }
+.chart-part.on { background: rgb(var(--ink) / 0.06); }
+.chart-part-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-part-share { width: 34px; text-align: right; }
+.chart-part-was { font-size: 0.85em; }
+
+/* One Foreman's part of a Space's page, under the open Space on the Org page. */
+
+/* A board Cobra made (components/CobraBoard.tsx), and her card's preview of one. */
+.cobra-board { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cobra-board-head { display: flex; align-items: center; gap: 8px; }
+.cobra-board-more { font-size: 1.2em; padding: 0 6px; }
+.cobra-board-drill { margin-top: 4px; }
+.board-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin-top: 8px; max-width: 760px; }
+.board-preview .chart-card { padding: 10px 12px; }
+
+/* Receipts on an expenses card (components/ExpensesPreview.tsx). */
+.receipts { display: flex; gap: 8px; margin-top: 8px; overflow-x: auto; max-width: 760px; }
+.receipt { width: 84px; flex: none; }
+.receipt-photo { width: 84px; height: 110px; border-radius: 6px; overflow: hidden; background: rgb(var(--ink) / .08); }
+.receipt-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.receipt-amount { font-weight: 700; font-size: 12px; margin-top: 4px; }
+.receipt-vendor { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.receipt-paid { width: 100%; margin-top: 4px; font: inherit; font-size: 11px; color: var(--fg); background: rgb(var(--ink) / .08); border: 0; border-radius: 999px; padding: 2px 6px; }
+.receipt-paid.ask { color: #fff; background: var(--accent); }
+
+/* A personal budget's board: the month switch and meters (components/BoardCharts.tsx). */
+.chart-months { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.chart-month { min-width: 160px; text-align: center; font-size: 15px; }
+.chart-month-step { width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgb(var(--ink) / .08); color: var(--fg); font-size: 18px; line-height: 1; cursor: pointer; }
+.chart-month-step:disabled { opacity: .3; cursor: default; }
+.meter-hero { display: flex; flex-direction: column; gap: 6px; }
+.meter-hero-value { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.meter-track { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: rgb(var(--ink) / .1); }
+.meter-track.thick { height: 12px; border-radius: 6px; }
+.meter-fill { display: block; height: 100%; }
+.meter-fill.tone-good { background: var(--green); }
+.meter-fill.tone-warn { background: var(--yellow); }
+.meter-fill.tone-bad { background: var(--red); }
+.meter-fill.later { opacity: .4; }
+.meter-line { font-size: 13px; font-variant-numeric: tabular-nums; }
+.meter-caption { font-size: 12px; }
+.tone-bad-text { color: var(--red); }
+.meter-list { display: flex; flex-direction: column; gap: 2px; }
+.meter-row { display: flex; flex-direction: column; gap: 4px; padding: 6px 4px; border: 0; border-radius: 6px; background: none; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.meter-row:hover { background: rgb(var(--ink) / .06); }
+.meter-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.meter-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meter-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+.dash-group { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0 4px; color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.dash-group span { font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: 0; font-weight: 600; }
+
+/* Bills to keep (components/BillsPreview.tsx): one ticked row per bill. */
+.bills { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; max-width: 760px; }
+.bill { display: flex; align-items: baseline; gap: 8px; cursor: pointer; }
+.bill input { margin: 0; accent-color: var(--accent); align-self: center; }
+.bill-name { font-weight: 600; }
+.bill.off .bill-name { color: var(--muted); text-decoration: line-through; }
+.bill-detail { color: var(--muted); font-size: 12px; }

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The terminal gateway on macOS: a launchd user agent, as systemd/cobra-term.service
+  is on Linux. install.sh fills in @PREFIX@, @CONFIG@, @HOME@ and @TERM_PORT@.
+
+  agent.env is read by the shell that starts node (launchd has no
+  EnvironmentFile); every value in it is plain, as the cobra-agent command
+  also sources it. The working folder is home, never the package (see the
+  systemd unit). AbandonProcessGroup is KillMode=process: a restart stops
+  node only, never the tmux server it forked or the sessions on it.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>app.cobra.term</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>COBRA_TERM_PORT=@TERM_PORT@; export COBRA_TERM_PORT; set -a; [ -f '@CONFIG@/agent.env' ] &amp;&amp; . '@CONFIG@/agent.env'; set +a; exec '@PREFIX@/current/bin/node' '@PREFIX@/current/apps/agent/src/gateway/index.ts'</string>
+  </array>
+  <key>WorkingDirectory</key><string>@HOME@</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>3</integer>
+  <key>AbandonProcessGroup</key><true/>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>StandardOutPath</key><string>@HOME@/Library/Logs/cobra-term.log</string>
+  <key>StandardErrorPath</key><string>@HOME@/Library/Logs/cobra-term.log</string>
+</dict>
+</plist>

@@ -1,0 +1,176 @@
+{
+  "format": {
+    "name": "tessel",
+    "version": 1
+  },
+  "meta": {
+    "title": "New product or service",
+    "description": "A full-bleed photo with a card at the foot. Photo: set its fills to the photo (fit crop); it fills the whole post, so choose one whose top two thirds carry it. Kicker: 1 to 3 words above the name (NEW, JUST IN). Headline: the product's name. Body: one or two lines on why it is good. Logo (the business name in text; with a logo in the brand kit, delete it and place the logo image in its box)."
+  },
+  "tokens": {
+    "colors": {
+      "color.brand": "#1f3a5f",
+      "color.accent": "#f2a541",
+      "color.ink": "#14161a",
+      "color.paper": "#f7f3ec"
+    },
+    "fonts": {
+      "font.heading": "Montserrat",
+      "font.body": "Inter"
+    }
+  },
+  "pages": [
+    {
+      "id": "p_page000001",
+      "name": "Post",
+      "children": [
+        {
+          "id": "n_frame00001",
+          "name": "Design",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 1350,
+          "clip": true,
+          "fills": [
+            {
+              "type": "solid",
+              "color": "{color.ink}"
+            }
+          ],
+          "children": [
+            {
+              "id": "n_ph0t0x0001",
+              "name": "Photo",
+              "kind": "rect",
+              "x": 0,
+              "y": 0,
+              "width": 1080,
+              "height": 1350,
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.accent}"
+                }
+              ]
+            },
+            {
+              "id": "n_cardxx0002",
+              "name": "Card",
+              "kind": "rect",
+              "x": 48,
+              "y": 880,
+              "width": 984,
+              "height": 422,
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.paper}"
+                }
+              ],
+              "corner_radius": 36
+            },
+            {
+              "id": "n_k1cker0003",
+              "name": "Kicker",
+              "kind": "text",
+              "x": 96,
+              "y": 920,
+              "width": 600,
+              "height": 50,
+              "content": "New",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.brand}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.body}",
+                "font_weight": 700,
+                "font_size": 30,
+                "letter_spacing": 4,
+                "text_transform": "upper"
+              }
+            },
+            {
+              "id": "n_head110004",
+              "name": "Headline",
+              "kind": "text",
+              "x": 96,
+              "y": 972,
+              "width": 888,
+              "height": 120,
+              "content": "The Winter Spa Day",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.ink}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 800,
+                "font_size": 80,
+                "line_height": {
+                  "percent": 102
+                }
+              }
+            },
+            {
+              "id": "n_b0dyxx0005",
+              "name": "Body",
+              "kind": "text",
+              "x": 96,
+              "y": 1094,
+              "width": 888,
+              "height": 110,
+              "content": "A warm bath, a deep conditioning coat treatment and a cosy blow dry.",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.ink}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.body}",
+                "font_weight": 400,
+                "font_size": 34,
+                "line_height": {
+                  "percent": 130
+                }
+              },
+              "opacity": 0.8
+            },
+            {
+              "id": "n_10g0xx0006",
+              "name": "Logo",
+              "kind": "text",
+              "x": 96,
+              "y": 1218,
+              "width": 888,
+              "height": 56,
+              "content": "Happy Tails",
+              "sizing": "fixed",
+              "fills": [
+                {
+                  "type": "solid",
+                  "color": "{color.brand}"
+                }
+              ],
+              "style": {
+                "font_family": "{font.heading}",
+                "font_weight": 800,
+                "font_size": 30
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

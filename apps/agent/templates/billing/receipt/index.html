@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Receipt</title>
+{{! Receipt: one payment the person said arrived, read from `row`.
+
+    Data: one row, the payment joined with its invoice and customer. Render
+    one file per payment with split: "payment_id".
+
+    Columns this template reads from `row`:
+      payment_id, received_on, amount_cents, method (bank, card, cash,
+      cheque or other), invoice_number, invoice_total_cents,
+      invoice_paid_cents (paid to date, this payment included), balance_cents
+      (invoice_total_cents - invoice_paid_cents, from the query: the engine
+      cannot subtract), customer_name, customer_address, customer_email
+      optional: currency (the invoice's; the business's when null)
+
+    Never referenced here: the payment's reference (the payer's bank or card
+    reference, a sensitive column) and its notes. Do not select them. }}
+<style>
+  @page {
+    size: A4;
+    margin: 18mm;
+    /* Page numbers. Chromium 131 and later print page-margin boxes; an older
+       one shows nothing here and the document is still complete. */
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 8pt; color: #666; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.45;
+    color: #000;
+    background: #fff;
+    padding-bottom: 14mm; /* room for the fixed footer */
+  }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Header: brand left, contact right, a quiet rule under both */
+  .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12mm; padding-bottom: 6mm; border-bottom: 0.5pt solid #b8b8b8; }
+  .brand img { display: block; max-height: 18mm; max-width: 60mm; }
+  .brand .legal { font-size: 16pt; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+  .brand .trading { color: #444; margin-top: 1.5mm; }
+  .contact { text-align: right; font-size: 9.5pt; color: #333; white-space: pre-line; line-height: 1.5; }
+
+  h1 { font-size: 20pt; font-weight: 600; letter-spacing: -0.01em; margin: 10mm 0 1mm; color: var(--accent); }
+  .lead { color: #444; margin: 0 0 8mm; }
+
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm 12mm; margin-bottom: 10mm; }
+  .fact .label { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 1mm; }
+  .fact .value strong { font-size: 13pt; font-weight: 600; }
+  .fact .sub { color: #444; }
+  .fact .address { color: #222; white-space: pre-line; }
+  .details { display: grid; grid-template-columns: auto 1fr; gap: 1mm 6mm; margin: 0; }
+  .details dt { color: #666; }
+  .details dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* The one bold line: the amount received */
+  .received { display: flex; justify-content: space-between; align-items: baseline; padding: 4mm 0; border-top: 1.5pt solid var(--accent); border-bottom: 0.5pt solid #ddd; }
+  .received .label { font-size: 12pt; font-weight: 600; }
+  .received .sub { color: #444; font-size: 9.5pt; margin-top: 1mm; }
+  .received .amount { font-size: 18pt; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  h2 { font-size: 9pt; text-transform: uppercase; letter-spacing: 0.08em; color: #666; font-weight: 600; margin: 10mm 0 2mm; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  td { padding: 2.2mm 0; border-bottom: 0.5pt solid #ddd; vertical-align: top; }
+  tr { break-inside: avoid; }
+  tr.balance td { border-top: 0.75pt solid #000; border-bottom: none; font-weight: 600; padding-top: 3mm; }
+  .col-money { width: 34mm; }
+
+  .state { margin-top: 8mm; border-left: 2pt solid var(--accent); padding: 2mm 0 2mm 5mm; max-width: 150mm; break-inside: avoid; }
+  .state .title { font-weight: 600; margin-bottom: 1mm; }
+  .state p { margin: 0; font-size: 10pt; color: #222; }
+  .statement { margin-top: 10mm; font-size: 9.5pt; color: #444; max-width: 140mm; }
+
+  .footer { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; gap: 8mm; font-size: 8.5pt; color: #666; border-top: 0.5pt solid #ddd; padding-top: 2mm; }
+  .footer .generated { white-space: nowrap; }
+</style>
+</head>
+<body style="--accent: {{default business.accent_colour "#1f3a5f"}}">
+
+<header class="header">
+  <div class="brand">
+    {{#if business.logo_path}}
+      <img src="{{file business.logo_path}}" alt="{{business.legal_name}}">
+    {{else}}
+      <div class="legal">{{business.legal_name}}</div>
+    {{/if}}
+    {{#if business.trading_name}}<div class="trading">{{business.trading_name}}</div>{{/if}}
+  </div>
+  <div class="contact">{{business.address}}
+{{business.email}}
+{{business.phone}}</div>
+</header>
+
+<h1>Receipt</h1>
+<p class="lead">Payment received {{date row.received_on}}{{#if row.invoice_number}} · Invoice {{row.invoice_number}}{{/if}}</p>
+
+<section class="facts">
+  <div class="fact">
+    <div class="label">Received from</div>
+    <div class="value"><strong>{{row.customer_name}}</strong></div>
+    {{#if row.customer_address}}<div class="address">{{row.customer_address}}</div>{{/if}}
+    {{#if row.customer_email}}<div class="sub">{{row.customer_email}}</div>{{/if}}
+  </div>
+  <div class="fact">
+    <div class="label">Receipt details</div>
+    <dl class="details">
+      <dt>Receipt number</dt><dd>{{row.payment_id}}</dd>
+      <dt>Date received</dt><dd>{{date row.received_on}}</dd>
+      <dt>Paid by</dt><dd>{{#if (eq row.method "bank")}}Bank transfer{{else}}{{#if (eq row.method "card")}}Card{{else}}{{#if (eq row.method "cash")}}Cash{{else}}{{#if (eq row.method "cheque")}}Cheque{{else}}Other{{/if}}{{/if}}{{/if}}{{/if}}</dd>
+      {{#if business.tax_number}}<dt>{{default business.tax_label "Tax"}} number</dt><dd>{{business.tax_number}}</dd>{{/if}}
+    </dl>
+  </div>
+</section>
+
+<div class="received">
+  <div>
+    <div class="label">Amount received</div>
+    <div class="sub">With thanks, on {{date row.received_on}}</div>
+  </div>
+  <div class="amount">{{money row.amount_cents row.currency}}</div>
+</div>
+
+<h2>Invoice {{row.invoice_number}}</h2>
+<table>
+  <tbody>
+    <tr><td>Invoice total</td><td class="num col-money">{{money row.invoice_total_cents row.currency}}</td></tr>
+    <tr><td>Paid to date, this payment included</td><td class="num col-money">{{money row.invoice_paid_cents row.currency}}</td></tr>
+    <tr class="balance"><td>Still owed</td><td class="num col-money">{{money row.balance_cents row.currency}}</td></tr>
+  </tbody>
+</table>
+
+<aside class="state">
+{{#if (eq row.balance_cents 0)}}
+  <div class="title">Paid in full</div>
+  <p>Invoice {{row.invoice_number}} is now settled. Nothing more is owed on it.</p>
+{{else}}
+  <div class="title">{{money row.balance_cents row.currency}} still owed</div>
+  <p>This payment has been applied to invoice {{row.invoice_number}}. The rest, {{money row.balance_cents row.currency}}, is still to pay on that invoice.</p>
+{{/if}}
+</aside>
+
+<p class="statement">This receipt records a payment {{#if business.trading_name}}{{business.trading_name}}{{else}}{{business.legal_name}}{{/if}} has received. It is not a request for payment.</p>
+
+<footer class="footer">
+  <div class="text">{{business.footer_text}}</div>
+  <div class="generated">Generated on {{date now}}</div>
+</footer>
+
+</body>
+</html>

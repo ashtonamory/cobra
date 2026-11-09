@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+    {{> head}}
+</head>
+<body>
+{{> header}}
+<main id="main">
+  {{#thanks}}
+  <div class="wrap scene">
+    <div class="box dialogue">
+      <p class="box tag">{{speaker}}</p>
+      <h1 class="visually-hidden">Thanks</h1><p>{{line}}</p>
+    </div>
+    <nav class="box choices" aria-label="Back"><ul><li><a href="/"><span class="arrow"></span>{{back}}</a></li></ul></nav>
+  </div>
+  {{/thanks}}
+</main>
+{{> footer}}
+</body>
+</html>

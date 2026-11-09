@@ -1,0 +1,20 @@
+[Unit]
+Description=Cobra desktop (cobra-desktop): needs-you popups, the bar count, SUPER+P picker
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/cobra-desktop --hidden
+Restart=on-failure
+RestartSec=3
+# Only the app itself stops on a restart. A terminal the desk opened, and a
+# tmux server that terminal started, sit in this unit's cgroup; with the
+# default (control-group) a reinstall would kill them, and with them every
+# session on that tmux server. cobra-launch also puts each terminal in a
+# scope of its own; this is the second line of defence.
+KillMode=process
+
+[Install]
+WantedBy=graphical-session.target

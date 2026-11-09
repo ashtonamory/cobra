@@ -1,0 +1,9 @@
+---
+import Base from "../../layouts/Base.astro";
+import Posts from "../../components/cobra/Posts.astro";
+import site from "../../content/site.json";
+---
+<Base title={`News · ${site.name}`}>
+  <section class="hero"><h1>News</h1></section>
+  <Posts />
+</Base>

@@ -1,0 +1,203 @@
+/* My Organization (pages/Org.tsx): the chart fills the page and scrolls, the bar floats over it, a card's
+   panel sits on the right. Connectors are CSS: each child draws the half of the bus on its side. */
+
+.org { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--bg); }
+.org-bar { position: absolute; z-index: 2; top: 10px; left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; pointer-events: none; }
+.org-bar > * { pointer-events: auto; }
+.org-pill { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--hair-strong); border-radius: 99px; background: var(--bg-light); color: var(--fg); font-weight: 600; font-family: var(--sans); }
+.org-pill.needs { box-shadow: inset 0 0 0 2px var(--signal); cursor: pointer; }
+.org-pill:disabled { cursor: default; }
+.org-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--signal); flex: none; }
+.org-new { padding: 6px 14px; border: 0; border-radius: 99px; background: var(--fg); color: var(--bg); font-weight: 700; cursor: pointer; }
+.org-switch { display: flex; padding: 2px; border-radius: 99px; background: var(--bg-light); border: 1px solid var(--hair-strong); }
+.org-switch button { border: 0; background: none; color: var(--dim); padding: 5px 12px; border-radius: 99px; cursor: pointer; font-size: 0.85em; }
+.org-switch button.on { background: var(--fg); color: var(--bg); font-weight: 700; }
+
+.org-scroll { position: absolute; inset: 0; overflow: auto; padding: 64px 24px 48px; display: flex; flex-direction: column; align-items: center; }
+.org-scroll.with-panel { padding-right: 376px; }
+.org-tree, .org-tree ul { list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; position: relative; }
+.org-tree { --line: var(--hair-strong); }
+.org-tree ul { padding-top: 22px; }
+.org-tree li { list-style: none; position: relative; display: flex; flex-direction: column; align-items: center; padding: 22px 8px 0; }
+.org-tree > li { padding-top: 0; }
+.org-tree > li > ul > li { padding-top: 0; }
+.org-tree > li > ul { padding-top: 22px; }
+.org-tree ul ul li::before, .org-tree ul ul li::after { content: ""; position: absolute; top: 0; right: 50%; width: 50%; height: 22px; border-top: 1.5px solid var(--line); }
+.org-tree ul ul li::after { right: auto; left: 50%; border-left: 1.5px solid var(--line); }
+.org-tree ul ul li:only-child::before, .org-tree ul ul li:only-child::after { display: none; }
+.org-tree ul ul li:first-child::before, .org-tree ul ul li:last-child::after { border: 0 none; }
+.org-tree ul ul li:last-child::before { border-right: 1.5px solid var(--line); border-radius: 0 6px 0 0; }
+.org-tree ul ul li:first-child::after { border-radius: 6px 0 0 0; }
+.org-tree ul ul ul::before, .org-tree ul ul::before, .org-tree > li > ul::before { content: ""; position: absolute; top: 0; left: 50%; width: 0; height: 22px; border-left: 1.5px solid var(--line); }
+.org-tree ul ul li:only-child { padding-top: 22px; }
+.org-tree ul ul li:only-child::after { display: block; content: ""; position: absolute; top: 0; left: 50%; width: 0; height: 22px; border-left: 1.5px solid var(--line); border-top: 0; right: auto; }
+
+.org-node { padding: 10px 28px; border: 1px solid var(--hair-strong); border-radius: 12px; background: var(--bg-light); font-weight: 600; }
+.org-cobra { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border: 1.5px solid var(--cobra); border-radius: 14px; background: var(--bg-light); color: var(--fg); text-align: left; cursor: pointer; }
+.org-cobra > span { display: flex; flex-direction: column; }
+/* A Space's card (design docs/cobra-space-screen.tessel.json frame 01): its mark, name and kind, NEXT, then
+   what runs (Cobra blue), what ran (green), what failed (red) or quiet; the badge and a tinted border when
+   something waits there. --space is the company's own colour, from the org. */
+.org-space { --space: var(--hair-strong); position: relative; display: flex; flex-direction: column; gap: 2px; width: 220px; padding: 12px 14px; border: 1px solid var(--hair-strong); border-radius: 14px; background: var(--bg-light); color: var(--fg); text-align: left; cursor: pointer; }
+.org-space:hover { border-color: rgb(var(--ink) / 0.32); }
+.org-space.needs { border: 1px solid rgb(var(--signal-rgb) / 0.6); }
+.org-space-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.org-space-name { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.org-space-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.org-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--space); color: var(--bg); font-weight: 800; display: flex; align-items: center; justify-content: center; flex: none; }
+.org-next-label { font-size: 0.7em; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dimmer); }
+.org-next { font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.org-now { font-size: 0.85em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tone-cobra { color: var(--cobra); }
+.tone-ok { color: var(--green); }
+.tone-bad { color: var(--red); }
+.tone-faint { color: var(--dimmer); }
+.org-hint { margin: 22px 0 0; }
+.org-badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--signal); color: var(--on-signal); font-size: 0.78em; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+.org-empty { margin: 24px 0 0; text-align: center; }
+.org-foot { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 32px; }
+.org-chip { padding: 5px 10px; border: 0; border-radius: 8px; background: var(--bg-light); color: var(--dim); font-size: 0.72em; font-weight: 700; letter-spacing: 0.06em; cursor: pointer; }
+.org-proposal { margin-top: 14px; padding: 10px 14px; border: 1px solid var(--cobra); border-radius: 12px; background: rgb(var(--cobra-rgb) / 0.16); color: var(--fg); font-weight: 600; cursor: pointer; }
+
+.org-listview { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.org-listbar { display: flex; justify-content: flex-end; padding: 8px 12px 0; }
+
+.org-panel { position: absolute; top: 56px; right: 12px; bottom: 12px; display: flex; flex-direction: column; background: var(--bg); border: 1px solid var(--hair-strong); border-radius: 12px; box-shadow: 0 8px 30px rgb(0 0 0 / 0.4); min-height: 0; }
+.org-panel-head { display: flex; align-items: flex-start; gap: 10px; padding: 14px 14px 8px; }
+.org-panel-title { font-size: 1.2em; font-weight: 700; }
+.org-close { border: 0; background: none; color: var(--dim); font-size: 1.4em; line-height: 1; cursor: pointer; }
+.org-panel-body { overflow-y: auto; padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.org-panel-body p { margin: 0; }
+.org-pre { white-space: pre-wrap; }
+.org-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.org-switch { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.org-switch > span { display: flex; flex-direction: column; gap: 2px; }
+.org-field { display: flex; gap: 6px; }
+.org-field input { flex: 1; min-width: 0; }
+.org-choices { display: flex; flex-direction: column; gap: 4px; }
+.org-choice { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--hair); border-radius: 8px; background: var(--bg-light); color: var(--fg); text-align: left; cursor: pointer; }
+.org-choice.on { border-color: var(--accent); }
+.org-swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--hair-strong); flex: none; }
+.org-seats { display: flex; flex-direction: column; }
+.org-seat { display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-radius: 8px; cursor: pointer; }
+.org-seat:hover { background: rgb(var(--ink) / 0.05); }
+.org-seat-name { font-weight: 600; }
+.org-state { width: 9px; height: 9px; border-radius: 5px; background: var(--hair-strong); flex: none; }
+.org-state.st-needs { background: var(--signal); }
+.org-state.st-working { background: var(--accent); }
+
+/* A Space's own screen (components/SpaceScreen.tsx; design docs/cobra-space-screen.tessel.json frames 04, 05):
+   a header, then three columns (Needs you and Today, Dashboards and To do, Activity), then the crew when shown. */
+.org-scroll.space { align-items: stretch; padding-top: 14px; }
+.space-screen { display: flex; flex-direction: column; gap: 14px; width: min(1220px, 100%); margin: 0 auto; }
+.space-head { --space: var(--hair-strong); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 4px 0 14px; border-bottom: 1px solid var(--hair); }
+.space-back { font-size: 1.05em; }
+.space-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--space); color: var(--bg); font-weight: 800; font-size: 1.1em; display: flex; align-items: center; justify-content: center; flex: none; }
+.space-title { margin: 0; font-size: 1.6em; }
+.space-headline { min-width: 0; }
+.space-ask { padding: 8px 22px; border: 1px solid var(--hair-strong); border-radius: 99px; background: var(--bg-light); color: var(--fg); cursor: pointer; }
+.space-ask:hover { background: rgb(var(--ink) / 0.1); }
+.space-manage { font-weight: 600; }
+/* Board tabs (components/SpaceScreen.tsx): Overview, the trades' boards, Cobra's (a blue dot), then +. */
+.space-tabs { display: flex; gap: 4px; flex-wrap: wrap; padding: 10px 0 12px; border-bottom: 1px solid var(--hair); }
+.space-tab { border: 0; background: none; color: var(--dim); padding: 6px 14px; border-radius: 99px; cursor: pointer; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px; }
+.space-tab:hover { background: rgb(var(--ink) / 0.08); color: var(--fg); }
+.space-tab.on { background: var(--fg); color: var(--bg); font-weight: 700; }
+.space-tab.add { font-weight: 700; padding: 6px 12px; }
+.space-tab-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cobra); flex: none; }
+.space-board { padding-top: 14px; min-width: 0; }
+.space-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: start; }
+@media (max-width: 1100px) { .space-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .space-cols { grid-template-columns: minmax(0, 1fr); } }
+.space-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.space-label { margin-top: 4px; }
+.space-label.row { display: flex; align-items: baseline; }
+.signal { color: var(--signal); }
+.bad { color: var(--red); }
+.caps.signal { color: var(--signal); }
+.space-card { display: flex; flex-direction: column; padding: 12px 14px; border-radius: 14px; background: var(--bg-light); }
+.space-card-foot { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--hair); font-size: 0.9em; }
+.space-card-foot .linkish { white-space: nowrap; }
+.space-empty { gap: 10px; align-items: flex-start; }
+.space-empty p { margin: 0; }
+
+/* Needs you as a card: the context line, the headline, the plain words, and Deny / Allow across its foot. */
+.needs-card { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid rgb(var(--signal-rgb) / 0.6); border-radius: 14px; background: rgb(var(--signal-rgb) / 0.1); }
+.needs-card-top { display: flex; gap: 8px; font-size: 0.85em; color: var(--dim); }
+.needs-card-title { font-size: 1.12em; }
+.needs-card-plain { line-height: 1.45; }
+.needs-card .req-exact { max-height: 200px; overflow: auto; margin: 0; }
+.needs-card-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+.needs-card-buttons .btn { padding: 8px 14px; }
+.needs-card-buttons .btn:not(.primary) { color: var(--fg); }
+.needs-card-buttons .btn:only-child { grid-column: 1 / -1; }
+
+/* Today's timeline: a dot on a vertical spine, the time, the routine and its skill, the result. */
+.tl { list-style: none; margin: 0; padding: 0; position: relative; }
+.tl-row { position: relative; display: grid; grid-template-columns: 14px 52px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 10px; }
+.tl-row + .tl-row::before { content: ""; position: absolute; left: 14px; top: -10px; height: 20px; width: 0; border-left: 1.5px solid var(--hair-strong); }
+.tl-dot { width: 12px; height: 12px; border-radius: 6px; background: var(--hair-strong); z-index: 1; justify-self: center; }
+.tl-ran .tl-dot { background: var(--green); }
+.tl-live { background: rgb(var(--cobra-rgb) / 0.16); }
+.tl-live .tl-dot { background: var(--cobra); }
+.tl-live .tl-result { color: var(--cobra); font-weight: 600; }
+.tl-bad .tl-dot { background: var(--red); }
+.tl-bad .tl-result { color: var(--red); }
+.tl-coming .tl-dot { background: var(--bg-light); border: 1.5px solid var(--dimmer); }
+.tl-coming .tl-name, .tl-coming .tl-time { color: var(--dim); }
+.tl-time { font-size: 0.9em; color: var(--dim); }
+.tl-live .tl-time { color: var(--fg); font-weight: 700; }
+.tl-main { display: flex; flex-direction: column; min-width: 0; }
+.tl-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-sub { font-size: 0.8em; color: var(--dimmer); }
+.tl-sub.signal { color: var(--signal); }
+.tl-result { font-size: 0.88em; color: var(--dim); text-align: right; white-space: nowrap; }
+.tl-quiet { display: flex; flex-direction: column; gap: 4px; padding: 4px 0; }
+.tl-quiet-title { font-size: 1.05em; color: var(--dim); }
+
+/* Dashboards: each skill's first tile, two to a row. */
+.space-dashes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.space-dash { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 0; border-radius: 14px; background: var(--bg-light); color: var(--fg); text-align: left; cursor: pointer; min-width: 0; }
+.space-dash:hover { background: rgb(var(--ink) / 0.1); }
+.space-dash-title { display: flex; font-size: 0.9em; color: var(--dim); font-weight: 600; }
+.space-dash-value { font-size: 1.7em; font-weight: 800; font-feature-settings: "tnum"; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.space-dash-caption { font-size: 0.85em; color: var(--dim); }
+
+/* Activity: a coloured dot, the title, then "time · skill". */
+.space-acts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.space-act { display: flex; gap: 10px; align-items: flex-start; }
+.space-act > span.grow { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.space-act-dot { width: 8px; height: 8px; border-radius: 4px; margin-top: 6px; flex: none; background: var(--dimmer); }
+.space-act.t-ok .space-act-dot { background: var(--green); }
+.space-act.t-cobra .space-act-dot { background: var(--cobra); }
+.space-act.t-bad .space-act-dot { background: var(--red); }
+.space-act-empty { margin: 0; }
+
+/* The crew, with Show the crew on. */
+.space-crew { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; border-top: 1px solid var(--hair); }
+.space-cap { margin: 0; }
+.space-foremen { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; align-items: start; }
+.space-foreman .dash-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.space-foreman { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--hair-strong); border-radius: 14px; background: var(--bg-light); }
+.space-foreman.needs { border-color: var(--signal); }
+.space-foreman-head { display: flex; align-items: center; gap: 10px; }
+
+/* All routines (components/AllRoutines.tsx, frame 03). */
+.routines-dialog { width: min(620px, 94vw); background: var(--bg-dark); }
+.routines-done { font-weight: 700; font-size: 1.05em; align-self: flex-start; }
+.routine-card { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 14px; background: var(--bg-light); }
+.routine-card.paused .routine-name, .routine-card.paused .routine-when { color: var(--dim); }
+.routine-name { font-size: 1.05em; }
+.routine-when { color: var(--dim); }
+.routine-state { font-size: 0.92em; color: var(--dim); display: flex; align-items: center; gap: 6px; }
+.routine-state.rs-live { color: var(--cobra); }
+.routine-state.rs-paused { color: var(--signal); }
+.routine-state.rs-bad { color: var(--red); }
+.routine-live { width: 9px; height: 9px; border-radius: 5px; background: var(--cobra); flex: none; }
+.routine-buttons { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.routine-buttons .btn:not(.primary) { color: var(--fg); padding: 5px 18px; }
+.routine-remove { color: var(--red); }
+.routine-remove:disabled { opacity: 0.45; cursor: default; }
+.routines-ask { padding: 12px 16px; border: 1px solid var(--cobra); border-radius: 14px; background: rgb(var(--cobra-rgb) / 0.14); color: var(--cobra); font-weight: 600; cursor: pointer; }
+.routines-ask:hover { background: rgb(var(--cobra-rgb) / 0.22); }
+.routines-note { text-align: center; }

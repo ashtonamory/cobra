@@ -1,0 +1,16 @@
+---
+import type { ServicesSection } from "../../../packages/contracts/src/website.ts";
+import Paragraphs from "../components/Paragraphs.astro";
+
+const { section: s } = Astro.props as { section: ServicesSection };
+---
+{s.heading && <h2>{s.heading}</h2>}
+<ul class="cards">
+  {s.items.map((item) => (
+    <li class="card">
+      {item.image && <img src={`/${item.image.src}`} alt={item.image.alt} loading="lazy" />}
+      <h3>{item.title}</h3>
+      <Paragraphs text={item.body} />
+    </li>
+  ))}
+</ul>

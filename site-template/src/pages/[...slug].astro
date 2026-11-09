@@ -1,0 +1,18 @@
+---
+import Base from "../layouts/Base.astro";
+import Section from "../components/Section.astro";
+import { data } from "../data.ts";
+import { pagePath } from "../../../packages/contracts/src/website.ts";
+
+export function getStaticPaths() {
+  return data.site.pages.map((page) => ({ params: { slug: page.slug || undefined }, props: { page } }));
+}
+
+const { page } = Astro.props as { page: (typeof data.site.pages)[number] };
+const { site } = data;
+const title = page.slug ? `${page.title} · ${site.name}` : site.tagline ? `${site.name} · ${site.tagline}` : site.name;
+const hero = page.sections.find((s) => s.kind === "hero");
+---
+<Base title={title} description={page.description} path={pagePath(page.slug)} image={hero?.kind === "hero" ? hero.image?.src : undefined}>
+  {page.sections.map((section, index) => <Section section={section} index={index} />)}
+</Base>

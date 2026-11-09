@@ -1,0 +1,12 @@
+---
+// The page for an address the site does not have (served with status 404). Keep it.
+import Base from "../layouts/Base.astro";
+import site from "../content/site.json";
+---
+<Base title={`Page not found · ${site.name}`}>
+  <section class="hero">
+    <h1>Page not found</h1>
+    <p class="lead">There is no page at this address.</p>
+    <p><a href="/">Go to the home page</a></p>
+  </section>
+</Base>

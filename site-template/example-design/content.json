@@ -1,0 +1,201 @@
+{
+  "name": "Corner Bakery",
+  "description": "Corner Bakery is a comedy RPG in the spirit of the GBA: a broke young capuchin, one very special banana tree, eight island turfs. Join the waitlist.",
+  "icon": "images/icon-bd.png",
+  "shareImage": "images/title.png",
+  "themeColor": "#1d2140",
+  "nav": [
+    {
+      "label": "Story",
+      "href": "/#story"
+    },
+    {
+      "label": "Crew",
+      "href": "/#crew"
+    },
+    {
+      "label": "Islands",
+      "href": "/#islands"
+    }
+  ],
+  "navCta": {
+    "label": "Waitlist",
+    "href": "/#waitlist"
+  },
+  "hero": {
+    "speaker": "Grandpa Barty",
+    "line": "Kid, that tree ain't normal. One bite and the whole island wants a bunch.",
+    "menu": [
+      {
+        "label": "Join waitlist",
+        "href": "/#waitlist"
+      },
+      {
+        "label": "Meet the crew",
+        "href": "/#crew"
+      },
+      {
+        "label": "See islands",
+        "href": "/#islands"
+      }
+    ],
+    "sub": "A comedy RPG in the spirit of the GBA. One broke capuchin. One very special banana tree.",
+    "image": {
+      "src": "images/title.png",
+      "alt": "Corner Bakery: the title screen, a moonlit island with palms and a smoking volcano."
+    }
+  },
+  "standoff": {
+    "kicker": "Standoffs",
+    "heading": "Fights are conversations.",
+    "body": "No swords. No guns. You win by sweet talk, fake calls, stare downs and the occasional thrown banana.",
+    "image": {
+      "src": "images/standoff-moves.png",
+      "alt": "A Standoff: Chico of the Jaguar Patrol faces Bongo. Moves: Sweet talk, Throw banana, Fake call, Stare down."
+    },
+    "stats": [
+      {
+        "label": "NRV",
+        "value": 70,
+        "tone": "good",
+        "note": "Nerve. Lose it, lose the round."
+      },
+      {
+        "label": "REP",
+        "value": 45,
+        "tone": "gold",
+        "note": "Respect on every island."
+      },
+      {
+        "label": "HEAT",
+        "value": 25,
+        "tone": "bad",
+        "note": "How hard the jaguars look."
+      }
+    ]
+  },
+  "crew": {
+    "kicker": "Party",
+    "heading": "The crew, and who is after them",
+    "members": [
+      {
+        "name": "You",
+        "level": "LV 1",
+        "nerve": 30,
+        "line": "Broke. Ambitious. Named by you.",
+        "image": "images/crew-don.png"
+      },
+      {
+        "name": "Grandpa Barty",
+        "level": "LV 40",
+        "nerve": 90,
+        "line": "Retired smuggler. Bad knees. Knows the tree.",
+        "image": "images/crew-barty.png"
+      },
+      {
+        "name": "Chico",
+        "level": "LV 3",
+        "nerve": 60,
+        "line": "Best friend. Only monkey in the Jaguar Patrol.",
+        "image": "images/crew-chico.png"
+      },
+      {
+        "name": "Tito",
+        "level": "LV 5",
+        "nerve": 70,
+        "line": "Your first dealer. Charming. Fast hands.",
+        "image": "images/crew-tito.png"
+      },
+      {
+        "name": "Auntie Plum",
+        "level": "LV 12",
+        "nerve": 80,
+        "line": "Green thumb. Won't discuss her past.",
+        "image": "images/crew-plum.png"
+      },
+      {
+        "name": "Big Moe",
+        "level": "LV 9",
+        "nerve": 95,
+        "line": "Muscle. Does not do small talk.",
+        "image": "images/crew-moe.png"
+      },
+      {
+        "name": "Jaguar Patrol",
+        "level": "LV 20",
+        "nerve": 85,
+        "line": "The island police. Night shift is worse.",
+        "image": "images/crew-jaguar.png"
+      },
+      {
+        "name": "Don Platano",
+        "level": "LV ??",
+        "nerve": 100,
+        "line": "CEO of Big Peel Co. Permanently furious."
+      }
+    ]
+  },
+  "islands": {
+    "kicker": "World map",
+    "heading": "Eight turfs. One tower. Three endings.",
+    "shown": [
+      {
+        "name": "Pippin Cay",
+        "sub": "Home",
+        "image": "images/plot-ready.png",
+        "alt": "Pippin Cay: Grandpa Barty's banana plot by the house."
+      },
+      {
+        "name": "Port Mango",
+        "sub": "Turf 1",
+        "image": "images/square.png",
+        "alt": "Port Mango's stone square."
+      },
+      {
+        "name": "Bayou Hollow",
+        "sub": "Turf 2",
+        "image": "images/bayou.png",
+        "alt": "A boardwalk over the water at Bayou Hollow."
+      }
+    ],
+    "more": [
+      "3 Cloud Forest",
+      "4 Puerto Platano",
+      "5 Sunset Resort",
+      "6 Misty Peak",
+      "7 Rust Reef",
+      "8 Canopy City"
+    ],
+    "finale": "Big Peel Tower"
+  },
+  "thanks": {
+    "speaker": "Grandpa Barty",
+    "line": "Got it, kid. You'll hear from us once, when the isles open. Not before.",
+    "back": "Back to title"
+  },
+  "notFound": {
+    "line": "You can't go that way. The tide's in.",
+    "back": "Back to title"
+  },
+  "footer": "Corner Bakery · A comedy RPG · No real monkeys were harmed",
+  "waitlist": {
+    "tag": "Waitlist",
+    "line": "The isles open soon. Leave your email and we'll send one message when they do."
+  },
+  "form": {
+    "kind": "waitlist",
+    "button": "Sign me up",
+    "message": "Corner Bakery waitlist",
+    "namePlaceholder": "Your name_",
+    "emailPlaceholder": "you@email.com_",
+    "theme": "light"
+  },
+  "pages": {
+    "thanks": {
+      "title": "Thanks"
+    },
+    "404": {
+      "title": "Not found"
+    }
+  }
+}

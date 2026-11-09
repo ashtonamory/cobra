@@ -1,0 +1,12 @@
+---
+import Base from "../layouts/Base.astro";
+import Paragraphs from "../components/Paragraphs.astro";
+import { data } from "../data.ts";
+---
+<Base title={`Thank you · ${data.site.name}`} path="/thanks/">
+  <section class="section"><div class="wrap narrow">
+    <h1>Thank you</h1>
+    <Paragraphs text={data.site.thanks ?? "We got your message and will write back soon."} class="lead" />
+    <p><a class="button" href="/">Back to the home page</a></p>
+  </div></section>
+</Base>

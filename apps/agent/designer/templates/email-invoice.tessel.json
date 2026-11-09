@@ -1,0 +1,1315 @@
+{
+ "format": {
+  "name": "tessel",
+  "version": 1
+ },
+ "meta": {
+  "title": "Invoice email",
+  "description": "An email, 600 wide (never a post): the Email frame is the email's card and each child is a section, top to bottom. Restyle it in the brand with set_tokens (color.brand for the button and pill, color.ink, color.paper the card, color.page around it, color.night the footer; font.heading, font.body), put the business's name in Logo and FooterName (or replace Logo with the logo as an image layer named for its alt text) and its own words everywhere. {{field}} words are filled for each person; keep them. A layer named link:<address> links: rename it to the real address. Save it as a template with email_design_save, declaring its fields. An invoice (transactional). Fields: invoice_number, amount_due, due_date, how_to_pay (default \"Reply to this email and we will tell you how to pay.\"), lines (a list: the repeat:lines rows, each {{item}}, {{qty}} and {{amount}}) and note (optional; if:note draws it). Rename the Pay button's layer to the payment link, or delete Action when there is none. Subject \"Invoice {{invoice_number}}\"; preheader \"{{amount_due}} due by {{due_date}}.\""
+ },
+ "tokens": {
+  "colors": {
+   "color.brand": "#0A84FF",
+   "color.accent": "#F08C00",
+   "color.ink": "#0B1220",
+   "color.paper": "#FFFFFF",
+   "color.page": "#EEF2F6",
+   "color.body": "#2A3242",
+   "color.muted": "#5B6474",
+   "color.faint": "#8A93A3",
+   "color.line": "#E3E7ED",
+   "color.soft": "#F5F7FA",
+   "color.tint": "#EAF5FD",
+   "color.night": "#0B1220",
+   "color.white": "#FFFFFF",
+   "color.footer": "#C7CFDB"
+  },
+  "fonts": {
+   "font.heading": "Inter",
+   "font.body": "Inter"
+  }
+ },
+ "pages": [
+  {
+   "id": "p_page000001",
+   "name": "Email",
+   "children": [
+    {
+     "id": "n_ema11x0042",
+     "name": "Email",
+     "kind": "frame",
+     "x": 0,
+     "y": 0,
+     "width": 600,
+     "height": 100,
+     "clip": true,
+     "fills": [
+      {
+       "type": "solid",
+       "color": "{color.paper}"
+      }
+     ],
+     "corner_radius": 0,
+     "layout": {
+      "direction": "column",
+      "gap": 0,
+      "padding": [
+       0,
+       0,
+       0,
+       0
+      ],
+      "justify": "start",
+      "align": "start",
+      "width": "fixed",
+      "height": "hug"
+     },
+     "children": [
+      {
+       "id": "n_header0004",
+       "name": "Header",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "row",
+        "gap": 0,
+        "padding": [
+         28,
+         40,
+         0,
+         40
+        ],
+        "justify": "space_between",
+        "align": "center",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_10g0xx0001",
+         "name": "Logo",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 20,
+         "content": "Business name",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.ink}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 700,
+          "font_size": 20,
+          "line_height": {
+           "px": 24
+          },
+          "letter_spacing": -0.3
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         }
+        },
+        {
+         "id": "n_badgex0003",
+         "name": "Badge",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.tint}"
+          }
+         ],
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "row",
+          "gap": 0,
+          "padding": [
+           5,
+           10,
+           5,
+           10
+          ],
+          "justify": "start",
+          "align": "start",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_badget0002",
+           "name": "BadgeText",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 11,
+           "content": "Invoice",
+           "sizing": "auto_width",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.brand}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 700,
+            "font_size": 11,
+            "line_height": {
+             "px": 13
+            },
+            "letter_spacing": 1,
+            "text_transform": "upper"
+           },
+           "layout_child": {
+            "width": "hug",
+            "height": "hug"
+           }
+          }
+         ],
+         "corner_radius": 999
+        }
+       ]
+      },
+      {
+       "id": "n_her0xx0007",
+       "name": "Hero",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 16,
+        "padding": [
+         34,
+         40,
+         8,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_head110005",
+         "name": "Headline",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 40,
+         "content": "Invoice {{invoice_number}}",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.ink}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 800,
+          "font_size": 40,
+          "line_height": {
+           "px": 44
+          },
+          "letter_spacing": -1.2
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "semantic": "h1"
+        },
+        {
+         "id": "n_w0rds10006",
+         "name": "Words1",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 16,
+         "content": "Hello {{first_name|there}}, here is your invoice. Thank you for your business.",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.body}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 16,
+          "line_height": {
+           "px": 25
+          }
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         }
+        }
+       ]
+      },
+      {
+       "id": "n_1temsx0026",
+       "name": "Items",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         26,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_1temsc0025",
+         "name": "ItemsCard",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.soft}"
+          }
+         ],
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "column",
+          "gap": 8,
+          "padding": [
+           18,
+           20,
+           14,
+           20
+          ],
+          "justify": "start",
+          "align": "start",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_1temst0024",
+           "name": "ItemsTitle",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 11,
+           "content": "What it is for",
+           "sizing": "auto_height",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.faint}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 700,
+            "font_size": 11,
+            "line_height": {
+             "px": 14
+            },
+            "letter_spacing": 1.2,
+            "text_transform": "upper"
+           },
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           }
+          },
+          {
+           "id": "n_repeat0013",
+           "name": "repeat:lines",
+           "kind": "frame",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 100,
+           "clip": false,
+           "fills": [],
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           },
+           "layout": {
+            "direction": "column",
+            "gap": 0,
+            "padding": [
+             0,
+             0,
+             0,
+             0
+            ],
+            "justify": "start",
+            "align": "start",
+            "width": "hug",
+            "height": "hug"
+           },
+           "children": [
+            {
+             "id": "n_11nexx0012",
+             "name": "Line",
+             "kind": "frame",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 100,
+             "clip": false,
+             "fills": [],
+             "layout_child": {
+              "width": "fill",
+              "height": "hug"
+             },
+             "layout": {
+              "direction": "column",
+              "gap": 0,
+              "padding": [
+               0,
+               0,
+               0,
+               0
+              ],
+              "justify": "start",
+              "align": "start",
+              "width": "hug",
+              "height": "hug"
+             },
+             "children": [
+              {
+               "id": "n_11nerv0008",
+               "name": "LineRule",
+               "kind": "rect",
+               "x": 0,
+               "y": 0,
+               "width": 520,
+               "height": 1,
+               "fills": [
+                {
+                 "type": "solid",
+                 "color": "{color.line}"
+                }
+               ],
+               "layout_child": {
+                "width": "fill",
+                "height": "fixed"
+               }
+              },
+              {
+               "id": "n_11ner00011",
+               "name": "LineRow",
+               "kind": "frame",
+               "x": 0,
+               "y": 0,
+               "width": 100,
+               "height": 100,
+               "clip": false,
+               "fills": [],
+               "layout_child": {
+                "width": "fill",
+                "height": "hug"
+               },
+               "layout": {
+                "direction": "row",
+                "gap": 16,
+                "padding": [
+                 10,
+                 0,
+                 10,
+                 0
+                ],
+                "justify": "start",
+                "align": "center",
+                "width": "hug",
+                "height": "hug"
+               },
+               "children": [
+                {
+                 "id": "n_11ne1a0009",
+                 "name": "LineLabel",
+                 "kind": "text",
+                 "x": 0,
+                 "y": 0,
+                 "width": 100,
+                 "height": 14,
+                 "content": "{{item}} \u00d7 {{qty|1}}",
+                 "sizing": "auto_height",
+                 "fills": [
+                  {
+                   "type": "solid",
+                   "color": "{color.muted}"
+                  }
+                 ],
+                 "style": {
+                  "font_family": "{font.body}",
+                  "font_weight": 400,
+                  "font_size": 14,
+                  "line_height": {
+                   "px": 20
+                  }
+                 },
+                 "layout_child": {
+                  "width": "fill",
+                  "height": "hug"
+                 }
+                },
+                {
+                 "id": "n_11neva0010",
+                 "name": "LineValue",
+                 "kind": "text",
+                 "x": 0,
+                 "y": 0,
+                 "width": 100,
+                 "height": 14,
+                 "content": "{{amount}}",
+                 "sizing": "auto_width",
+                 "fills": [
+                  {
+                   "type": "solid",
+                   "color": "{color.ink}"
+                  }
+                 ],
+                 "style": {
+                  "font_family": "{font.body}",
+                  "font_weight": 600,
+                  "font_size": 14,
+                  "line_height": {
+                   "px": 20
+                  }
+                 },
+                 "layout_child": {
+                  "width": "hug",
+                  "height": "hug"
+                 },
+                 "align": "right"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "id": "n_dvexxx0018",
+           "name": "Due",
+           "kind": "frame",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 100,
+           "clip": false,
+           "fills": [],
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           },
+           "layout": {
+            "direction": "column",
+            "gap": 0,
+            "padding": [
+             0,
+             0,
+             0,
+             0
+            ],
+            "justify": "start",
+            "align": "start",
+            "width": "hug",
+            "height": "hug"
+           },
+           "children": [
+            {
+             "id": "n_dverv10014",
+             "name": "DueRule",
+             "kind": "rect",
+             "x": 0,
+             "y": 0,
+             "width": 520,
+             "height": 2,
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.ink}"
+              }
+             ],
+             "layout_child": {
+              "width": "fill",
+              "height": "fixed"
+             }
+            },
+            {
+             "id": "n_dver0w0017",
+             "name": "DueRow",
+             "kind": "frame",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 100,
+             "clip": false,
+             "fills": [],
+             "layout_child": {
+              "width": "fill",
+              "height": "hug"
+             },
+             "layout": {
+              "direction": "row",
+              "gap": 16,
+              "padding": [
+               10,
+               0,
+               10,
+               0
+              ],
+              "justify": "start",
+              "align": "center",
+              "width": "hug",
+              "height": "hug"
+             },
+             "children": [
+              {
+               "id": "n_dve1ab0015",
+               "name": "DueLabel",
+               "kind": "text",
+               "x": 0,
+               "y": 0,
+               "width": 100,
+               "height": 14,
+               "content": "Amount due",
+               "sizing": "auto_height",
+               "fills": [
+                {
+                 "type": "solid",
+                 "color": "{color.ink}"
+                }
+               ],
+               "style": {
+                "font_family": "{font.body}",
+                "font_weight": 700,
+                "font_size": 14,
+                "line_height": {
+                 "px": 20
+                }
+               },
+               "layout_child": {
+                "width": "fill",
+                "height": "hug"
+               }
+              },
+              {
+               "id": "n_dveva10016",
+               "name": "DueValue",
+               "kind": "text",
+               "x": 0,
+               "y": 0,
+               "width": 100,
+               "height": 14,
+               "content": "{{amount_due}}",
+               "sizing": "auto_width",
+               "fills": [
+                {
+                 "type": "solid",
+                 "color": "{color.ink}"
+                }
+               ],
+               "style": {
+                "font_family": "{font.body}",
+                "font_weight": 700,
+                "font_size": 14,
+                "line_height": {
+                 "px": 20
+                }
+               },
+               "layout_child": {
+                "width": "hug",
+                "height": "hug"
+               },
+               "align": "right"
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "id": "n_byxxxx0023",
+           "name": "By",
+           "kind": "frame",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 100,
+           "clip": false,
+           "fills": [],
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           },
+           "layout": {
+            "direction": "column",
+            "gap": 0,
+            "padding": [
+             0,
+             0,
+             0,
+             0
+            ],
+            "justify": "start",
+            "align": "start",
+            "width": "hug",
+            "height": "hug"
+           },
+           "children": [
+            {
+             "id": "n_byrv1e0019",
+             "name": "ByRule",
+             "kind": "rect",
+             "x": 0,
+             "y": 0,
+             "width": 520,
+             "height": 1,
+             "fills": [
+              {
+               "type": "solid",
+               "color": "{color.line}"
+              }
+             ],
+             "layout_child": {
+              "width": "fill",
+              "height": "fixed"
+             }
+            },
+            {
+             "id": "n_byr0wx0022",
+             "name": "ByRow",
+             "kind": "frame",
+             "x": 0,
+             "y": 0,
+             "width": 100,
+             "height": 100,
+             "clip": false,
+             "fills": [],
+             "layout_child": {
+              "width": "fill",
+              "height": "hug"
+             },
+             "layout": {
+              "direction": "row",
+              "gap": 16,
+              "padding": [
+               10,
+               0,
+               10,
+               0
+              ],
+              "justify": "start",
+              "align": "center",
+              "width": "hug",
+              "height": "hug"
+             },
+             "children": [
+              {
+               "id": "n_by1abe0020",
+               "name": "ByLabel",
+               "kind": "text",
+               "x": 0,
+               "y": 0,
+               "width": 100,
+               "height": 14,
+               "content": "Due by",
+               "sizing": "auto_height",
+               "fills": [
+                {
+                 "type": "solid",
+                 "color": "{color.muted}"
+                }
+               ],
+               "style": {
+                "font_family": "{font.body}",
+                "font_weight": 400,
+                "font_size": 14,
+                "line_height": {
+                 "px": 20
+                }
+               },
+               "layout_child": {
+                "width": "fill",
+                "height": "hug"
+               }
+              },
+              {
+               "id": "n_byva1v0021",
+               "name": "ByValue",
+               "kind": "text",
+               "x": 0,
+               "y": 0,
+               "width": 100,
+               "height": 14,
+               "content": "{{due_date}}",
+               "sizing": "auto_width",
+               "fills": [
+                {
+                 "type": "solid",
+                 "color": "{color.ink}"
+                }
+               ],
+               "style": {
+                "font_family": "{font.body}",
+                "font_weight": 600,
+                "font_size": 14,
+                "line_height": {
+                 "px": 20
+                }
+               },
+               "layout_child": {
+                "width": "hug",
+                "height": "hug"
+               },
+               "align": "right"
+              }
+             ]
+            }
+           ]
+          }
+         ],
+         "corner_radius": 14
+        }
+       ]
+      },
+      {
+       "id": "n_1fn0te0030",
+       "name": "if:note",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         18,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_n0teca0029",
+         "name": "NoteCard",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [
+          {
+           "type": "solid",
+           "color": "#FFF4E5"
+          }
+         ],
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "column",
+          "gap": 4,
+          "padding": [
+           12,
+           14,
+           12,
+           14
+          ],
+          "justify": "start",
+          "align": "start",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_n0te1a0027",
+           "name": "NoteLabel",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 10,
+           "content": "Note",
+           "sizing": "auto_height",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.accent}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 700,
+            "font_size": 10,
+            "line_height": {
+             "px": 13
+            },
+            "letter_spacing": 1.2,
+            "text_transform": "upper"
+           },
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           }
+          },
+          {
+           "id": "n_n0tew00028",
+           "name": "NoteWords",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 14,
+           "content": "{{note}}",
+           "sizing": "auto_height",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.body}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 400,
+            "font_size": 14,
+            "line_height": {
+             "px": 21
+            }
+           },
+           "layout_child": {
+            "width": "fill",
+            "height": "hug"
+           }
+          }
+         ],
+         "corner_radius": 10
+        }
+       ]
+      },
+      {
+       "id": "n_h0wt0p0033",
+       "name": "HowToPay",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 6,
+        "padding": [
+         26,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_h0wt1t0031",
+         "name": "HowTitle",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 18,
+         "content": "How to pay",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.ink}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 800,
+          "font_size": 18,
+          "line_height": {
+           "px": 24
+          },
+          "letter_spacing": -0.4
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         },
+         "semantic": "h2"
+        },
+        {
+         "id": "n_h0ww0r0032",
+         "name": "HowWords",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 15,
+         "content": "{{how_to_pay}}",
+         "sizing": "auto_height",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.body}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 15,
+          "line_height": {
+           "px": 23
+          }
+         },
+         "layout_child": {
+          "width": "fill",
+          "height": "hug"
+         }
+        }
+       ]
+      },
+      {
+       "id": "n_act10n0036",
+       "name": "Action",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         8,
+         40,
+         0,
+         40
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_11nkht0035",
+         "name": "link:https://example.com/pay",
+         "kind": "frame",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 100,
+         "clip": false,
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.brand}"
+          }
+         ],
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "layout": {
+          "direction": "row",
+          "gap": 0,
+          "padding": [
+           14,
+           28,
+           14,
+           28
+          ],
+          "justify": "start",
+          "align": "start",
+          "width": "hug",
+          "height": "hug"
+         },
+         "children": [
+          {
+           "id": "n_bvtt0n0034",
+           "name": "ButtonLabel",
+           "kind": "text",
+           "x": 0,
+           "y": 0,
+           "width": 100,
+           "height": 16,
+           "content": "Pay now",
+           "sizing": "auto_width",
+           "fills": [
+            {
+             "type": "solid",
+             "color": "{color.white}"
+            }
+           ],
+           "style": {
+            "font_family": "{font.body}",
+            "font_weight": 700,
+            "font_size": 16,
+            "line_height": {
+             "px": 20
+            }
+           },
+           "layout_child": {
+            "width": "hug",
+            "height": "hug"
+           }
+          }
+         ],
+         "corner_radius": 999,
+         "semantic": "button"
+        }
+       ]
+      },
+      {
+       "id": "n_gapxxx0037",
+       "name": "Gap",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 0,
+        "padding": [
+         36,
+         0,
+         0,
+         0
+        ],
+        "justify": "start",
+        "align": "start",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": []
+      },
+      {
+       "id": "n_f00ter0041",
+       "name": "Footer",
+       "kind": "frame",
+       "x": 0,
+       "y": 0,
+       "width": 100,
+       "height": 100,
+       "clip": false,
+       "fills": [
+        {
+         "type": "solid",
+         "color": "{color.night}"
+        }
+       ],
+       "layout_child": {
+        "width": "fill",
+        "height": "hug"
+       },
+       "layout": {
+        "direction": "column",
+        "gap": 8,
+        "padding": [
+         28,
+         40,
+         28,
+         40
+        ],
+        "justify": "start",
+        "align": "center",
+        "width": "hug",
+        "height": "hug"
+       },
+       "children": [
+        {
+         "id": "n_f00ter0038",
+         "name": "FooterName",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 16,
+         "content": "Business name",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.white}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.heading}",
+          "font_weight": 700,
+          "font_size": 16,
+          "line_height": {
+           "px": 20
+          }
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         }
+        },
+        {
+         "id": "n_f00ter0039",
+         "name": "FooterLine",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 13,
+         "content": "One line about what the business does.",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "{color.footer}"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 13,
+          "line_height": {
+           "px": 18
+          }
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "align": "center"
+        },
+        {
+         "id": "n_addres0040",
+         "name": "Address",
+         "kind": "text",
+         "x": 0,
+         "y": 0,
+         "width": 100,
+         "height": 11,
+         "content": "{{address}}",
+         "sizing": "auto_width",
+         "fills": [
+          {
+           "type": "solid",
+           "color": "#7D8798"
+          }
+         ],
+         "style": {
+          "font_family": "{font.body}",
+          "font_weight": 400,
+          "font_size": 11,
+          "line_height": {
+           "px": 17
+          }
+         },
+         "layout_child": {
+          "width": "hug",
+          "height": "hug"
+         },
+         "align": "center"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
