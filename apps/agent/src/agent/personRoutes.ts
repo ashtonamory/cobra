@@ -134,7 +134,7 @@ async function googleIntegration(deps: PersonDeps): Promise<GoogleIntegration> {
  */
 export async function handlePerson(route: string, method: string | undefined, url: URL, bodyText: string, caller: { kind: string }, deps: PersonDeps): Promise<Reply> {
   if (!PERSON_KINDS.has(caller.kind)) {
-    return { status: 403, body: { error: "only a phone or a desk you linked reads a project's records or the Google connection here; a Foreman uses its db_ tools" } };
+    return { status: 403, body: { error: "only the desk app you linked reads a project's records or the Google connection here; a Foreman uses its db_ tools" } };
   }
   const post = PERSON_POSTS.has(route);
   if (post && method !== "POST") return { status: 405, body: { error: "POST only" } };

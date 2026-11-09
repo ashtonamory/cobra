@@ -106,7 +106,7 @@ export async function apiKeyCommand(args: readonly string[], fail: (message: str
     say("Note: no long-lived Claude token is kept here, so the Lead and Foremen keep your own sign-in and do not use the key. Keep one with `claude setup-token` and `cobra-agent claude-token`.");
   }
   const lane = readPolicyFile().policy.apiLane ?? DEFAULT_API_LANE;
-  if (!lane.enabled || lane.monthlyCapUsd <= 0) say("The API lane is not on yet: `cobra-agent api-lane on --cap 50`, or Settings → Claude on the phone.");
+  if (!lane.enabled || lane.monthlyCapUsd <= 0) say("The API lane is not on yet: `cobra-agent api-lane on --cap 50`, or Settings → Claude in the desk app.");
 }
 
 /** The policy with a new lane, as the next revision, and what changed in words. */
@@ -164,5 +164,5 @@ export async function apiLaneCommand(args: readonly string[], fail: (message: st
   }
   writePolicy(next, { at: Date.now(), revision: next.revision, by: `cobra-agent on ${os.hostname()}`, lines });
   for (const line of lines) say(line.text);
-  say(`policy.json revision ${next.revision} on this computer. Other computers take it when the phone or the desk next sends the policy (Settings → Claude), or run the same command on each.`);
+  say(`policy.json revision ${next.revision} on this computer. The desk app shows it under Settings → Claude.`);
 }

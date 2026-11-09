@@ -159,7 +159,7 @@ test("an Allow with no key, from an app older than the rule, passes only until t
   const key = dialogKey(readPane(prompt("ls -la")).dialogText);
   assert.equal(allowRefusal(undefined, key, BEFORE_GRACE_ENDS, GRACE), null);
   assert.equal(allowRefusal("", key, BEFORE_GRACE_ENDS, GRACE), null);
-  assert.match(allowRefusal(undefined, key, AFTER_GRACE_ENDS, GRACE) ?? "", /update Cobra on your phone/);
+  assert.match(allowRefusal(undefined, key, AFTER_GRACE_ENDS, GRACE) ?? "", /update the Cobra desk app/);
   // Removing the grace (the constant set to null) refuses it at once.
-  assert.match(allowRefusal(undefined, key, BEFORE_GRACE_ENDS, null) ?? "", /update Cobra on your phone/);
+  assert.match(allowRefusal(undefined, key, BEFORE_GRACE_ENDS, null) ?? "", /update the Cobra desk app/);
 });

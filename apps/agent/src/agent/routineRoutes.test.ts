@@ -296,7 +296,7 @@ test("the tools: routine_set, routine_list and routine_remove for the Lead and t
   }
   const set = mcp.TOOLS.find((tool) => tool.name === "routine_set")!;
   assert.match(set.description, /\{"every": "week", "interval": 2, "days": \["fri"\], "at": "09:00", "starts": "2026-10-30"\}/);
-  assert.match(set.description, /The person allows the routine once on their phone/);
+  assert.match(set.description, /The person allows the routine once in their desk app/);
   assert.match(set.description, /this computer's local time/);
   assert.deepEqual((set.inputSchema as { required: string[] }).required, ["name", "rule", "brief"]);
   assert.equal("computer" in (set.inputSchema as { properties: Record<string, unknown> }).properties, false);

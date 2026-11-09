@@ -206,7 +206,7 @@ async function writeLocal(projects: Project[], path: string): Promise<void> {
   const body = JSON.stringify(
     {
       $comment:
-        "Projects created from the phone. Written by cobra-agent, outside the repo " +
+        "Projects created from the desk app. Written by cobra-agent, outside the repo " +
         "because config/projects.json is rsynced with --delete on every deploy. " +
         "Promote an entry by copying it into config/projects.json and committing; " +
         "the tracked copy then wins and this one is ignored.",

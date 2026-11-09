@@ -699,7 +699,7 @@ function batchCopy(b: Batch, index: number, folders: EmailFolders, theme: Return
  * hash put on the card, whose words are drawn again.
  */
 export function handleBatchEdit(method: string, body: string, caller: { kind: string }, deps: Pick<EmailRouteDeps, "approvals" | "spaceById" | "place" | "drafts" | "editDraft" | "now">, personKinds: ReadonlySet<string>): Reply {
-  if (!personKinds.has(caller.kind)) return bad(403, "only a phone or a desk you linked changes a batch");
+  if (!personKinds.has(caller.kind)) return bad(403, "only the desk app you linked changes a batch");
   if (method !== "POST") return bad(405, "POST only");
   let input: Record<string, unknown>;
   try {
@@ -846,7 +846,7 @@ function hostOf(href: string): string {
 
 /** The phone's and desk's preview of a card's email: the draft or version it names, drawn with its values, images inline. */
 export function handleEmailPerson(route: string, method: string, url: URL, caller: { kind: string }, deps: Pick<EmailRouteDeps, "approvals" | "spaceById" | "place" | "drafts">, personKinds: ReadonlySet<string>): Reply {
-  if (!personKinds.has(caller.kind)) return bad(403, "only a phone or a desk you linked reads email previews");
+  if (!personKinds.has(caller.kind)) return bad(403, "only the desk app you linked reads email previews");
   if (method !== "GET") return bad(405, "GET only");
   if (route !== "/email/preview") return bad(404, `no route ${route}`);
   const id = url.searchParams.get("approval") ?? "";
@@ -901,7 +901,7 @@ export function handleEmailPerson(route: string, method: string, url: URL, calle
  * sends an email.
  */
 export async function handleEmailEditor(route: string, method: string, url: URL, body: string, caller: { kind: string }, deps: EmailRouteDeps, personKinds: ReadonlySet<string>): Promise<Reply> {
-  if (!personKinds.has(caller.kind)) return bad(403, "only a phone or a desk you linked edits email templates");
+  if (!personKinds.has(caller.kind)) return bad(403, "only the desk app you linked edits email templates");
   const posting = EDITOR_POSTS.has(route);
   if (method !== (posting ? "POST" : "GET")) return bad(405, posting ? "POST only" : "GET only");
   let input: Record<string, unknown> = {};

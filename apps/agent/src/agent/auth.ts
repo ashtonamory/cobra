@@ -90,8 +90,8 @@ export function expiredMessage(caller: Pick<Caller, "kind" | "expiresAt" | "proj
       : `This Lead's key for this computer expired${on}. Stop Cobra and start her again (\`cobra-agent lead start\`); a start makes it a new key.`;
   }
   return caller.kind === "desk"
-    ? `This desktop's key for this computer expired${on}. Run \`cobra-desk add\` for it again.`
-    : `This phone's key for this computer expired${on}. Link it again from Settings → Computers.`;
+    ? `This desktop's key for this computer expired${on}. Link it again: Settings → This computer → Link the agent.`
+    : `This key for this computer expired${on}. Link the desk app again: Settings → This computer → Link the agent.`;
 }
 
 /** 401 for no caller at all, or an expired key; 403 for a known caller outside its scopes. */

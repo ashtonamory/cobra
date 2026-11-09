@@ -43,7 +43,7 @@ export function keyRoute(
   if (!body) return { status: 400, body: { error: "invalid JSON body" } };
 
   if (route === "/keys/rotate") {
-    if (!expiring(caller)) return { status: 403, body: { error: "only a phone's or a desktop's key is rotated this way" } };
+    if (!expiring(caller)) return { status: 403, body: { error: "only the desk app's key is rotated this way" } };
     // A phone rotates once it signs: before that, its bearer key alone could keep itself alive.
     const keyHash = typeof body.keyHash === "string" ? body.keyHash : "";
     if (!/^[0-9a-f]{64}$/.test(keyHash)) return { status: 400, body: { error: "keyHash must be a SHA-256 in hex" } };

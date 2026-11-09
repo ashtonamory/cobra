@@ -111,7 +111,7 @@ test("a phone's and a desk's key are answered; a Lead's, a Foreman's, a widget's
     for (const route of PERSON_ROUTES) {
       const reply = PERSON_POSTS.has(route) ? await undo({ project: "payroll", journal: 1 }, deps, { kind }) : await get(route, "?project=payroll", deps, { kind });
       assert.equal(reply.status, 403, `${kind} ${route}`);
-      assert.match((reply.body as { error: string }).error, /phone or a desk/);
+      assert.match((reply.body as { error: string }).error, /only the desk app you linked/);
     }
     assert.equal(listed(), 0);
     assert.equal(granted(), 0);

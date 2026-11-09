@@ -29,7 +29,7 @@ function listed(deps: MailboxRouteDeps): Reply {
 }
 
 export async function handleMailboxes(route: string, method: string, body: string, caller: { kind: string }, deps: MailboxRouteDeps, personKinds: ReadonlySet<string>): Promise<Reply> {
-  if (!personKinds.has(caller.kind)) return bad(403, "only a phone or a desk you linked sees or changes mailboxes");
+  if (!personKinds.has(caller.kind)) return bad(403, "only the desk app you linked sees or changes mailboxes");
   if (method !== "GET" && method !== "POST") return bad(405, "POST only");
   let input: Record<string, unknown> = {};
   if (method === "POST") {

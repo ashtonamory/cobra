@@ -161,7 +161,7 @@ export const UNBOUND_ALLOW_UNTIL: string | null = "2026-10-27T00:00:00Z";
 export function allowRefusal(sent: string | undefined, shown: string, now = Date.now(), until = UNBOUND_ALLOW_UNTIL): string | null {
   if (sent === undefined || sent === "") {
     if (until !== null && now < Date.parse(until)) return null;
-    return "this app sent no copy of the request it showed; update Cobra on your phone, or answer in the terminal";
+    return "this app sent no copy of the request it showed; update the Cobra desk app, or answer in the terminal";
   }
   return sent === shown ? null : "the request on screen changed since you saw it; look at it again";
 }
