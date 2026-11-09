@@ -50,7 +50,7 @@ export const LABEL_MAX = 100;
 /** Names a person's own label may not take: they are Gmail's, and a "Trash" label would only confuse. */
 const RESERVED = new Set(["inbox", "sent", "draft", "drafts", "spam", "trash", "unread", "starred", "important", "chat", "all mail", "scheduled", "snoozed", "category_personal", "category_social", "category_promotions", "category_updates", "category_forums"]);
 
-const TURN_ON = "Cobra cannot organize the person's mail yet: its Google connection does not carry Organize mail (gmail.modify). The person can connect Google by adding Gmail's MCP connector and organize mail with its tools";
+const TURN_ON = "Cobra cannot organize the person's mail yet: its Google connection does not carry Organize mail (gmail.modify). The person turns on Mail in the app (Settings → Integrations → Google), which allows it";
 
 /** The Google connection works but does not carry gmail.modify: a 409 whose message is the step to take. */
 export class MailboxOffError extends GoogleAuthError {

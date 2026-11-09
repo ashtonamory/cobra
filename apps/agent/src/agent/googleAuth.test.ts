@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import type { BrokerLink } from "./googleAuth.ts";
+import type { BrokerLink, GoogleGrant } from "./googleAuth.ts";
 import {
   clearGoogleGrant,
   configureGoogleAuth,
@@ -69,7 +69,7 @@ test("clearGoogleGrant makes the next call ask again", async () => {
 test("no cloud link is a refusal that says to link, without a request", async () => {
   const { fetcher, calls } = cloud([]);
   configureGoogleAuth({ readLink: () => null, fetcher, now: () => T0 });
-  await assert.rejects(googleGrant(), (error: unknown) => error instanceof GoogleAuthError && error.problem === "no_cloud_link" && error.status === 409 && /MCP connector/.test(error.message));
+  await assert.rejects(googleGrant(), (error: unknown) => error instanceof GoogleAuthError && error.problem === "no_cloud_link" && error.status === 409 && /no Google sign-in/.test(error.message));
   assert.equal(calls.length, 0);
   assert.equal(googleStatus().problem, "no_cloud_link");
 });
@@ -123,4 +123,16 @@ test("no error message carries the token", async () => {
   const { fetcher } = cloud([{ status: 200, body: { ...GOOD, email: "x" } }]);
   configureGoogleAuth({ readLink: () => LINK, fetcher, now: () => T0 });
   await assert.rejects(googleGrant(), (error: unknown) => error instanceof Error && !error.message.includes("ya29"));
+});
+
+test("with no broker, the grant comes from the sign-in on this computer, and its refusal is the status", async () => {
+  const { fetcher, calls } = cloud([]);
+  let answer: GoogleGrant | GoogleAuthError = new GoogleAuthError("google_no_client");
+  configureGoogleAuth({ readLink: () => null, local: async () => { if (answer instanceof GoogleAuthError) throw answer; return answer; }, fetcher, now: () => T0 });
+  await assert.rejects(googleGrant(), (error: unknown) => error instanceof GoogleAuthError && error.problem === "google_no_client" && /Settings → Integrations → Google/.test(error.message));
+  assert.equal(googleStatus().problem, "google_no_client");
+  answer = { accessToken: "ya29.local", expiresAt: T0 + HOUR, email: "owner@example.com", scopes: GOOD.scopes };
+  assert.equal((await googleGrant()).accessToken, "ya29.local");
+  assert.deepEqual(googleStatus(), { connected: true, email: "owner@example.com", scopes: GOOD.scopes, problem: null, checkedAt: T0 });
+  assert.equal(calls.length, 0, "no broker is asked");
 });

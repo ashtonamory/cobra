@@ -3,12 +3,12 @@ import { SessionError } from "./sessions.ts";
 /**
  * The Google connection, as this computer's agent uses it.
  *
- * Cobra has no cloud of its own, so out of the box there is no token broker
- * and every Google call reports `no_cloud_link`. Google is meant to
- * come through MCP connectors instead (Calendar, Gmail, Drive); this seam
- * stays so a local token broker can be plugged in with `configureGoogleAuth`.
- * A broker trades its own bearer token for a one-hour access token at
- * `POST <broker>/google/token`; the agent then calls Google itself.
+ * Cobra has no cloud of its own. The person signs in with their own Google
+ * OAuth client on this computer (googleLocal.ts), which the agent plugs in as
+ * `local` at start. A token broker can still be plugged in with
+ * `configureGoogleAuth` (`readLink`): it trades its own bearer token for a
+ * one-hour access token at `POST <broker>/google/token`. With neither, every
+ * Google call reports `no_cloud_link`. Either way the agent calls Google itself.
  *
  * The grant is kept in memory until five minutes before it ends and never
  * written anywhere: not a file, a log line or an error. A 401 from Google
@@ -34,25 +34,29 @@ export type GoogleGrant = { accessToken: string; expiresAt: number; email: strin
 
 /**
  * Why there is no grant, in the words a person acts on:
- * - `no_cloud_link`: no token broker is plugged in (the default), or it refused this computer.
+ * - `no_cloud_link`: no sign-in of any kind is plugged in, or a broker refused this computer.
+ * - `google_no_client`: no Google OAuth client is saved here yet (googleLocal.ts): the person sets one up.
  * - `google_not_connected`: the account has never connected Google.
  * - `google_reconnect`: Google refused the stored sign-in (revoked, or a test sign-in older than 7 days).
  * - `google_unavailable`: the broker could not be reached or answered something else.
  */
-export type GoogleProblem = "no_cloud_link" | "google_not_connected" | "google_reconnect" | "google_unavailable";
+export type GoogleProblem = "no_cloud_link" | "google_no_client" | "google_not_connected" | "google_reconnect" | "google_unavailable";
 
 const SAYS: Record<GoogleProblem, string> = {
-  no_cloud_link: "Cobra has no Google connection of its own here: connect Google by adding its MCP connector (Gmail, Calendar or Drive) and use its tools",
+  no_cloud_link: "Cobra has no Google sign-in on this computer",
+  google_no_client: "Google is not set up yet: set up your own Google client in the app (Settings → Integrations → Google)",
   google_not_connected: "Google is not connected: connect Google in the app (Settings → Integrations → Google)",
   google_reconnect: "Google needs to be connected again: open Settings → Integrations → Google in the app and connect",
-  google_unavailable: "the Google token broker could not hand out a token just now; the next try may work",
+  google_unavailable: "Google could not hand out a token just now; the next try may work",
 };
 
 export class GoogleAuthError extends SessionError {
   problem: GoogleProblem;
+  detail: string | undefined;
   constructor(problem: GoogleProblem, detail?: string) {
     super(detail ? `${SAYS[problem]} (${detail})` : SAYS[problem], problem === "google_unavailable" ? 503 : 409);
     this.problem = problem;
+    this.detail = detail;
   }
 }
 
@@ -64,12 +68,15 @@ export type BrokerLink = { url: string; deviceToken: string };
 
 export type GoogleAuthDeps = {
   readLink: () => BrokerLink | null;
+  /** The sign-in on this computer (googleLocal.ts), asked when no broker is linked; null for none. */
+  local: (() => Promise<GoogleGrant>) | null;
   fetcher: typeof fetch;
   now: () => number;
 };
 
 const LIVE: GoogleAuthDeps = {
   readLink: () => null,
+  local: null,
   fetcher: fetch,
   now: Date.now,
 };
@@ -120,7 +127,19 @@ export async function googleGrantFor(scope: string): Promise<GoogleGrant> {
 
 async function fetchGrant(): Promise<GoogleGrant> {
   const link = deps.readLink();
-  if (!link) return fail("no_cloud_link");
+  if (!link) {
+    if (!deps.local) return fail("no_cloud_link");
+    let grant: GoogleGrant;
+    try {
+      grant = await deps.local();
+    } catch (caught) {
+      if (caught instanceof GoogleAuthError) return fail(caught.problem, caught.detail);
+      return fail("google_unavailable", caught instanceof Error ? caught.message : String(caught));
+    }
+    cached = grant;
+    status = { connected: true, email: grant.email || null, scopes: [...grant.scopes], problem: null, checkedAt: deps.now() };
+    return grant;
+  }
   let response: Response;
   try {
     response = await deps.fetcher(`${link.url}${TOKEN_PATH}`, {
