@@ -54,11 +54,17 @@ jobs:
         working-directory: apps/desk/app
     steps:
       - uses: actions/checkout@v4
+      # The desk imports packages/contracts, which needs the workspace's zod.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: apps/desk/app/package-lock.json
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
       - run: npm ci --no-audit --no-fund
       - run: npx tsc --noEmit
       - run: npx vitest run

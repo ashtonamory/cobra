@@ -143,7 +143,7 @@ async function harness() {
     newId: () => `0000000${++ids}-aaaa`,
     log: () => {},
   };
-  return { dir, deps, chats: createChats(deps), children, spawned, cleanup: () => rm(dir, { recursive: true, force: true }) };
+  return { dir, deps, chats: createChats(deps), children, spawned, cleanup: () => rm(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 }) };
 }
 
 /** Claude answers: init, the text streamed, the result, and the process ends. */
