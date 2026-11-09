@@ -12,7 +12,9 @@
 #
 # agent    the agent package for linux-x64, linux-arm64, darwin-arm64 and
 #          darwin-x64 (apps/agent/scripts/package.sh); on macOS its native
-#          files are signed with the Developer ID and notarized.
+#          files are signed with the Developer ID and notarized. A Linux
+#          package carries the desk's AppImage for its target, so one
+#          download installs both (it waits for the desk job).
 # desk     the desktop app: .deb and AppImage for Linux (x64 and arm64), a
 #          universal .dmg for macOS, signed and notarized, and the signed
 #          update files the desk's updater checks.
@@ -43,7 +45,7 @@ jobs:
       - run: node scripts/release/version.ts check "${GITHUB_REF_NAME#v}"
 
   agent:
-    needs: version
+    needs: [version, desk]
     strategy:
       fail-fast: true
       matrix:
@@ -66,6 +68,12 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install gnu-tar
       - run: pnpm install --frozen-lockfile
+      - name: The desk's AppImage for this target
+        if: runner.os == 'Linux'
+        uses: actions/download-artifact@v4
+        with:
+          name: desk-${{ matrix.target }}
+          path: ${{ runner.temp }}/desk
       - name: The Developer ID, in a keychain for this job only
         if: runner.os == 'macOS'
         env:
@@ -95,7 +103,13 @@ jobs:
           COBRA_NOTARY_KEY: ${{ runner.os == 'macOS' && format('{0}/notary.p8', runner.temp) || '' }}
           COBRA_NOTARY_KEY_ID: ${{ secrets.APPLE_API_KEY }}
           COBRA_NOTARY_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-        run: bash apps/agent/scripts/package.sh ${{ matrix.target }}
+        run: |
+          if [[ $RUNNER_OS == Linux ]]; then
+            appimage=$(find "$RUNNER_TEMP/desk" -maxdepth 1 -name '*.AppImage' | head -1)
+            [[ -n $appimage ]] || { echo "::error::No desk AppImage for ${{ matrix.target }}"; exit 1; }
+            export COBRA_DESK_APPIMAGE=$appimage
+          fi
+          bash apps/agent/scripts/package.sh ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
           name: agent-${{ matrix.target }}

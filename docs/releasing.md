@@ -76,7 +76,9 @@ same workflow then signs and notarizes with no other change.
 
 3. The Release workflow runs (about 30 minutes; notarizing is most of it).
    It makes a draft release with:
-   - `cobra-agent-0.4.0-<target>.tar.gz` for linux-x64 and linux-arm64;
+   - `cobra-agent-0.4.0-<target>.tar.gz` for linux-x64 and linux-arm64,
+     each with the desk's AppImage for its target inside: its `install.sh`
+     installs the agent and the desk app, linked (one download);
    - the desk: `.deb` and `.AppImage` (x64 and arm64) and the signed
      update files;
 

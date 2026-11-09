@@ -14,6 +14,10 @@ import { join, resolve } from "node:path";
  *      disabled, the agent's own tmux server, and any headless session whose
  *      shell is still there.
  *   3. The units and the commands removed (only links into the package).
+ *   3b. The desk app, when the package installed it (install.sh): its
+ *      service, ~/.local/bin/cobra-desktop, the launcher entry, and on
+ *      Omarchy the Hyprland rules and the bar widget (install-omarchy.sh
+ *      --uninstall, which backs up each file it edits).
  *   4. The package's builds removed. With --purge also Cobra's config,
  *      state and data folders (keys, policy, memory, chats) and its runtime
  *      sockets; without it they stay, so a reinstall picks up where it was.
@@ -43,6 +47,10 @@ export type UninstallPaths = {
   /** The package's hook helpers and skills (apps/agent/hooks, apps/agent/skills). */
   hooks: string;
   skills: string;
+  /** The package's desk installer (apps/desk/scripts/install-omarchy.sh), when the package carries the desk; it takes the desk out with --uninstall. */
+  deskScript?: string | null;
+  /** The desk app's own folders (app.cobra.desktop under config, data and cache: its link to the agent, its web view); --purge removes them. */
+  deskFolders?: string[];
 };
 
 export type UninstallOptions = {
@@ -224,10 +232,24 @@ export async function runUninstall(paths: UninstallPaths, options: UninstallOpti
     }
   }
 
+  // 3b. The desk app, when this package put it on the desktop.
+  const deskBin = join(paths.home, ".local", "bin", "cobra-desktop");
+  const deskUnit = join(paths.units, "cobra-desktop.service");
+  const deskThere = existsSync(deskBin) || existsSync(deskUnit);
+  const deskOurs = Boolean(paths.deskScript && existsSync(paths.deskScript));
+  if (deskThere && deskOurs) {
+    say("The desk app");
+    const done = await run("bash", [paths.deskScript!, "--uninstall"]);
+    say(done.code === 0 ? "  ✓ the desk app, its service, launcher entry, window rules and bar widget removed" : `  ! the desk app was not removed: ${done.stderr.trim() || `exit ${done.code}`}`);
+    if (done.code !== 0) left.push(`The desk app: ${deskBin} and ${deskUnit}`);
+  } else if (deskThere) {
+    left.push(`The desk app (${deskBin}): this package did not install it; remove it as you installed it`);
+  }
+
   // 4. The package, and with --purge everything Cobra keeps.
   say(options.purge ? "Cobra's folders (--purge)" : "The package");
   if (options.purge) {
-    const folders = [paths.config, paths.state, paths.data, ...(paths.runtime ? [join(paths.runtime, "cobra-w")] : [])];
+    const folders = [paths.config, paths.state, paths.data, ...(paths.runtime ? [join(paths.runtime, "cobra-w")] : []), ...(paths.deskFolders ?? [])];
     for (const folder of folders) {
       if (!existsSync(folder)) continue;
       rmSync(folder, { recursive: true, force: true });
@@ -255,7 +277,6 @@ export async function runUninstall(paths: UninstallPaths, options: UninstallOpti
   left.push(
     "Your projects, their <repo>.worktrees folders and .cobra-attachments, and ~/Downloads/Cobra: yours, never touched",
     ...(options.launchd ? [] : ["Linger: `sudo loginctl disable-linger $USER`, only if nothing else of yours needs it"]),
-    "The desk app: remove it as you installed it",
   );
   say("Left as it was");
   for (const line of left) say(`  - ${line}`);

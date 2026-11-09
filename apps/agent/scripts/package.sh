@@ -18,6 +18,9 @@
 # pty.node (the file type is still checked), and sign. The result is
 # unsigned; docs/mac-test.md says how to open it on the Mac.
 #
+# On Linux, with COBRA_DESK_APPIMAGE set (the release), it also carries the
+# desk app's AppImage, which install.sh installs and links.
+#
 # Inside: its own Node runtime (pinned and checksum-verified), the agent and
 # gateway TypeScript sources with the pairing code they share with the phone
 # (Node runs them directly, so there is no build step), the runtime modules
@@ -225,6 +228,20 @@ if [[ $CROSS == 1 ]]; then IMPORT_NODE=node; else IMPORT_NODE="$STAGE/bin/node";
 "$IMPORT_NODE" "$AGENT/scripts/staged-imports.mjs" "$ROOT" "$STAGE"
 
 # 4. Units, installer, metadata.
+# The desk app (Linux), so one download installs everything: the release's
+# AppImage for this target, and what puts it on the desktop
+# (apps/desk/scripts/install-omarchy.sh and the files it installs, in their
+# repo places). install.sh runs it. COBRA_DESK_APPIMAGE names the AppImage;
+# without it the package has no desk (a Mac package, or a local build).
+if [[ -n ${COBRA_DESK_APPIMAGE:-} ]]; then
+  [[ $OS == linux ]] || { echo "COBRA_DESK_APPIMAGE is for a Linux package; the Mac desk is a .dmg of its own" >&2; exit 1; }
+  [[ -f $COBRA_DESK_APPIMAGE ]] || { echo "No AppImage at $COBRA_DESK_APPIMAGE" >&2; exit 1; }
+  install -Dm755 "$COBRA_DESK_APPIMAGE" "$STAGE/desk/cobra-desktop.AppImage"
+  install -Dm755 "$ROOT/apps/desk/scripts/install-omarchy.sh" "$STAGE/apps/desk/scripts/install-omarchy.sh"
+  cp -a "$ROOT/apps/desk/omarchy" "$STAGE/apps/desk/omarchy"
+  install -Dm644 "$ROOT/apps/desk/app/src-tauri/icons/128x128.png" "$STAGE/apps/desk/app/src-tauri/icons/128x128.png"
+  echo "    desk: $(basename "$COBRA_DESK_APPIMAGE")"
+fi
 cp -a "$AGENT/systemd" "$STAGE/systemd"
 cp -a "$AGENT/launchd" "$STAGE/launchd"
 cp "$AGENT/install.sh" "$STAGE/install.sh"
