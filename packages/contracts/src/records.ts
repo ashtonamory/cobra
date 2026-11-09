@@ -28,14 +28,20 @@ export const GoogleIntegration = z.object({
   scopes: z.array(z.string()).optional(),
   /**
    * Why it is not connected, null when it is: "no_cloud_link" (no token broker
-   * here: add Google's MCP connector), "google_not_connected" (connect Google in the app),
+   * here), "google_no_client" (set up your own Google client), "google_not_connected" (connect Google in the app),
    * "google_reconnect" (connect again: revoked, or a test sign-in older than
    * 7 days), "google_unavailable" (the broker did not answer; try later). A
    * string, so a value from a newer agent reads as an unknown problem.
    */
   problem: z.string().nullable().optional(),
-  /** When the agent last asked the cloud, ms since the epoch; null before it ever did. */
+  /** When the agent last asked Google, ms since the epoch; null before it ever did. */
   checkedAt: z.number().nullable().optional(),
+  /** A Google OAuth client of the person's own is saved on this computer (googleLocal.ts). */
+  clientSet: z.boolean().optional(),
+  /** Its client ID (not a secret); null when none. */
+  clientId: z.string().nullable().optional(),
+  /** The return address Google sends the browser to, on loopback. */
+  redirect: z.string().optional(),
 });
 export type GoogleIntegration = z.infer<typeof GoogleIntegration>;
 

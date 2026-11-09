@@ -165,6 +165,8 @@ import { liveMcpDeps, loginCache, mcpConnect, mcpDisconnect, mcpStatus, mcpToggl
 import { handlePerson, livePersonDeps, PERSON_KINDS, PERSON_POSTS, PERSON_ROUTES } from "./personRoutes.ts";
 import { handleNotebook, NOTEBOOK_ROUTES, TICKS_PATH } from "./notebook.ts";
 import { CLOUDFLARE_ROUTES, cloudflareHere, handleCloudflare } from "./cloudflare.ts";
+import { CALLBACK_PATH as GOOGLE_CALLBACK, GOOGLE_LOCAL_ROUTES, googleLocalHere, handleGoogleLocal } from "./googleLocal.ts";
+import { clearGoogleGrant, configureGoogleAuth } from "./googleAuth.ts";
 import { openProjectDb, spaceDataPath } from "./db.ts";
 import { scheduleMirror } from "./mirror.ts";
 import { STATE_DIR } from "./paths.ts";
@@ -229,6 +231,9 @@ onAuditFailure((problem) => notices.record({ kind: "audit", projectId: "", title
 const startedAt = new Date();
 /** The owner's Cloudflare connection here: its sign-in in progress and one refresh at a time (cloudflare.ts). */
 const cloudflare = cloudflareHere((line) => console.log(`[${SERVICE}] ${line}`));
+/** The person's own Google client, signed in here (googleLocal.ts); every Google call gets its token through it (googleAuth.ts). */
+const googleLocal = googleLocalHere((line) => console.log(`[${SERVICE}] ${line}`), clearGoogleGrant);
+configureGoogleAuth({ local: () => googleLocal.grant() });
 
 /**
  * History and alert state, owned here so the HTTP handlers and the sampling
@@ -3033,6 +3038,20 @@ const server = http.createServer((request, response) => {
       // credential — it reports liveness, not anything sensitive.
       if (route === "/health") return sendJson(response, 200, buildHealth());
 
+      // Google's return after the person signs in, in their browser: it carries no key, so it is open,
+      // and googleLocal.ts takes only a state it made in the last ten minutes, once.
+      if (route === GOOGLE_CALLBACK && request.method === "GET") {
+        const page = await googleLocal.callback(url.searchParams);
+        response.writeHead(page.status, {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+          "content-security-policy": "default-src 'none'; sandbox",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer",
+        });
+        return response.end(page.text);
+      }
+
       const gate = authorize(request.headers.authorization, route, request.method, config.keys);
       if (!gate.ok) {
         noteRejection(route);
@@ -3115,6 +3134,13 @@ const server = http.createServer((request, response) => {
       if (CLOUDFLARE_ROUTES.has(route)) {
         const body = request.method === "POST" ? await readBody(request).catch(() => "") : "";
         const reply = await handleCloudflare(route, request.method, body, caller, cloudflare);
+        return sendJson(response, reply.status, reply.body);
+      }
+
+      // The person's own Google client and its sign-in here (googleLocal.ts). A desk's key only.
+      if (GOOGLE_LOCAL_ROUTES.has(route)) {
+        const body = request.method === "POST" ? await readBody(request).catch(() => "") : "";
+        const reply = await handleGoogleLocal(route, request.method, body, caller, googleLocal);
         return sendJson(response, reply.status, reply.body);
       }
 

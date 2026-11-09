@@ -308,10 +308,10 @@ const MIRROR: Dict = {
   lastSync: iso(300), lastError: "Google needs to be connected again", pending: true,
 };
 const GOOGLE = (machine: string): Dict => machine === "legion"
-  ? { cloudLinked: true, connected: true, email: "penny@example.com", problem: null, checkedAt: Date.now() - 120_000, accountUrl: "https://accounts.example.com/account",
+  ? { cloudLinked: true, connected: true, email: "penny@example.com", problem: null, checkedAt: Date.now() - 120_000, clientSet: true, clientId: "123-abc.apps.googleusercontent.com",
     scopes: ["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/gmail.send",
       "https://www.googleapis.com/auth/calendar.readonly"] }
-  : { cloudLinked: true, connected: false, email: null, scopes: [], problem: "google_not_connected", checkedAt: null, accountUrl: "https://accounts.example.com/account" };
+  : { cloudLinked: true, connected: false, email: null, scopes: [], problem: "google_not_connected", checkedAt: null, clientSet: true, clientId: "123-abc.apps.googleusercontent.com" };
 
 // The owner's Cloudflare (contracts cloudflare.ts): Legion connected with two accounts, Mini not.
 const CF_BASE = { scopes: ["workers-scripts.admin", "d1.write", "account-settings.read", "offline_access"], problem: null,
@@ -814,6 +814,9 @@ function apiAnswer(machine: string, method: string, path: string, body: Dict | n
       case "/org": return { org: { ...ORG, revision: ORG.revision + 1 } };
       case "/view/write": return { journal: 9, summary: `Ran ${String(body?.mutation)}.`, changes: [] };
       case "/view/reveal": return { value: "555-010-4477" };
+      case "/integrations/google/connect": return { url: "https://accounts.google.com/o/oauth2/v2/auth?client_id=123-abc.apps.googleusercontent.com&state=g1" };
+      case "/integrations/google/client": return { clientSet: true, clientId: "123-abc.apps.googleusercontent.com", redirect: "http://127.0.0.1:8787/google/callback" };
+      case "/integrations/google/disconnect": return { clientSet: true, clientId: "123-abc.apps.googleusercontent.com", redirect: "http://127.0.0.1:8787/google/callback" };
       case "/integrations/cloudflare/start": return { url: "https://dash.cloudflare.com/oauth2/auth?client_id=c&state=s1" };
       case "/integrations/cloudflare/finish": return { ...CLOUDFLARE("legion"), accounts: [CF_ACCOUNTS[0]] };
       case "/integrations/cloudflare/account": return { ...CLOUDFLARE("legion"), account: CF_ACCOUNTS.find((a) => a.id === body?.id) ?? null };
@@ -1801,15 +1804,17 @@ describe("smoke: pages", () => {
     await click(ints);
     const shownNow = () => [...el.querySelectorAll<HTMLElement>(".settings-scroll")].find((x) => !x.hidden)!;
     for (const g of ["Google", "connected as penny@example.com", "What it allows", "It cannot see your other files.",
-      "Send email from your Gmail, only the messages you allow.", "Checked 2 minutes ago.", "Account page", "GitHub",
+      "Send email from your Gmail, only the messages you allow.", "Checked 2 minutes ago.", "Disconnect", "Change client", "GitHub",
       "What Cobra can read", "Calendar", "Read your calendar so My day and Projects can plan around it.", "Mail",
-      "works only for invited testers", "Turn on"]) {
+      "tidy it in batches you allow", "Turn on"]) {
       expect(text(shownNow()), g).toContain(g);
     }
     // Calendar is on (no Turn on); Mail's Turn on opens the account page and watches for it.
     expect(button(shownNow(), "Turn on")).toBeTruthy();
     await click(button(shownNow(), "Turn on"));
+    await flush(3);
     expect(toasts.some((x) => x.startsWith("Turn on Mail on the page that opened"))).toBe(true);
+    expect(tauri.invoked.some((x) => x.cmd === "api" && (x.args as Dict).path === "/integrations/google/connect" && (x.args as Dict).body?.read === "mail")).toBe(true);
     expect(text(shownNow())).toContain("Waiting for Mail to be turned on");
     // Cloudflare on Legion: connected to Pine Yoga, Paws Studio a Use away; Disconnect asks first.
     for (const g of ["Cloudflare", "connected to Pine Yoga", "Accounts this sign-in reaches", "Paws Studio", "in use"]) {
@@ -1819,7 +1824,8 @@ describe("smoke: pages", () => {
     await flush(3);
     expect(toasts).toContain("Websites from Legion go in Paws Studio");
     expect(tauri.invoked.some((x) => x.cmd === "api" && (x.args as Dict).path === "/integrations/cloudflare/account" && (x.args as Dict).body?.id === "cf2")).toBe(true);
-    await click(button(shownNow(), "Disconnect"));
+    // The first Disconnect is Google's; the second is Cloudflare's.
+    await click(buttons(shownNow(), "Disconnect")[1]!);
     expect(text(el)).toContain("Disconnect Cloudflare from Legion?");
     await click(buttons(el, "Cancel").at(-1)!);
     expect(text(el)).not.toContain("Disconnect Cloudflare from Legion?");
@@ -1868,8 +1874,19 @@ describe("smoke: pages", () => {
       await flush(5);
       const shownNow = () => [...el.querySelectorAll<HTMLElement>(".settings-scroll")].find((x) => !x.hidden)!;
       expect(text(shownNow())).toContain("not connected");
+      // Change client opens the setup steps; the pasted JSON goes to the agent.
+      await click(button(shownNow(), "Change client"));
+      expect(text(shownNow())).toContain("Set up your Google client, once");
+      expect(text(shownNow())).toContain("Desktop app");
+      const box = shownNow().querySelector<HTMLTextAreaElement>("textarea[aria-label='Google client JSON']")!;
+      await change(box, '{"installed":{"client_id":"123-abc.apps.googleusercontent.com","client_secret":"s"}}');
+      await click(button(shownNow(), "Save"));
+      await flush(3);
+      expect(toasts).toContain("Google client saved. Now press Connect Google.");
+      expect(tauri.invoked.some((x) => x.cmd === "api" && (x.args as Dict).path === "/integrations/google/client")).toBe(true);
       await click(button(shownNow(), "Connect Google"));
-      expect(toasts.some((x) => x.startsWith("Connect Google on the page that opened"))).toBe(true);
+      await flush(3);
+      expect(toasts.some((x) => x.startsWith("Sign in to Google on the page that opened"))).toBe(true);
       expect(text(shownNow())).toContain("Waiting for Google to be connected");
       // Cloudflare on Mini: the note first, then the sign-in page, then the code box; a bad code never leaves the desk.
       await click(button(shownNow(), "Connect Cloudflare"));

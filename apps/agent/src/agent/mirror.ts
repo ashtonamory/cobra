@@ -118,7 +118,7 @@ export function sheetTitle(projectTitle: string): string {
 }
 
 /** The problems that wait for the person to connect Google; anything else is a failed push like any other. */
-const WAITS_FOR_PERSON: ReadonlySet<GoogleProblem> = new Set(["no_cloud_link", "google_not_connected", "google_reconnect"]);
+const WAITS_FOR_PERSON: ReadonlySet<GoogleProblem> = new Set(["no_cloud_link", "google_no_client", "google_not_connected", "google_reconnect"]);
 
 // --- the state file -----------------------------------------------------------------
 

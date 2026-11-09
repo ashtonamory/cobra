@@ -24,10 +24,11 @@
 // Foreman hears it as a [cobra] line (finishes.ts tell), as it hears what
 // became of an action after Allow.
 //
-// Cobra has no Google connection of its own: a token broker can be plugged in
-// (googleAuth.ts), and otherwise Google comes through MCP connectors. The route
-// asks for a grant (held in memory, so cheap once connected) and answers what
-// it learned: never the token.
+// Google comes through the person's own OAuth client, signed in on this
+// computer (googleLocal.ts, googleAuth.ts). The route asks for a grant (held in
+// memory, so cheap once connected) and answers what it learned, with whether a
+// client is saved and the return address Google needs: never a token or the
+// client secret.
 import type { GoogleIntegration, JournalEntry as JournalView, JournalReply, MirrorStatus as MirrorView, Project } from "@cobra/contracts";
 
 import { BY_PERSON, handleDb, liveDbDeps, type DbDeps, type Reply } from "./dbRoutes.ts";
@@ -37,6 +38,7 @@ import { openingMonth } from "./viewSpecs/finance.ts";
 import { publicBoards, readBoards, writeBoards } from "./spaceBoards.ts";
 import { seatOf, spaceKindOf, SPACES_DIR } from "./spaces.ts";
 import { GoogleAuthError, googleGrant, googleStatus, type GoogleStatus } from "./googleAuth.ts";
+import { googleLocalHere, type GoogleLocalView } from "./googleLocal.ts";
 import type { MirrorStatus } from "./mirror.ts";
 
 export const PERSON_ROUTES: ReadonlySet<string> = new Set(["/integrations/google", "/db/journal", "/db/undo", "/db/mirror", "/views", "/view", "/view/write", "/view/reveal", "/boards", "/board/view", "/boards/remove"]);
@@ -54,6 +56,8 @@ export type PersonDeps = {
   /** googleAuth.ts googleGrant: a GoogleAuthError when there is none. What it returns is never read here, so the token never reaches a reply. */
   grant: () => Promise<unknown>;
   status: () => GoogleStatus;
+  /** The Google client saved here (googleLocal.ts): whether there is one, its ID and the return address. Never the secret. */
+  local?: () => GoogleLocalView;
   /** finishes.ts tell: one [cobra] line for an owner (here a project's Foreman). */
   tell: (owner: string, text: string) => void;
   now: () => number;
@@ -66,7 +70,7 @@ export type PersonDeps = {
 
 /** The live deps, with the registry and the Foreman's line from index.ts. */
 export function livePersonDeps(projects: () => Promise<Project[]>, tell: (owner: string, text: string) => void, log: (line: string) => void, importAllowed?: (project: string) => void): PersonDeps {
-  return { projects, db: liveDbDeps(), grant: googleGrant, status: googleStatus, tell, now: Date.now, log, ...(importAllowed ? { importAllowed } : {}) };
+  return { projects, db: liveDbDeps(), grant: googleGrant, status: googleStatus, local: () => googleLocalHere().view(), tell, now: Date.now, log, ...(importAllowed ? { importAllowed } : {}) };
 }
 
 const message = (caught: unknown): string => (caught instanceof Error ? caught.message : String(caught));
@@ -124,6 +128,7 @@ async function googleIntegration(deps: PersonDeps): Promise<GoogleIntegration> {
     scopes: status.scopes,
     problem: status.problem,
     checkedAt: status.checkedAt,
+    ...(deps.local ? deps.local() : {}),
   };
 }
 

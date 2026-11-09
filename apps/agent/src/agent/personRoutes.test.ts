@@ -309,3 +309,12 @@ test("the contracts read what an older or a newer agent sends", () => {
   assert.deepEqual(MirrorView.parse({ project: "p" }), { project: "p" });
   assert.equal(JournalView.parse({ id: 1, at: "2026-10-23T09:00:00Z", by: "routine", mutation: "close_run", undone: false, undoable: true, extra: 1 }).by, "routine");
 });
+
+test("google: the client saved here goes with the status, never its secret", async () => {
+  const { deps } = fakeDeps({ local: () => ({ clientSet: true, clientId: "123-abc.apps.googleusercontent.com", redirect: "http://127.0.0.1:8787/google/callback" }) });
+  const reply = await get("/integrations/google", "", deps);
+  const body = GoogleIntegration.parse(reply.body);
+  assert.equal(body.clientSet, true);
+  assert.equal(body.clientId, "123-abc.apps.googleusercontent.com");
+  assert.equal(body.redirect, "http://127.0.0.1:8787/google/callback");
+});
