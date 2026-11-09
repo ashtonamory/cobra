@@ -50,7 +50,7 @@ const SCRYPT_MAXMEM = 256 * 1024 * 1024;
  * The Lead's and Foremen's keys are in no file: only the agent holds them
  * (orchSocket.ts).
  */
-export const SEALED_NAMES: ReadonlySet<string> = new Set(["anthropic-api-key", "claude-token", "cloudflare.json", "mailboxes.json", "github-pat", "github-auth.json", "google.json"]);
+export const SEALED_NAMES: ReadonlySet<string> = new Set(["anthropic-api-key", "claude-token", "cloudflare.json", "mailboxes.json", "github-pat", "github-auth.json"]);
 
 export function isSealedName(path: string): boolean {
   return SEALED_NAMES.has(basename(path));

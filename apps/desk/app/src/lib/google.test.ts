@@ -19,17 +19,10 @@ describe("googleView", () => {
     expect(google.googleView({ connected: true }, "Legion").word).toBe("connected");
   });
 
-  it("an agent from before the Google sign-in says to update it", () => {
+  it("no Google sign-in of its own points to the MCP connectors", () => {
     const v = google.googleView({ cloudLinked: false, connected: false, problem: "no_cloud_link" }, "Mini");
-    expect([v.word, v.fix]).toEqual(["update the agent", "none"]);
-    expect(v.detail).toContain("Update it");
-  });
-
-  it("no client yet offers the setup steps", () => {
-    const v = google.googleView({ cloudLinked: true, connected: false, problem: "google_no_client" }, "Mini");
-    expect([v.word, v.tone, v.fix]).toEqual(["not set up", "signal", "setup"]);
-    expect(google.SETUP_STEPS.join(" ")).toContain("Desktop app");
-    expect(google.SETUP_STEPS.join(" ")).toContain("Publish app");
+    expect([v.word, v.fix]).toEqual(["through a connector", "none"]);
+    expect(v.detail).toContain("MCP connector");
   });
 
   it("not connected and reconnect both offer Connect Google", () => {
@@ -79,7 +72,7 @@ describe("connected reads", () => {
     expect(rows[0]!.line).toBe(google.CALENDAR_LINE);
     expect(rows[0]!.note).toBe("");
     expect(rows[1]!.line).toBe(google.MAIL_LINE);
-    expect(rows[1]!.note).toBe("");
+    expect(rows[1]!.note).toBe(google.MAIL_TESTING_LINE);
   });
 
   it("a granted read is on; the scope may come short or as Google's URL", () => {
@@ -100,7 +93,7 @@ describe("connected reads", () => {
     expect(v.allows).toHaveLength(2);
     expect(v.allows.join(" ")).not.toContain("cannot read your mail");
     expect(google.BLURB).toContain("reads your calendar or mail only when you turn that on");
-    expect(google.READS_NOTE).toContain("press Disconnect and connect again");
+    expect(google.READS_NOTE).toContain("disconnect Google on your account page and connect again");
   });
 
   it("after Turn on the desk watches until that read is on", () => {
@@ -115,14 +108,15 @@ describe("connected reads", () => {
   });
 });
 
-describe("signInPage", () => {
-  it("opens only Google's own sign-in address", () => {
-    expect(google.signInPage("https://accounts.google.com/o/oauth2/v2/auth?client_id=x")).toBe("https://accounts.google.com/o/oauth2/v2/auth?client_id=x");
-    expect(google.signInPage(null)).toBeNull();
-    expect(google.signInPage("")).toBeNull();
-    expect(google.signInPage("https://accounts.google.com.evil.example/x")).toBeNull();
-    expect(google.signInPage("http://accounts.google.com/x")).toBeNull();
-    expect(google.signInPage("javascript:alert(1)")).toBeNull();
+describe("accountPage", () => {
+  it("is the page the agent names, on https or loopback, else none", () => {
+    expect(google.accountPage("https://cloud.example.com/account")).toBe("https://cloud.example.com/account");
+    expect(google.accountPage("http://127.0.0.1:8787/google/connect")).toBe("http://127.0.0.1:8787/google/connect");
+    expect(google.accountPage(null)).toBeNull();
+    expect(google.accountPage("")).toBeNull();
+    expect(google.accountPage("http://cloud.example.com")).toBeNull();
+    expect(google.accountPage("javascript:alert(1)")).toBeNull();
+    expect(google.accountPage("https://bad host")).toBeNull();
   });
 });
 

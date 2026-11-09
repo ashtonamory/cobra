@@ -136,12 +136,6 @@ export const answerApproval = (m: M, approval: string, allow: boolean, models?: 
 // The account's Google connection and a project's records (the agent's personRoutes.ts, contracts records.ts).
 /** Whether this computer's agent can use the account's Google; it asks the cloud, so it may take a few seconds. */
 export const googleIntegration = (m: M) => get(m, "/integrations/google", 20);
-/** Keep the Google client the person made (the JSON Google gave them); answers whether one is saved, never its secret. */
-export const googleClient = (m: M, json: string) => post(m, "/integrations/google/client", { json }, 10);
-/** Google's sign-in page for this computer (`{url}`), with a read added when `read` is set; Google returns to the agent. */
-export const googleConnect = (m: M, read: string | null = null) => post(m, "/integrations/google/connect", read ? { read } : {}, 10);
-/** Sign out at Google and here; `forgetClient` removes the saved client too. */
-export const googleDisconnect = (m: M, forgetClient = false) => post(m, "/integrations/google/disconnect", { forgetClient }, 30);
 // The owner's Cloudflare connection (the agent's cloudflare.ts, contracts cloudflare.ts): one sign-in per computer, the token kept there.
 export const cloudflareIntegration = (m: M) => get(m, "/integrations/cloudflare", 10);
 /** Cloudflare's sign-in page for this computer (`{url}`); the other half of the sign-in stays on the computer. */
