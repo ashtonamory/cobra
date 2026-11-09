@@ -171,11 +171,11 @@ test("an expired key is told to link again, not just refused", () => {
   assert.equal(expired.ok, false);
   assert.equal(!expired.ok && expired.status, 401);
   assert.equal(!expired.ok && expired.expired, true);
-  assert.match((!expired.ok && expired.error) || "", /expired on 2027-01-15\. Link it again from Settings → Computers/);
+  assert.match((!expired.ok && expired.error) || "", /expired on 2027-01-15\. Link the desk app again: Settings → This computer → Link the agent/);
   assert.equal(authorize(`Bearer ${PHONE_KEY}`, "/system", "GET", keys([{ ...phone, expiresAt: now + 1 }]), now).ok, true);
   const { caller: desk, key } = mintDesk("Desk", 0);
   const deskExpired = authorize(`Bearer ${key}`, "/system", "GET", keys([desk]), desk.expiresAt!);
-  assert.match((!deskExpired.ok && deskExpired.error) || "", /Run `cobra-desk add`/);
+  assert.match((!deskExpired.ok && deskExpired.error) || "", /Settings → This computer → Link the agent/);
 });
 
 test("a desktop key acts, but opens no terminal and writes no file into a folder", () => {

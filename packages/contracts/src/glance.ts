@@ -4,7 +4,7 @@ import { z } from "zod";
 const Fraction = z.number().min(0).max(1);
 
 /**
- * `/glance`: everything the iPhone widgets show about one computer, in one
+ * `/glance`: everything a glance (the bar's count) shows about one computer, in one
  * small response. A widget extension has a few seconds and a few megabytes, so
  * it asks once per computer rather than for projects, system and usage in
  * turn. A widget key (keys.ts, scope "glance") can read this route and nothing

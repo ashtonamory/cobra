@@ -39,7 +39,7 @@ if (keysRead.refused) {
   console.error(
     `[cobra-agent] refusing to read ${KEYS_PATH}: ${keysRead.refused}.\n` +
       `           Fix it with: chmod 600 ${KEYS_PATH}\n` +
-      `           If others could change it, delete it and link your phone again.`,
+      `           If others could change it, delete it and link the desk app again (Settings → This computer → Link the agent).`,
   );
   process.exit(1);
 }

@@ -120,7 +120,7 @@ export async function answerRemote(
     return true;
   }
   if (dialogKey !== ask.key) {
-    throw new SessionError(dialogKey ? "the request changed since you saw it; look at it again" : "this app sent no copy of the request it showed; update Cobra on your phone", 409);
+    throw new SessionError(dialogKey ? "the request changed since you saw it; look at it again" : "this app sent no copy of the request it showed; update the Cobra desk app", 409);
   }
   deps.grant(id, ask.tool, ask.input, deps.now() + CALL_GRANT_MS);
   try {

@@ -343,7 +343,7 @@ export function auditWords(record: AuditRecord): string {
     case "key.revoked":
       return `${who} removed the key of ${str(d.keyKind) || "a caller"} ${str(d.name) || record.subject?.target || ""}`.trim();
     case "key.signing":
-      return `${who} set the signing key of ${str(d.name) || record.subject?.target || "a phone"}`;
+      return `${who} set the signing key of ${str(d.name) || record.subject?.target || "a desk app"}`;
     case "vault.init":
       return `${who} made the vault (${str(d.mode) || "key kept"})`;
     case "vault.unlock":

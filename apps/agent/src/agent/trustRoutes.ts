@@ -66,7 +66,7 @@ function parse(text: string): Record<string, unknown> | null {
 }
 
 export async function handleTrustPerson(route: string, method: string | undefined, url: URL, bodyText: string, caller: { kind: string }, deps: TrustDeps): Promise<Reply> {
-  if (!PERSON_KINDS.has(caller.kind)) return bad(403, "only a phone or a desk you linked uses /trust");
+  if (!PERSON_KINDS.has(caller.kind)) return bad(403, "only the desk app you linked uses /trust");
   const post = PERSON_TRUST_POSTS.has(route);
   if (post && method !== "POST") return bad(405, "POST only");
   if (!post && method !== "GET") return bad(405, "GET only");

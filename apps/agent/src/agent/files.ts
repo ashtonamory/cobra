@@ -873,7 +873,7 @@ export function deliveryTimeoutMs(bytes: number): number {
 export function httpDeliver() {
   return async (target: DeviceTarget, blob: string, name: string, sendId: string): Promise<ReceivedFile> => {
     if (!target.key) {
-      throw new SessionError(`${target.label} has no delivery key yet. Set the hub again from the phone.`, 409);
+      throw new SessionError(`${target.label} has no delivery key yet. Set the hub again from the desk app.`, 409);
     }
     const content = await readFile(blob);
     const url = `${target.url}/files/receive?name=${encodeURIComponent(name)}&send=${encodeURIComponent(sendId)}`;

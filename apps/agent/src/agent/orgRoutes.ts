@@ -89,7 +89,7 @@ function change(deps: OrgDeps, raw: unknown, revision?: unknown): Reply {
 
 /** GET and POST /org, for the person's phone and desk. */
 export async function handleOrgPerson(route: string, method: string | undefined, bodyText: string, caller: Caller, deps: OrgDeps): Promise<Reply> {
-  if (!PERSON_KINDS.has(caller.kind)) return bad(403, "only your phone or desk changes the organization");
+  if (!PERSON_KINDS.has(caller.kind)) return bad(403, "only the desk app changes the organization");
   if (route !== "/org") return bad(404, "no such route");
   if (method === "GET") return { status: 200, body: { org: deps.load(), home: deps.home() } };
   if (method !== "POST") return bad(405, "GET or POST");

@@ -464,7 +464,7 @@ export type Reply = { status: number; body: unknown };
 
 /** One route. `bodyText` is the raw body of a POST. */
 export async function handleCloudflare(route: string, method: string | undefined, bodyText: string, caller: { kind: string }, cloudflare: Cloudflare): Promise<Reply> {
-  if (!PERSON_KINDS.has(caller.kind)) return { status: 403, body: { error: "only a phone or a desk you linked connects Cloudflare" } };
+  if (!PERSON_KINDS.has(caller.kind)) return { status: 403, body: { error: "only the desk app you linked connects Cloudflare" } };
   const get = route === "/integrations/cloudflare";
   if (get && method !== "GET") return { status: 405, body: { error: "GET only" } };
   if (!get && method !== "POST") return { status: 405, body: { error: "POST only" } };

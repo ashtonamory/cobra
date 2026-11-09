@@ -443,7 +443,7 @@ const bad = (status: number, error: string): Reply => ({ status, body: { error }
  * email/archive/ (kept on disk; refused while a routine names it).
  */
 export async function handleMarketing(route: string, method: string, url: URL, body: string, caller: { kind: string }, deps: MarketingDeps & { enqueueTest: (space: string, job: { template: string; version: number; templateSha: string; values: Record<string, unknown>; to: string }) => number }, personKinds: ReadonlySet<string>): Promise<Reply> {
-  if (!personKinds.has(caller.kind)) return bad(403, "only a phone or a desk you linked reads the Marketing board");
+  if (!personKinds.has(caller.kind)) return bad(403, "only the desk app you linked reads the Marketing board");
   const posting = MARKETING_POSTS.has(route);
   if (method !== (posting ? "POST" : "GET")) return bad(405, posting ? "POST only" : "GET only");
   let input: Record<string, unknown> = {};

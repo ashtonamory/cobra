@@ -125,7 +125,7 @@ export function adoptStatus(repo: Dict): [string, string] {
 export function describe(err: unknown, label: string): string {
   const status: Json = err !== null && typeof err === "object" ? (err as { status?: Json }).status ?? null : null;
   if (status === 0) return `${label} is not reachable.`;
-  if (status === 401 || status === 403) return `${label} no longer knows this desktop. Run \`cobra-desk add\` for it again.`;
+  if (status === 401 || status === 403) return `${label} no longer knows this desktop. Link it again: Settings → This computer → Link the agent.`;
   const text = err instanceof Error ? err.message : String(err);
   return text || "Something went wrong.";
 }

@@ -179,7 +179,7 @@ export async function handleRoutineOrch(route: string, url: URL, bodyText: strin
 
 /** The person's routes, from a phone's or a desk's key. */
 export async function handleRoutinePerson(route: string, method: string | undefined, url: URL, bodyText: string, caller: { kind: string }, deps: RoutineDeps): Promise<Reply> {
-  if (!PERSON_KINDS.has(caller.kind)) return bad(403, "only a phone or a desk you linked uses /routines; the Lead and Foremen use routine_set, routine_list and routine_remove");
+  if (!PERSON_KINDS.has(caller.kind)) return bad(403, "only the desk app you linked uses /routines; the Lead and Foremen use routine_set, routine_list and routine_remove");
   const post = PERSON_ROUTINE_POSTS.has(route);
   if (post && method !== "POST") return bad(405, "POST only");
   if (!post && method !== "GET") return bad(405, "GET only");

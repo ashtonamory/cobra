@@ -39,7 +39,7 @@ function PasscodeGroup() {
     if (ok && mode) toast({ make: "Passcode made", change: "Passcode changed", remove: "Passcode removed", unlock: "Unlocked" }[mode]);
   };
   return (
-    <Group title="Passcode" note="Where the phone asks for Face ID, this app asks for its passcode: before a hidden value is shown, and before an Allow that is yours alone. Forgotten: delete passcode.json in this app's config folder and make a new one."
+    <Group title="Passcode" note="This app asks for its passcode before a hidden value is shown, and before an Allow that is yours alone. Forgotten: delete passcode.json in this app's config folder and make a new one."
       footnote="A right passcode unlocks for 5 minutes. Five wrong ones in a row lock it out for a minute.">
       <FlowRow
         main={<div className="col" style={{ gap: 2 }}><span>Passcode</span><span className="dim">{statusLine(status)}</span></div>}

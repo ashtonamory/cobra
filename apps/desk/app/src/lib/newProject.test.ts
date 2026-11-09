@@ -87,7 +87,7 @@ group("Lists", () => {
 group("Words", () => {
   it("errors read as sentences", () => {
     expect(newproject.describe(new ApiError(0, "unreachable: x"), "mini")).toBe("mini is not reachable.");
-    expect(newproject.describe(new ApiError(401, "no"), "mini")).toContain("cobra-desk add");
+    expect(newproject.describe(new ApiError(401, "no"), "mini")).toContain("Link the agent");
     expect(newproject.describe(new ApiError(409, "already a project"), "mini")).toBe("already a project");
   });
 

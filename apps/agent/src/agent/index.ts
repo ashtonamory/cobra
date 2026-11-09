@@ -860,7 +860,7 @@ async function notifyApproval(approval: StoredApproval): Promise<void> {
  * daily cap is used. POST /decided/undo {id}: that Undo, once.
  */
 async function handleDecided(route: string, url: URL, request: http.IncomingMessage, response: http.ServerResponse, caller: Caller): Promise<void> {
-  if (caller.kind !== "phone" && caller.kind !== "desk") return sendJson(response, 403, { error: "only a phone or a desk you linked reads what Cobra did" });
+  if (caller.kind !== "phone" && caller.kind !== "desk") return sendJson(response, 403, { error: "only the desk app you linked reads what Cobra did" });
   if (route === "/decided") {
     if (request.method !== "GET") return sendJson(response, 405, { error: "GET only" });
     const days = Math.min(14, Math.max(1, Number(url.searchParams.get("days") ?? 7) || 7));
@@ -1374,7 +1374,7 @@ async function handlePolicy(route: string, caller: Caller, request: http.Incomin
     });
   }
   if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
-  if (!mayChange(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked may change the policy" });
+  if (!mayChange(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked may change the policy" });
   let body: { policy?: unknown; confirmed?: unknown };
   try {
     body = JSON.parse(await readBody(request, 65_536)) as typeof body;
@@ -1388,7 +1388,7 @@ async function handlePolicy(route: string, caller: Caller, request: http.Incomin
   const widens = lines.some((line) => line.widens);
   if (route === "/policy/preview") return sendJson(response, 200, { lines, widens });
   if (widens && body.confirmed !== true) {
-    return sendJson(response, 428, { error: "this change grants more: confirm it (Face ID on the phone, the second press on the desk) and send it again", lines, widens });
+    return sendJson(response, 428, { error: "this change grants more: confirm it (the second press in the desk app) and send it again", lines, widens });
   }
   writePolicy(taken.policy, { at: Date.now(), revision: taken.policy.revision, by: caller.name, lines });
   console.log(`[${SERVICE}] policy revision ${taken.policy.revision} by ${caller.name}: ${lines.map((line) => line.text).join("; ") || "no change in force here"}`);
@@ -2392,7 +2392,7 @@ async function handleBrain(caller: Caller, request: http.IncomingMessage, respon
   };
   if (request.method === "GET") return sendJson(response, 200, await view());
   if (request.method !== "POST") return sendJson(response, 405, { error: "GET or POST" });
-  if (!mayChange(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked may change the router's rules" });
+  if (!mayChange(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked may change the router's rules" });
   let body: unknown;
   try {
     body = JSON.parse(await readBody(request, 65_536));
@@ -2423,7 +2423,7 @@ async function handleEngines(caller: Caller, request: http.IncomingMessage, resp
   });
   if (request.method === "GET") return sendJson(response, 200, await view());
   if (request.method !== "POST") return sendJson(response, 405, { error: "GET or POST" });
-  if (!mayChange(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked may change the engines" });
+  if (!mayChange(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked may change the engines" });
   let body: unknown;
   try {
     body = JSON.parse(await readBody(request));
@@ -2453,7 +2453,7 @@ async function handleFolders(caller: Caller, request: http.IncomingMessage, resp
   };
   if (request.method === "GET") return sendJson(response, 200, await view());
   if (request.method !== "POST") return sendJson(response, 405, { error: "GET or POST" });
-  if (!mayChange(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked may change where projects are looked for" });
+  if (!mayChange(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked may change where projects are looked for" });
   let body: unknown;
   try {
     body = JSON.parse(await readBody(request));
@@ -3128,7 +3128,7 @@ const server = http.createServer((request, response) => {
 
       // Cobra's Notebook (notebook.ts): this computer's memory notes for the phone and the desk. A phone's or desk's key only.
       if (NOTEBOOK_ROUTES.has(route)) {
-        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked reads the notebook" });
+        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked reads the notebook" });
         const body = request.method === "POST" ? await readBody(request).catch(() => "") : "";
         const reply = handleNotebook({ root: MEMORY_DIR, computer: computerName(), now: Date.now, ticksPath: TICKS_PATH }, route, request.method ?? "GET", url, body);
         return sendJson(response, reply.status, reply.body);
@@ -3136,7 +3136,7 @@ const server = http.createServer((request, response) => {
 
       // Receipts scanned on the phone (receipts.ts): a photo into the Space's receipts folder, then read into Money. A phone's or desk's key only.
       if (route === "/receipts/add" || route === "/receipts/read") {
-        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked sends receipts" });
+        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked sends receipts" });
         if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
         const project = url.searchParams.get("project") ?? "";
         if (route === "/receipts/add") {
@@ -3158,14 +3158,14 @@ const server = http.createServer((request, response) => {
 
       // All money (allMoney.ts): every Money seat's month here, in one currency. A phone's or desk's key only.
       if (route === "/money/all") {
-        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked reads All money" });
+        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked reads All money" });
         if (request.method !== "GET") return sendJson(response, 405, { error: "GET only" });
         return sendJson(response, 200, allMoney(liveAllMoneyDeps(os.hostname(), (line) => console.log(`[${SERVICE}] ${line}`)), url.searchParams.get("month"), url.searchParams.get("to")));
       }
 
       // Bank statements dropped on the Finance tab (statements.ts): a CSV or PDF into the Space's statements folder, then read into Money. A phone's or desk's key only.
       if (route === "/statements/add" || route === "/statements/read") {
-        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked sends statements" });
+        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked sends statements" });
         if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
         const project = url.searchParams.get("project") ?? "";
         if (route === "/statements/add") {
@@ -3196,7 +3196,7 @@ const server = http.createServer((request, response) => {
       // The trades here (trades.ts): shipped and defined, for the phone's and the desk's new-project pickers.
       // The morning brief (morning.ts): whether this computer sends it, its hour and on or off, and today's.
       if (route === "/morning") {
-        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked reads or sets the morning brief" });
+        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked reads or sets the morning brief" });
         if (request.method === "POST") {
           let raw: unknown;
           try {
@@ -3212,7 +3212,7 @@ const server = http.createServer((request, response) => {
       }
 
       if (route === "/trades") {
-        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only a phone or a desk you linked reads /trades" });
+        if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked reads /trades" });
         if (request.method !== "GET") return sendJson(response, 405, { error: "GET only" });
         return sendJson(response, 200, { trades: allTrades() });
       }
@@ -3275,7 +3275,7 @@ const server = http.createServer((request, response) => {
 
       // Research runs (webRuns.ts): GET /web/runs?days= lists them with their reads; POST /web/runs/stop {id} ends one. For the phone and the desk.
       if (route === "/web/runs" || route === "/web/runs/stop") {
-        if (caller.kind !== "phone" && caller.kind !== "desk") return sendJson(response, 403, { error: "only a phone or a desk you linked reads and stops research runs" });
+        if (caller.kind !== "phone" && caller.kind !== "desk") return sendJson(response, 403, { error: "only the desk app you linked reads and stops research runs" });
         if (route === "/web/runs") {
           if (request.method !== "GET") return sendJson(response, 405, { error: "GET only" });
           const days = Math.min(14, Math.max(1, Number(url.searchParams.get("days") ?? 7) || 7));

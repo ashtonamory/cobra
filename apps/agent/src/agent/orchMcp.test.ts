@@ -788,7 +788,7 @@ test("a Worker's local check shows on its line; a failed one's last lines come w
 test("notify_person posts to the agent", async () => {
   const { fetcher, seen } = agent({ "/orch/notify": { sent: true } });
   const sent = await mcp.runTool("notify_person", { title: "Plant Shop needs you", text: "Its Foreman asks which plan to run.", project: "plant-shop" }, [computer], fetcher);
-  assert.equal(sent, "Sent. The person has it on their phone and desk.");
+  assert.equal(sent, "Sent. The person has it in their desk app.");
   assert.equal(seen[0]?.url, "http://127.0.0.1:8797/orch/notify");
   assert.deepEqual(seen[0]?.body, { title: "Plant Shop needs you", text: "Its Foreman asks which plan to run.", project: "plant-shop" });
 });

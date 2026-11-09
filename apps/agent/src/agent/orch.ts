@@ -1335,7 +1335,7 @@ export async function handleOrch(
       send(response, 202, {
         waiting: true,
         approval: publicView(gate.approval),
-        error: `Workers on ${io.machineLabel} wait for the person's Allow on their phone; try again once approval_status says allowed`,
+        error: `Workers on ${io.machineLabel} wait for the person's Allow in the desk app; try again once approval_status says allowed`,
       });
       return true;
     };
