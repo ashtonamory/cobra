@@ -1,6 +1,6 @@
 {
   "name": "@cobra/agent",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "type": "module",
   "description": "The Cobra agent: one per computer. System stats, projects read off the screen, sessions, dispatch, git, files, alerts and push (src/agent), and the terminal gateway (src/gateway). MIT.",

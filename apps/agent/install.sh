@@ -26,6 +26,13 @@
 #   ./install.sh --print-config       # print the settings this run would use, and change nothing
 #   ./install.sh --print-env          # print the agent.env this run would write, and change nothing
 #   ./install.sh --no-systemd         # lay out files only (tests, other inits); --no-services is the same
+#   ./install.sh --no-desk            # the agent only, not the desk app (a computer with no screen)
+#
+# The desk app (Linux): a package that carries it (desk/cobra-desktop.AppImage,
+# the release's) installs it too, linked to this agent: ~/.local/bin/cobra-desktop,
+# the launcher entry and its user service, and on Omarchy the Hyprland rules
+# and the bar widget (apps/desk/scripts/install-omarchy.sh). It updates itself
+# after that (Settings → This app → Updates).
 #
 # An update keeps this computer's settings. The ports, the name, git sync,
 # home AI, the tmux socket and contain are read back from agent.env (as data,
@@ -107,6 +114,7 @@ CLAUDE_HOOKS=0
 CLAUDE_SKILLS=0
 CODEX_NOTIFY=0
 SYSTEMD=1
+DESK=1
 RESET_CONFIG=0
 PRINT_CONFIG=0
 PRINT_ENV=0
@@ -144,6 +152,7 @@ while (($#)); do
     --print-config) PRINT_CONFIG=1; shift ;;
     --print-env) PRINT_ENV=1; shift ;;
     --no-systemd | --no-services) SYSTEMD=0; shift ;;
+    --no-desk) DESK=0; shift ;;
     -h | --help) sed -n '2,/^# ---/p' "$0"; exit 0 ;;
     *) echo "Unknown option: $1 (see --help)" >&2; exit 2 ;;
   esac
@@ -640,6 +649,43 @@ if ((SYSTEMD)); then
   ok "cobra-agent on 127.0.0.1:$AGENT_PORT, cobra-term on 127.0.0.1:$TERM_PORT"
 fi
 
+# The desk app, when this package carries it: linked first (cobra-agent desk
+# --into writes its key straight into the desk's computers.json, never to the
+# screen; a link that still works stays), then put on the desktop.
+# What is left for the person, numbered at the end.
+NEXT=()
+next_step() { NEXT+=("$1"); }
+
+DESK_DONE=0
+DESK_APPIMAGE="$PREFIX/current/desk/cobra-desktop.AppImage"
+DESK_SCRIPT="$PREFIX/current/apps/desk/scripts/install-omarchy.sh"
+if ((SYSTEMD && DESK)) && [[ $OS == Linux && -f $DESK_APPIMAGE && -f $DESK_SCRIPT ]]; then
+  say "The desk app"
+  DESK_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/app.cobra.desktop/computers.json"
+  if linked=$("$PREFIX/current/bin/cobra-agent" desk --into "$DESK_FILE" --name "${MACHINE_NAME:-$(uname -n)} desktop" 2>&1); then
+    ok "$linked"
+  else
+    todo "the desk app is not linked yet: ${linked//$'\n'/ }"
+    next_step "Open Cobra and press Settings → This computer → Link the agent"
+  fi
+  desk_flags=(--binary "$DESK_APPIMAGE")
+  if [[ -d ${OMARCHY_PATH:-/usr/share/omarchy} ]] && command -v hyprctl >/dev/null; then
+    DESK_WHERE="Omarchy: the launcher, SUPER+P and the bar"
+  else
+    desk_flags+=(--no-omarchy)
+    DESK_WHERE="your app launcher"
+  fi
+  if desk_log=$(bash "$DESK_SCRIPT" "${desk_flags[@]}" 2>&1); then
+    DESK_DONE=1
+    ok "Cobra (the desk app) installed and running: $DESK_WHERE"
+  elif [[ -x $HOME/.local/bin/cobra-desktop ]]; then
+    DESK_DONE=1
+    todo "the desk app is installed but did not start here (no desktop session?); it starts at your next login"
+  else
+    todo "the desk app was not installed: $(tail -1 <<<"$desk_log")"
+  fi
+fi
+
 if ((WIDGET_ENGINE)); then
   # Life sync ended with the life app (October 2026): the companion's engine no
   # longer ships. The flag is still accepted so older install commands work; it
@@ -693,9 +739,6 @@ if ((CODEX_NOTIFY)); then
   fi
 fi
 
-# What is left for the person, numbered at the end.
-NEXT=()
-next_step() { NEXT+=("$1"); }
 
 say "Checks"
 if [[ $OS == Darwin ]]; then
@@ -727,7 +770,11 @@ if ((FIRST_INSTALL)) && [[ ! -s $CONFIG/claude-token ]] && ! compgen -G "$CONFIG
   next_step "Give Workers a lasting Claude sign-in: claude setup-token (it prints a token), then cobra-agent claude-token (paste it, Enter, Ctrl-D)"
 fi
 ((${VAULT_PASSPHRASE:-0})) && next_step "Seal secret files with a passphrase (no keychain here): cobra-agent vault init"
-next_step "Open the desk app; it makes its own key with: cobra-agent desk"
+if ((DESK_DONE)); then
+  next_step "Open Cobra from your app launcher and say hello to your Lead"
+else
+  next_step "Open the desk app; it makes its own key with: cobra-agent desk"
+fi
 
 say "Done"
 echo "    Next:"

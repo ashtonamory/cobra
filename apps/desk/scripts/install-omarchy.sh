@@ -4,6 +4,7 @@
 #
 #   apps/desk/scripts/install-omarchy.sh [--no-build | --binary <path>]
 #   apps/desk/scripts/install-omarchy.sh --uninstall
+#   apps/desk/scripts/install-omarchy.sh --binary <path> --no-omarchy
 #
 # From a checkout it builds the release binary (`npm run tauri build --
 # --no-bundle`). With a binary built elsewhere, pass --binary <path> (no node,
@@ -19,7 +20,12 @@
 #                                                      section in ~/.config/omarchy/shell.json
 #
 # --binary <path> takes a file copied from elsewhere as it is: one that lost
-# its execute bit on the way is installed 0755 all the same.
+# its execute bit on the way is installed 0755 all the same. The agent
+# package's install.sh passes the release's AppImage here; installed as
+# ~/.local/bin/cobra-desktop it keeps its window class and updates itself.
+#
+# --no-omarchy (a Linux desktop that is not Omarchy): the app, the launcher
+# entry and the service only; no Hyprland file and no bar.
 #
 # --uninstall undoes everything above and leaves the app's own folder
 # (~/.config/app.cobra.desktop: computers.json with the agent's desk key) so a
@@ -51,12 +57,14 @@ require_line='require("hypr.cobra")'
 require_note='-- Cobra desktop (apps/desk/scripts/install-omarchy.sh): window rules and SUPER+P.'
 
 uninstall=0
+omarchy=1
 build=1
 binary=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --uninstall) uninstall=1 ;;
     --no-build) build=0 ;;
+    --no-omarchy) omarchy=0 ;;
     --binary) build=0; binary="${2:?--binary needs a path}"; shift ;;
     -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "install-omarchy: unknown option $1 (try --help)" >&2; exit 2 ;;
@@ -138,7 +146,7 @@ fi
 
 # -- install -------------------------------------------------------------------------------------------
 
-have jq || die "jq is needed to edit $shell_json (omarchy pkg add jq)"
+[ "$omarchy" = 0 ] || have jq || die "jq is needed to edit $shell_json (omarchy pkg add jq)"
 have systemctl || die "systemd --user is needed"
 
 if [ "$build" = 1 ]; then
@@ -180,6 +188,7 @@ install -Dm644 "$src/systemd/$unit" "$units/$unit" && say "installed $units/$uni
 systemctl --user daemon-reload
 systemctl --user enable "$unit" >/dev/null 2>&1 && say "enabled $unit"
 
+if [ "$omarchy" = 1 ]; then
 # Hyprland: the rules and the bind in a file of their own, loaded after the
 # user's files so it has the last word on SUPER+P.
 install -Dm644 "$src/hypr/cobra.lua" "$hypr/cobra.lua" && say "installed $hypr/cobra.lua"
@@ -220,6 +229,7 @@ fi
 have omarchy-shell && omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
 
 hypr_reload
+fi
 
 systemctl --user restart "$unit"
 sleep 2
@@ -230,7 +240,11 @@ else
   exit 1
 fi
 
-say "done. SUPER+P finds a session; the mark in the bar opens Cobra (right-click: the picker)."
+if [ "$omarchy" = 1 ]; then
+  say "done. SUPER+P finds a session; the mark in the bar opens Cobra (right-click: the picker)."
+else
+  say "done. Cobra is in your app launcher."
+fi
 if [ -s "$config/app.cobra.desktop/computers.json" ]; then
   say "the agent: $config/app.cobra.desktop/computers.json"
 else

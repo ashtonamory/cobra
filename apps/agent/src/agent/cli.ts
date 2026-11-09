@@ -10,12 +10,14 @@ import { SessionError } from "./sessions.ts";
 import { attachCommand } from "./tmuxHost.ts";
 import { CONFIG_DIR, DATA_DIR, STATE_DIR } from "./paths.ts";
 import { runUninstall } from "./uninstall.ts";
+import { keptEntry, linkedId, writeDeskFile } from "./deskLink.ts";
 import { TMUX_SOCKET } from "./tmuxHost.ts";
 
 /**
  * `cobra-agent`: the commands a person runs on the computer.
  *
  *   cobra-agent desk [--name <name>]       a key for the desk app on this computer (printed once)
+ *   cobra-agent desk --into <file>         the same, written into the desk's computers.json (install.sh)
  *   cobra-agent keys                       the keys that can call this agent
  *   cobra-agent unlink <name or id>        revoke one
  *   cobra-agent uninstall [--purge] [--yes]   remove the agent from this computer (uninstall.ts)
@@ -92,8 +94,9 @@ async function uninstall(): Promise<void> {
       "  - Cobra's hooks from ~/.claude/settings.json and ~/.codex/config.toml (each copied first), and the skills it installed",
       "  - stops and removes cobra-agent and cobra-term, which ends every Cobra session and Worker here",
       "  - the cobra-agent and ste-check commands",
+      "  - the desk app, when install.sh put it there: its service, launcher entry, window rules and bar widget",
       purge
-        ? `  - all of ${CONFIG_DIR}, ${STATE_DIR} and ${DATA_DIR}: keys, policy, memory, chats (--purge)`
+        ? `  - all of ${CONFIG_DIR}, ${STATE_DIR} and ${DATA_DIR}: keys, policy, memory, chats, and the desk app's own folders (--purge)`
         : `  - the package's builds; ${CONFIG_DIR}, ${STATE_DIR} and Cobra's data stay (--purge removes them)`,
       "Your projects and worktrees are never touched.",
       "",
@@ -119,6 +122,8 @@ async function uninstall(): Promise<void> {
       tmuxDir: join(process.env.TMUX_TMPDIR || "/tmp", `tmux-${process.getuid?.() ?? 0}`),
       hooks: join(here, "..", "..", "hooks"),
       skills: join(here, "..", "..", "skills"),
+      deskScript: join(here, "..", "..", "..", "desk", "scripts", "install-omarchy.sh"),
+      deskFolders: [xdg("XDG_CONFIG_HOME", ".config"), xdg("XDG_DATA_HOME", ".local", "share"), xdg("XDG_CACHE_HOME", ".cache")].map((base) => join(base, "app.cobra.desktop")),
     },
     {
       purge,
@@ -169,8 +174,16 @@ async function uninstall(): Promise<void> {
  */
 async function desk(): Promise<void> {
   const keys = createKeyStore();
-  const { refused } = keys.load();
+  const { callers, refused } = keys.load();
   if (refused) fail(`Cannot read the key list: ${refused}`);
+  // --into <computers.json>: install.sh links the desk app itself (deskLink.ts). A key that
+  // still works stays; the new key goes into the file only, never to the screen.
+  const into = option("--into");
+  const linked = into ? linkedId(into) : null;
+  if (into && linked && callers.some((caller) => caller.id === linked)) {
+    process.stdout.write(`The desk app is already linked (${linked}).\n`);
+    return;
+  }
   const { caller, key } = mintDesk(option("--name") ?? "Desktop", Date.now());
   keys.upsert(caller, "cli");
   const line = {
@@ -181,6 +194,11 @@ async function desk(): Promise<void> {
     id: caller.id,
     key,
   };
+  if (into) {
+    writeDeskFile(into, keptEntry(line));
+    process.stdout.write(`Linked the desk app (${caller.id}). \`cobra-agent unlink ${caller.id}\` revokes it.\n`);
+    return;
+  }
   process.stdout.write(`${JSON.stringify(line)}\n`);
   process.stderr.write(`Made a desktop key "${caller.name}" (${caller.id}). \`cobra-agent unlink ${caller.id}\` revokes it.\n`);
 }

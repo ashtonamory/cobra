@@ -164,3 +164,53 @@ test("on macOS: the launchd agents are booted out and their plists removed; no s
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+test("the desk app the package installed goes too, through its own installer; --purge takes its folders", async () => {
+  const home = mkdtempSync(join(tmpdir(), "cobra-uninstall-"));
+  try {
+    const paths = installed(home);
+    const deskScript = join(paths.data, "0.9.0-bbb/apps/desk/scripts/install-omarchy.sh");
+    mkdirSync(join(deskScript, ".."), { recursive: true });
+    writeFileSync(deskScript, "#!/bin/sh\n");
+    writeFileSync(join(home, ".local/bin/cobra-desktop"), "appimage");
+    writeFileSync(join(paths.units, "cobra-desktop.service"), "[Unit]\n");
+    const deskFolders = [join(home, ".config/app.cobra.desktop"), join(home, ".local/share/app.cobra.desktop")];
+    for (const folder of deskFolders) mkdirSync(folder, { recursive: true });
+    const calls: string[][] = [];
+    const said: string[] = [];
+    const done = await runUninstall({ ...paths, deskScript, deskFolders }, { ...OPTIONS, purge: true }, {
+      run: fakeRun(calls),
+      say: (line) => said.push(line),
+      cmdline: () => null,
+      kill: () => true,
+    });
+    assert.ok(done.ok);
+    assert.ok(calls.some((call) => call.join(" ") === `bash ${deskScript} --uninstall`));
+    assert.ok(said.some((line) => /the desk app, its service/.test(line)));
+    for (const folder of deskFolders) assert.equal(existsSync(folder), false, folder);
+    assert.ok(!done.left.some((line) => /desk app/i.test(line)));
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("a desk app the package did not install is named and left alone", async () => {
+  const home = mkdtempSync(join(tmpdir(), "cobra-uninstall-"));
+  try {
+    const paths = installed(home);
+    writeFileSync(join(home, ".local/bin/cobra-desktop"), "built from source");
+    const calls: string[][] = [];
+    const done = await runUninstall({ ...paths, deskScript: join(home, "no/such/install-omarchy.sh") }, OPTIONS, {
+      run: fakeRun(calls),
+      say: () => {},
+      cmdline: () => null,
+      kill: () => true,
+    });
+    assert.ok(done.ok);
+    assert.ok(!calls.some((call) => call[0] === "bash"));
+    assert.ok(existsSync(join(home, ".local/bin/cobra-desktop")));
+    assert.ok(done.left.some((line) => /did not install it/.test(line)));
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

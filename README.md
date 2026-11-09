@@ -42,17 +42,48 @@ phone app. Nothing listens on a network address other than `127.0.0.1`.
 
 ## Install from a release
 
-Each [release](../../releases) has the agent
-package (`cobra-agent-<version>-linux-x64.tar.gz` or `-linux-arm64`) and the
-desk app (`.deb` or `.AppImage`). Check the files against `SHA256SUMS`, then:
+One download installs everything: the agent and the desk app. From the
+[latest release](../../releases/latest), take
+`cobra-agent-<version>-linux-x64.tar.gz` (or `-linux-arm64`) and
+`SHA256SUMS`, then:
 
 ```sh
+sha256sum --check --ignore-missing SHA256SUMS
 tar xzf cobra-agent-<version>-linux-x64.tar.gz
 cd cobra-agent-<version>-linux-x64
-./install.sh                    # installs and starts the cobra-agent user service
+./install.sh
 ```
 
-Then install and open the desk app.
+`install.sh` runs as you, without sudo. It installs the agent as a systemd
+user service and installs the desk app, already linked to the agent. On
+Omarchy it also adds the window rules, SUPER+P and the mark in the bar. Open
+**Cobra** from your app launcher. The script ends with a short list of
+anything left to do, such as giving Workers a Claude sign-in.
+
+- `./install.sh --no-desk` installs the agent only (a computer with no screen).
+- To update, run the new package's `install.sh`. Your settings stay. The desk
+  app also updates itself (Settings → This app → Updates).
+- The `.AppImage` and `.deb` on each release are the desk app alone, for
+  people who build the agent from source.
+
+## Uninstall
+
+```sh
+cobra-agent uninstall
+```
+
+It asks first, then stops Cobra (this ends every Cobra session and Worker),
+and removes the agent, its services, the `cobra-agent` command and the desk
+app with its launcher entry, window rules and bar mark. Each file it edits is
+copied first. Your settings, keys, memory and chats stay, so a reinstall
+continues where you were.
+
+```sh
+cobra-agent uninstall --purge
+```
+
+The same, and it also removes Cobra's settings, keys, memory, chats and the
+desk app's own folders. Your projects are never touched.
 
 ## Install from source
 
