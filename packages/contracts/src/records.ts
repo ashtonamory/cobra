@@ -36,6 +36,13 @@ export const GoogleIntegration = z.object({
   problem: z.string().nullable().optional(),
   /** When the agent last asked the cloud, ms since the epoch; null before it ever did. */
   checkedAt: z.number().nullable().optional(),
+  /**
+   * Gmail, Google Calendar and Google Drive as the Claude account on this
+   * computer has them (claude.ai → Settings → Connectors), each signed in or
+   * not; absent before the agent first looked. The Lead and the Foremen use
+   * the signed-in ones when they run on Claude.
+   */
+  connectors: z.array(z.object({ name: z.string(), connected: z.boolean() })).optional(),
 });
 export type GoogleIntegration = z.infer<typeof GoogleIntegration>;
 

@@ -46,6 +46,7 @@ import { ATTACHMENTS_DIR } from "./attachments.ts";
 import { DESIGNER, DESIGNER_FONTS, DESIGNER_TEMPLATES, designerFolders, designerNote, ensureDesignerFolders, findTessel, tesselHeadless, tesselServer, withTessel, type DesignerFolders } from "./designer.ts";
 import { CODEX_ASK_NOTE, overlayAsk, pendingAsk } from "./asks.ts";
 import { orchModelArgs } from "./orchModels.ts";
+import { GOOGLE_NOTE, liveConnectorDenyRules } from "./connectors.ts";
 import { loadRoles } from "./permissions.ts";
 
 const run = promisify(execFile);
@@ -196,6 +197,7 @@ export function foremanPrompt(project: Pick<Project, "id" | "name" | "path" | "c
   // Codex has no AskUserQuestion: its questions go through ask_person (asks.ts), which the phone draws the same way.
   const ask = engine === "codex" ? "ask_person" : "AskUserQuestion";
   const github = `${mcpNames.includes(GITHUB) ? ` ${GITHUB_NOTE}` : ""}${designer ? ` ${designer}` : ""}`;
+  const google = engine === "claude" ? ` ${GOOGLE_NOTE}` : "";
   // Its name (crew.ts), as the person sees it on the phone and the desk.
   const you = project.crew ? `${project.crew.name}, the Foreman` : "the Foreman";
   const named = project.crew ? ` The person knows you as ${project.crew.name}, and the Lead as Cobra.` : "";
@@ -203,7 +205,7 @@ export function foremanPrompt(project: Pick<Project, "id" | "name" | "path" | "c
 
 Where work comes from: most often a brief from the Lead, the orchestrator over all of the person's projects, typed into this conversation as a line that starts with "${BRIEF_PREFIX}". A brief gives the goal and the context; the plan is yours. When your project works for a company in the person's My Organization (a client or business, such as Happy Tails), a brief starts with "[Company: …]", naming it and the other projects whose Foremen work for it: their work is related to yours, but you never reach them yourself, so say in your report what of theirs your work touches, and Cobra takes it to them. The person may also talk to you directly. A line that starts with "Routine <name>:" is a routine, scheduled work the person set up and allowed, typed in by the agent when it is due: do it as a brief, and end that turn's report by naming the routine (routine_set proposes a new one for the person to allow, routine_list and routine_remove show and remove this project's).
 
-Your hands are the mcp__cobra-orch__ tools, and they reach this project only. A Worker is an agent session in its own git worktree on its own branch, in a strict sandbox: it can write only in its worktree, has no network, and anything risky becomes a question in the desk app. It cannot read files outside its worktree either: when it needs one (a logo, a font, a template), give it with worker_import, which the person allows, and never ask the person to copy files for you.${github}
+Your hands are the mcp__cobra-orch__ tools, and they reach this project only. A Worker is an agent session in its own git worktree on its own branch, in a strict sandbox: it can write only in its worktree, has no network, and anything risky becomes a question in the desk app. It cannot read files outside its worktree either: when it needs one (a logo, a font, a template), give it with worker_import, which the person allows, and never ask the person to copy files for you.${github}${google}
 
 Anything that leaves this computer (an email from the person's Gmail with files from this repository attached, or files put in the person's Google Drive) goes out one way: you propose it with action_propose, with its exact content, the person sees that content in the desk app and allows or denies it, and the agent sends exactly what they saw. A save to their own Google Drive (channel file, no folder) needs no Allow: they agreed to it when they connected Google, so the agent saves it at once and they get a receipt. Drive never replaces a file, and nothing deletes one: a new version is a new file. Never ask a Worker to send, post or contact anyone, and never write a message you mean to send into your reply: propose it. A note (channel note) tells the person something on a card and sends nothing.${emailBrief(project.foremanTemplate)}${templateBrief(project.foremanTemplate)}${dataBrief(project.foremanTemplate)}${readsBrief(project.foremanTemplate)}
 
@@ -347,9 +349,11 @@ export function foremanSettings(
   company: ForemanCompany,
   hooks: Record<string, unknown>,
   home = homedir(),
+  connectorDeny: readonly string[] = [],
 ): Record<string, unknown> {
+  const permissions = foremanPermissions(project, home, company);
   return {
-    permissions: foremanPermissions(project, home, company),
+    permissions: { ...permissions, deny: [...permissions.deny, ...connectorDeny] },
     hooks,
     autoMemoryEnabled: false,
     ...(worksOnCode(project) ? {} : { claudeMdExcludes: [join(home, ".claude", "CLAUDE.md")] }),
@@ -364,8 +368,9 @@ export function foremanCommand(project: Project, mcp: Pick<McpMerge, "names" | "
     "claude",
     "--mcp-config",
     files.mcp,
-    "--strict-mcp-config",
-    // Not Claude in Chrome: the owner's "Enabled by default" (~/.claude.json) gave every Foreman its 20 browser tools and their prompt section (~11.7k tokens), which --strict-mcp-config does not cover.
+    // --restricted, not --strict-mcp-config, so the Google connectors of the person's Claude account come in and nothing else of the owner's does (lead.ts leadCommand, connectors.ts).
+    "--restricted",
+    // Not Claude in Chrome: the owner's "Enabled by default" (~/.claude.json) gave every Foreman its 20 browser tools and their prompt section (~11.7k tokens), which --restricted does not cover.
     "--no-chrome",
     "--settings",
     files.settings,
@@ -474,7 +479,7 @@ export async function startForeman(project: Project): Promise<{ session: string;
   else dropHandoff(files.dir);
   // Its web reads go to the judge first under Instinct (orchWeb.ts).
   const hooks = { ...liveMemoryHook("foreman", await projectKeyFor(project), start ? files.dir : undefined), ...liveOrchWebHooks({ role: "foreman", project: project.id }), ...liveUsageHooks("foreman", foremanSession(project)) };
-  writePrivateFile(files.settings, `${JSON.stringify(foremanSettings(project, company, hooks), null, 2)}\n`);
+  writePrivateFile(files.settings, `${JSON.stringify(foremanSettings(project, company, hooks, homedir(), liveConnectorDenyRules()), null, 2)}\n`);
   const home = foremanHome(project);
   mkdirSync(home, { recursive: true, mode: 0o700 });
   await trustPath(home);
