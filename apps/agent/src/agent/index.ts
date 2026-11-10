@@ -1,3 +1,4 @@
+import { lookForConnectors } from "./connectors.ts";
 import http from "node:http";
 import os from "node:os";
 import { homedir } from "node:os";
@@ -3503,6 +3504,8 @@ server.listen(config.port, config.bind, () => {
       `(host=${os.hostname()}, callers=${config.keys.load().callers.length}, ` +
       `tmux=${TMUX_SOCKET === "default" ? "your server" : `-L ${TMUX_SOCKET}`})`,
   );
+  // Which Google connectors the Claude account has, so the Lead's first start already denies the others (connectors.ts).
+  void lookForConnectors();
 });
 
 // Pushes for this machine's own sessions. Cheap while nobody is registered:

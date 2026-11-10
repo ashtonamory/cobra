@@ -19,10 +19,27 @@ describe("googleView", () => {
     expect(google.googleView({ connected: true }, "Legion").word).toBe("connected");
   });
 
-  it("no Google sign-in of its own points to the MCP connectors", () => {
+  it("no Google sign-in of its own points to the Claude account's connectors", () => {
     const v = google.googleView({ cloudLinked: false, connected: false, problem: "no_cloud_link" }, "Mini");
-    expect([v.word, v.fix]).toEqual(["through a connector", "none"]);
-    expect(v.detail).toContain("MCP connector");
+    expect([v.word, v.fix]).toEqual(["through your Claude account", "connectors"]);
+    expect(v.detail).toContain("Mini has not checked your Claude account yet");
+    expect(v.detail).toContain("claude.ai → Settings → Connectors");
+  });
+
+  it("says which of Gmail, Calendar and Drive the Claude account has", () => {
+    const status = (connected: Record<string, boolean>) => ({
+      cloudLinked: false, connected: false, problem: "no_cloud_link",
+      connectors: Object.entries(connected).map(([name, on]) => ({ name, connected: on })),
+    });
+    const some = google.googleView(status({ Gmail: true, "Google Calendar": true, "Google Drive": false }), "Mini");
+    expect([some.word, some.tone, some.fix]).toEqual(["Gmail and Google Calendar connected", "ink", "connectors"]);
+    expect(some.detail).toBe("Google Drive is not connected. Connect them at claude.ai → Settings → Connectors.");
+    expect(some.allows.join(" ")).toContain("only when you allow it");
+    const none = google.googleView(status({ Gmail: false, "Google Calendar": false, "Google Drive": false }), "Mini");
+    expect([none.word, none.tone]).toEqual(["not connected", "signal"]);
+    expect(none.detail).toContain("none of Gmail, Google Calendar and Google Drive");
+    const all = google.googleView(status({ Gmail: true, "Google Calendar": true, "Google Drive": true }), "Mini");
+    expect([all.word, all.detail]).toEqual(["Gmail, Google Calendar and Google Drive connected", ""]);
   });
 
   it("not connected and reconnect both offer Connect Google", () => {
@@ -92,7 +109,7 @@ describe("connected reads", () => {
     const v = google.googleView(ready([DRIVE, GMAIL, CALENDAR_READ, MAIL_READ]), "Legion");
     expect(v.allows).toHaveLength(2);
     expect(v.allows.join(" ")).not.toContain("cannot read your mail");
-    expect(google.BLURB).toContain("reads your calendar or mail only when you turn that on");
+    expect(google.BLURB).toContain("nothing is sent, changed or deleted without your Allow");
     expect(google.READS_NOTE).toContain("disconnect Google on your account page and connect again");
   });
 

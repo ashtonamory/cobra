@@ -482,8 +482,8 @@ test("lead: no Bash, no Edit, only the cobra-orch MCP server, and reads kept fro
   const command = lead.leadCommand();
   const tools = command[command.indexOf("--tools") + 1] ?? "";
   for (const forbidden of ["Bash", "Edit", "Write", "NotebookEdit", "Agent", "Task"]) assert.equal(tools.split(",").includes(forbidden), false, forbidden);
-  assert.ok(command.includes("--strict-mcp-config"));
-  assert.equal(command[command.indexOf("--allowedTools") + 1], "mcp__cobra-orch");
+  assert.ok(command.includes("--restricted") && !command.includes("--strict-mcp-config"));
+  assert.equal(command[command.indexOf("--allowedTools") + 1], ["mcp__cobra-orch", ...GOOGLE_READS].join(","));
   const rules = lead.leadDenyRules("/home/u");
   assert.ok(rules.includes("Read(~/.ssh/**)"));
   assert.ok(rules.includes("Read(~/.claude/.credentials.json)"));
@@ -1200,6 +1200,7 @@ test("laneWords: each Worker line says which account its model spends", async ()
 
 const { FOREMAN_TEMPLATES } = await import("./trades.ts");
 const { tradeReads, tradeSchema } = await import("./trades.ts");
+const { GOOGLE_READS } = await import("./connectors.ts");
 
 test("each Foreman tool is in exactly one group, and the groups are every Foreman tool", () => {
   const grouped = mcp.TOOL_GROUPS.flatMap((group) => mcp.FOREMAN_GROUPS[group]);

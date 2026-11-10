@@ -166,6 +166,10 @@ function Machine({ c, m }: { c: GoogleController; m: config.Machine }) {
           <Button kind="primary" title="Opens your account page in the browser, where you sign in to Google"
             onClick={() => void c.connect(m.machine)}>Connect Google</Button>
         )}
+        {view.fix === "connectors" && (
+          <Button kind="flat" title="Opens claude.ai's connector settings in the browser"
+            onClick={() => openUri(google.CONNECTORS_PAGE)}>Claude connectors</Button>
+        )}
         {view.fix === "none" && (
           <Button kind="flat" title="Change or disconnect Google on your account page, in the browser"
             onClick={() => void c.connect(m.machine)}>Account page</Button>

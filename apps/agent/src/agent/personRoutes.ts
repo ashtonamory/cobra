@@ -28,6 +28,7 @@
 // (googleAuth.ts), and otherwise Google comes through MCP connectors. The route
 // asks for a grant (held in memory, so cheap once connected) and answers what
 // it learned: never the token.
+import { GOOGLE_CONNECTORS, lookForConnectors, readConnectors } from "./connectors.ts";
 import type { GoogleIntegration, JournalEntry as JournalView, JournalReply, MirrorStatus as MirrorView, Project } from "@cobra/contracts";
 
 import { BY_PERSON, handleDb, liveDbDeps, type DbDeps, type Reply } from "./dbRoutes.ts";
@@ -54,6 +55,8 @@ export type PersonDeps = {
   /** googleAuth.ts googleGrant: a GoogleAuthError when there is none. What it returns is never read here, so the token never reaches a reply. */
   grant: () => Promise<unknown>;
   status: () => GoogleStatus;
+  /** The Claude account's Google connectors from the agent's last look (connectors.ts), or null before one. */
+  connectors?: () => Array<{ name: string; connected: boolean }> | null;
   /** finishes.ts tell: one [cobra] line for an owner (here a project's Foreman). */
   tell: (owner: string, text: string) => void;
   now: () => number;
@@ -66,7 +69,7 @@ export type PersonDeps = {
 
 /** The live deps, with the registry and the Foreman's line from index.ts. */
 export function livePersonDeps(projects: () => Promise<Project[]>, tell: (owner: string, text: string) => void, log: (line: string) => void, importAllowed?: (project: string) => void): PersonDeps {
-  return { projects, db: liveDbDeps(), grant: googleGrant, status: googleStatus, tell, now: Date.now, log, ...(importAllowed ? { importAllowed } : {}) };
+  return { projects, db: liveDbDeps(), grant: googleGrant, status: googleStatus, connectors: liveGoogleConnectors, tell, now: Date.now, log, ...(importAllowed ? { importAllowed } : {}) };
 }
 
 const message = (caught: unknown): string => (caught instanceof Error ? caught.message : String(caught));
@@ -117,6 +120,7 @@ async function googleIntegration(deps: PersonDeps): Promise<GoogleIntegration> {
     if (!(caught instanceof GoogleAuthError)) deps.log(`google: ${message(caught)}`);
   }
   const status = deps.status();
+  const connectors = deps.connectors?.() ?? null;
   return {
     cloudLinked: status.problem !== "no_cloud_link",
     connected: status.connected,
@@ -124,7 +128,16 @@ async function googleIntegration(deps: PersonDeps): Promise<GoogleIntegration> {
     scopes: status.scopes,
     problem: status.problem,
     checkedAt: status.checkedAt,
+    ...(connectors ? { connectors } : {}),
   };
+}
+
+/** The Google ones from the last look, and a new look started for the next read. */
+function liveGoogleConnectors(): Array<{ name: string; connected: boolean }> | null {
+  const seen = readConnectors();
+  void lookForConnectors();
+  if (!seen) return null;
+  return GOOGLE_CONNECTORS.map((name) => ({ name, connected: seen.connectors.some((connector) => connector.name === name && connector.connected) }));
 }
 
 /**

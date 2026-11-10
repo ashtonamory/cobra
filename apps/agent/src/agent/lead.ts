@@ -26,6 +26,7 @@ import { leadEnv, orchKeyEnv } from "./launchEnv.ts";
 import { testModeOn } from "./apiTest.ts";
 import { GATE_SOCKET } from "./gate.ts";
 import { orchModelArgs } from "./orchModels.ts";
+import { GOOGLE_NOTE, GOOGLE_READS, liveConnectorDenyRules } from "./connectors.ts";
 import { headlessOrchCommand, orchHeadless, startOrchHeadless, stopOrchHeadless, withPermissionTool } from "./orchHeadless.ts";
 import { tmuxEnvArgs } from "./localModels.ts";
 import { activeCodexCredential } from "./accounts.ts";
@@ -167,11 +168,12 @@ export function leadPrompt(mcpNames: readonly string[] = [], web = false, engine
   const ask = engine === "codex" ? "ask_person" : "AskUserQuestion";
   const direct = onCall.length > 0 ? onCallNote(onCall) : "";
   const github = mcpNames.includes(GITHUB) ? ` ${GITHUB_NOTE}` : "";
+  const google = engine === "claude" ? ` ${GOOGLE_NOTE}` : "";
   return `You are the Lead in Cobra, and the person knows you as Cobra: the orchestrator over all of this person's projects. You keep the whole picture, and each project's Foreman runs the work in it. You never edit code or run commands yourself; you have no Bash and no Edit. ${NO_WRITE_NOTE}
 
 The chain: the person talks to you; you brief the right project's Foreman; the Foreman plans with the person, starts Workers, reviews their PRs and asks the person to merge them; its report comes back to you. A Worker is an agent session in its own git worktree on its own branch, in a strict sandbox. You do not start, steer, finish or merge Workers: the agent refuses you those, and the Foreman knows its project better${direct ? " (one exception: a light task in an on-call Space, in step 3)" : ""}.
 
-Your hands are the mcp__cobra-orch__ tools.${github}
+Your hands are the mcp__cobra-orch__ tools.${github}${google}
 
 How to work:
 1. Understand the request at a high level. Call the status tool for this computer's projects, each project's Foreman and its state, the Workers, the caps and the budget. Read files with Read, Grep and Glob when you need context (this computer's files only), or ask job_run a read-only question about a project: it answers in a minute and leaves nothing behind.
@@ -321,7 +323,7 @@ export function leadMcpConfig(line = lineDir(LEAD_LINE), role: OrchRole = "lead"
 
 /** cobra-orch's tools, and the tools of each merged read-only entry, run without a prompt; others ask. */
 export function allowedMcpTools(mcp: Pick<McpMerge, "preAllowed">): string {
-  return ["cobra-orch", ...mcp.preAllowed.filter((name) => name !== "cobra-orch")].map((name) => `mcp__${name}`).join(",");
+  return [...["cobra-orch", ...mcp.preAllowed.filter((name) => name !== "cobra-orch")].map((name) => `mcp__${name}`), ...GOOGLE_READS].join(",");
 }
 
 /** Logs what the registry left out of a Lead or a Foreman, and a refused registry. */
@@ -341,8 +343,9 @@ export function leadCommand(mcp: Pick<McpMerge, "names" | "preAllowed"> = NO_MCP
     "claude",
     "--mcp-config",
     LEAD_MCP,
-    "--strict-mcp-config",
-    // Not Claude in Chrome, whatever the owner's "Enabled by default" says: --strict-mcp-config does not cover it (foreman.ts foremanCommand).
+    // Not --strict-mcp-config: that also drops the Google connectors of the person's Claude account. --restricted keeps out the owner's own MCP servers, plugins and settings files instead, and the settings deny every other connector (connectors.ts).
+    "--restricted",
+    // Not Claude in Chrome, whatever the owner's "Enabled by default" says: --restricted does not cover it (foreman.ts foremanCommand).
     "--no-chrome",
     "--settings",
     LEAD_SETTINGS,
@@ -451,7 +454,7 @@ export async function startLead(): Promise<{ session: string; path: string }> {
   const mcp = await mcpServersFor("lead");
   logMcp("the Lead", mcp);
   writePrivateFile(LEAD_MCP, `${JSON.stringify(leadMcpConfig(line, "lead", mcp.servers), null, 2)}\n`);
-  writePrivateFile(LEAD_SETTINGS, `${JSON.stringify(leadSettings([...leadDenyRules(), ...envDenyRules(leadHome()), ...leadSpaceDenyRules()], { ...liveMemoryHook("lead"), ...liveOrchWebHooks({ role: "lead" }), ...liveUsageHooks("lead", LEAD_SESSION) }), null, 2)}\n`);
+  writePrivateFile(LEAD_SETTINGS, `${JSON.stringify(leadSettings([...leadDenyRules(), ...envDenyRules(leadHome()), ...leadSpaceDenyRules(), ...liveConnectorDenyRules()], { ...liveMemoryHook("lead"), ...liveOrchWebHooks({ role: "lead" }), ...liveUsageHooks("lead", LEAD_SESSION) }), null, 2)}\n`);
   const path = leadHome();
   // A folder Claude has never opened asks whether to trust it, and nobody is
   // at the keyboard to answer: the projects folder is yours.

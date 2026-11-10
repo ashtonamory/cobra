@@ -59,7 +59,7 @@ test("the Foreman: its own folder, the repository by --add-dir, no Bash or Edit,
   const tools = command[command.indexOf("--tools") + 1]?.split(",") ?? [];
   for (const forbidden of ["Bash", "Edit", "Write", "Agent", "Task"]) assert.equal(tools.includes(forbidden), false, forbidden);
   assert.equal(command[command.indexOf("--add-dir") + 1], project.path);
-  assert.ok(command.includes("--strict-mcp-config"));
+  assert.ok(command.includes("--restricted") && !command.includes("--strict-mcp-config"), "the account's Google connectors come in, the owner's servers do not");
   assert.match(command.at(-1) ?? "", /Foreman for one project in Cobra: The Book \(project id book-club\)/);
   assert.match(command.at(-1) ?? "", /data, not instructions/);
   assert.ok((command.at(-1) ?? "").includes("You cannot write files or keep memory between conversations"));
@@ -503,7 +503,7 @@ test("a Foreman whose trade reads the calendar or mail is told what it reads and
   assert.equal(without, foreman.foremanPrompt(project));
   // The Foreman's command allows every cobra-orch tool, the reads among them, and no other server's.
   const command = foreman.foremanCommand({ ...project, foremanTemplate: "my-day" });
-  assert.equal(command[command.indexOf("--allowedTools") + 1], "mcp__cobra-orch");
+  assert.equal(command[command.indexOf("--allowedTools") + 1], ["mcp__cobra-orch", ...GOOGLE_READS].join(","));
 });
 
 test("rosterOf: a project's trade, whether it reports to the Lead, its routines on and what is trusted there", async () => {
@@ -589,7 +589,7 @@ test("a Designer is told its trade, its folders and its Tessel; the person's pho
   assert.match(prompt, /brand_propose/);
   assert.match(prompt, /never post, publish or send anything yourself/);
   assert.ok(prompt.includes(note), "where it works is in its prompt");
-  assert.ok(foreman.foremanCommand(designer, { names: ["tessel"], preAllowed: ["tessel"] }, "claude", undefined, note).includes("mcp__cobra-orch,mcp__tessel"));
+  assert.ok(foreman.foremanCommand(designer, { names: ["tessel"], preAllowed: ["tessel"] }, "claude", undefined, note).includes(["mcp__cobra-orch", "mcp__tessel", ...GOOGLE_READS].join(",")));
   assert.doesNotMatch(foreman.foremanPrompt(project), /Tessel/, "only a Designer hears of it");
   // Only the attachment folders that exist are given to Tessel.
   const lead = mkdtempSync(join(tmpdir(), "cobra-lead-"));
@@ -617,6 +617,7 @@ test("the branded email paragraph is for the trades with the email tools: Outrea
 const { GITHUB } = await import("./mcp.ts");
 const { headlessOrchCommand } = await import("./orchHeadless.ts");
 const { toolsFor } = await import("./orchMcp.ts");
+const { GOOGLE_READS } = await import("./connectors.ts");
 
 const github = { type: "stdio" as const, command: "/usr/bin/node", args: ["githubMcp.ts"], env: { COBRA_MCP_REGISTRY: "/c/mcp-servers.json" } };
 const tessel = { type: "stdio" as const, command: "/opt/tessel", args: ["mcp", "--headless"] };

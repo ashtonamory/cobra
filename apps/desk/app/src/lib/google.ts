@@ -21,13 +21,16 @@ import { APP_NAME } from "./appName.ts";
 import { isDict, type Dict, type Json } from "./json.ts";
 
 export const BLURB =
-  `Connect Google once and ${APP_NAME} keeps a project's records in a sheet in your Drive, puts the files you ` +
-  "allow in your Drive and sends the email you allow from your Gmail. Nothing goes out without your Allow, and it " +
-  "reads your calendar or mail only when you turn that on.";
+  `${APP_NAME} uses Gmail, Google Calendar and Google Drive through your Claude account: connect them at ` +
+  "claude.ai → Settings → Connectors. It reads your mail and calendar when it needs to, and nothing is sent, " +
+  "changed or deleted without your Allow.";
+
+/** Where the person connects them. */
+export const CONNECTORS_PAGE = "https://claude.ai/settings/connectors";
 
 export type Tone = "ink" | "signal" | "muted";
-/** What the computer's block offers: Connect Google (opens the account page), nothing, or only Refresh. */
-export type Fix = "none" | "connect" | "retry";
+/** What the computer's block offers: Connect Google (opens the account page), nothing, only Refresh, or Claude's connectors page. */
+export type Fix = "none" | "connect" | "retry" | "connectors";
 
 export interface GoogleView {
   /** The status cell. */
@@ -50,11 +53,8 @@ export function googleView(status: Json, computer: string): GoogleView {
   }
   switch (problem) {
     case "no_cloud_link":
-      // Out of the box: no Google sign-in of its own. Google comes through MCP connectors.
-      return {
-        word: "through a connector", tone: "muted", fix: "none", allows: [],
-        detail: `${APP_NAME} reaches Google through MCP connectors. Add the Gmail, Calendar or Drive connector, and the agents use its tools.`,
-      };
+      // Out of the box: no Google sign-in of its own. Google comes through the Claude account's connectors.
+      return connectorView(s.connectors, computer);
     case "google_not_connected":
       return {
         word: "not connected", tone: "signal", fix: "connect", allows: [],
@@ -207,4 +207,36 @@ export function watchToast(read: ReadName | null): string {
 export function watchLine(read: ReadName | null): string {
   if (read === null) return "Waiting for Google to be connected…";
   return `Waiting for ${read === "calendar" ? "Calendar" : "Mail"} to be turned on…`;
+}
+
+/**
+ * Gmail, Calendar and Drive as the Claude account on that computer has them. An agent that has not
+ * looked yet (or an older one) sends none, and the line says where to connect them anyway.
+ */
+export function connectorView(connectors: Json, computer: string): GoogleView {
+  const seen = Array.isArray(connectors)
+    ? connectors.filter(isDict).filter((c) => typeof c.name === "string").map((c) => ({ name: String(c.name), connected: c.connected === true }))
+    : null;
+  const where = "Connect them at claude.ai → Settings → Connectors.";
+  if (seen === null || seen.length === 0) {
+    return { word: "through your Claude account", tone: "muted", fix: "connectors", allows: [], detail: `${computer} has not checked your Claude account yet. ${where}` };
+  }
+  const on = seen.filter((c) => c.connected).map((c) => c.name);
+  const off = seen.filter((c) => !c.connected).map((c) => c.name);
+  if (on.length === 0) {
+    return { word: "not connected", tone: "signal", fix: "connectors", allows: [], detail: `Your Claude account has none of ${listWords(off)}. ${where}` };
+  }
+  return {
+    word: `${listWords(on)} connected`, tone: "ink", fix: "connectors",
+    allows: [
+      "Reads your mail, calendar and files when a task needs them.",
+      "Sends, replies, trashes or changes an event only when you allow it.",
+    ],
+    detail: off.length ? `${listWords(off)} ${off.length === 1 ? "is" : "are"} not connected. ${where}` : "",
+  };
+}
+
+function listWords(names: readonly string[]): string {
+  if (names.length <= 1) return names.join("");
+  return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }
