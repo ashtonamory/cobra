@@ -101,7 +101,7 @@ import { handoffRefusal, onCall, wordCount, writeHandoffNote } from "./onCall.ts
 import { checkCheckout } from "./checks.ts";
 import { isCheckRunning, liveCheckoutDeps, liveWorkerScope, startWorkerCheck, type WorkerCheckDeps } from "./workerChecks.ts";
 import { liveEaRun, liveMemorySync } from "./ea.ts";
-import { computerName, MEMORY_DIR, memoryDay, projectKeyFor, withMemoryLock } from "./memory.ts";
+import { computerName, MEMORY_DIR, memoryDay, projectKeyFor, sourceOf, withMemoryLock } from "./memory.ts";
 import { DEFAULT_FALLBACKS, HARD_CAPS, loadPolicy, loadRoles, modelAllowed } from "./permissions.ts";
 import { askMemory, readScoped, readSlice, rememberLesson, type SliceKind } from "./memoryAccess.ts";
 import { orgForMemory, readIndexes } from "./memoryIndex.ts";
@@ -893,7 +893,7 @@ export async function handleOrch(
     trades?: TradeDeps;
     /** Trust (trustRoutes.ts): whether an action runs on trust, and the agent's own carrying out of an allowed action (index.ts carryOutAction). */
     trust?: { deps: TrustDeps; carryOut: (approval: StoredApproval) => void };
-    /** The taint in force for a session (`lead`, `foreman:<project>`, `worker:<id>`) this turn (taint.ts); the live file when left out. */
+    /** The taint in force for a session (`lead`, `foreman:<project>`, `worker:<id>`) (taint.ts); the live file when left out. */
     taintOf?: (who: string) => Taint | null;
     /** The taint on what a Foreman last said (taint.ts reportTaint). */
     reportTaintOf?: (who: string) => Taint | null;
@@ -1692,6 +1692,9 @@ export async function handleOrch(
     if (route === "/orch/memory/remember") {
       // Lessons come from the Lead or a Foreman, and say which.
       if (!isLead) return send(response, 403, { error: "the Lead and the Foremen hand lessons to memory" });
+      // A note from a conversation that read text from outside is kept, and says so wherever it is read later (taint.ts, memory.ts sourceOf).
+      const outside = taintOf(who) !== null;
+      const from = sourceOf(only === undefined ? "lead" : "foreman", outside);
       // An on-call Foreman's handoff note (onCall.ts): its own project's, in its Space's memory, at most HANDOFF_WORDS words.
       if (text("kind") === "handoff") {
         if (only === undefined || io.caller.worker !== undefined) return send(response, 403, { error: "a handoff note is an on-call Foreman's, for its own project" });
@@ -1703,11 +1706,11 @@ export async function handleOrch(
         const refused = handoffRefusal(note);
         if (refused) return send(response, 400, { error: refused });
         const now = Date.now();
-        const path = writeHandoffNote(MEMORY_DIR, computerName(), mode.space, project.id, note, now);
+        const path = writeHandoffNote(MEMORY_DIR, computerName(), mode.space, project.id, note, now, outside);
         onCall.handoffWritten(project.id, now);
         const sync = liveMemorySync(io.log);
         if (sync) void withMemoryLock(() => sync.push(`memory: ${computerName()} keeps ${project.id}'s handoff note`)).catch((caught: unknown) => io.log(`memory: push failed: ${String(caught)}`));
-        return send(response, 200, { handoff: true, space: mode.space, path, words: wordCount(note) });
+        return send(response, 200, { handoff: true, space: mode.space, path, words: wordCount(note), ...(outside ? { markedOutside: true } : {}) });
       }
       // A lesson for the whole company goes into its brain (companyBrain.ts): here when this computer holds it, else pending for the Lead's computer.
       if (text("scope") === "company") {
@@ -1731,7 +1734,7 @@ export async function handleOrch(
           computerName(),
           { id: company.id, name: company.name, sensitive: company.sensitive === true },
           memoryHome(),
-          { kind: text("kind") ?? "", text: text("text") ?? "", from: only === undefined ? "lead" : "foreman" },
+          { kind: text("kind") ?? "", text: text("text") ?? "", from },
           memoryDay(Date.now()),
         );
         if ("error" in result) return send(response, result.status, { error: result.error });
@@ -1749,14 +1752,14 @@ export async function handleOrch(
       const result = rememberLesson(MEMORY_DIR, computerName(), key, {
         kind: text("kind") ?? "",
         text: text("text") ?? "",
-        from: only === undefined ? "lead" : "foreman",
+        from,
         ...(replaces ? { replaces } : {}),
       });
       if ("error" in result) return send(response, result.status, { error: result.error });
       // Out to the other computers now, rather than at the next round-up; it never holds up the answer.
       const sync = liveMemorySync(io.log);
       if ((result.added || result.replaced) && sync) void withMemoryLock(() => sync.push(`memory: ${computerName()} remembers for ${key}`)).catch((caught: unknown) => io.log(`memory: push failed: ${String(caught)}`));
-      return send(response, 200, { key, ...result });
+      return send(response, 200, { key, ...result, ...(outside ? { markedOutside: true } : {}) });
     }
     if (route === "/orch/action/propose") {
       // Only a Foreman, for its own project: the exact content becomes an approval, and the agent carries it out after your Allow.

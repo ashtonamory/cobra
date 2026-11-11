@@ -454,6 +454,18 @@ export function lessonText(line: string): string {
     .trim();
 }
 
+/**
+ * What a note's source says when the conversation that wrote it had read
+ * text from outside (taint.ts): the note may hold what that text planted, so
+ * whoever reads it later, an agent or the person, is told.
+ */
+export const AFTER_OUTSIDE = "written after reading text from outside: check it before acting on it";
+
+/** A note's source, with that mark when it was written in a tainted conversation. */
+export function sourceOf(from: string, outside: boolean): string {
+  return outside ? `${from}, ${AFTER_OUTSIDE}` : from;
+}
+
 /** A lesson as its file keeps it. */
 export function lessonLine(day: string, kind: LessonKind, text: string, from: string): string {
   return `- ${day} · ${kind} · ${text.replace(/\s+/g, " ").trim().slice(0, 400)} (from: ${from})`;

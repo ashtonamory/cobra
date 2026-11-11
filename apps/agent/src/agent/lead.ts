@@ -448,6 +448,8 @@ export function leadSettings(deny: readonly string[], hooks: Record<string, unkn
 export async function startLead(): Promise<{ session: string; path: string }> {
   requireJail();
   if (await leadRunning()) throw new SessionError("the Lead is already running", 409);
+  // Every start is a new conversation, which has read nothing yet (taint.ts).
+  clearTaint("lead");
   // The agent serves this line from its start (index.ts); its folder is made here, as a Codex fence binds it at launch.
   const line = prepareLine(LEAD_LINE);
   mkdirSync(LEAD_DIR, { recursive: true, mode: 0o700 });
@@ -517,6 +519,4 @@ export async function freshConversation(o: { running: () => Promise<boolean>; st
 /** The Lead's New conversation (POST /lead/clear): a fresh start, so it has today's MCP servers. Its Workers keep running. */
 export async function newLeadConversation(port: number): Promise<void> {
   await freshConversation({ running: leadRunning, stop: stopLead, start: () => startLead() });
-  // A new conversation has read nothing yet (taint.ts).
-  clearTaint("lead");
 }

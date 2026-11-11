@@ -115,7 +115,7 @@ export type EmailRouteDeps = {
   now: () => number;
   /** Trust on a template version (trustRoutes.ts trustedApproval): an approval already allowed, carried out at once; absent, every send asks. */
   trust?: { approval: (action: ApprovalAction, requestedBy: string) => StoredApproval | null; carryOut: (approval: StoredApproval) => void };
-  /** Whether a session (`foreman:<project>`, `worker:<id>`) read text from outside this turn (taint.ts): then every send asks. */
+  /** Whether a session (`foreman:<project>`, `worker:<id>`) read text from outside in its conversation (taint.ts): then every send asks. */
   tainted?: (who: string) => boolean;
   /** Where a new hook starts in the Space's store (emailHooks.ts startCursor); null when the Space keeps no such rows. */
   hookStart: (space: string, event: HookEvent) => number | null;
