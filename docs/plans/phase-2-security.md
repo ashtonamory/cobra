@@ -126,7 +126,9 @@ What was built:
   outside) marks the turn tainted. This builds on `taint.json`.
 - In a tainted turn, every outward action becomes an approval card that
   says what was read, even when trust or Instinct would allow it.
-- The taint ends with the turn, not with a timer.
+- The taint ends with the turn, not with a timer. (Changed 2026-11-11: it
+  lasts the conversation again, since what was read stays in front of the
+  model after the turn. See SECURITY.md.)
 
 What was there before: `taint.json` marked a session after a web read only
 (the judge's or Claude Code's, `gate.ts` for a Worker, `orchWeb.ts` for the

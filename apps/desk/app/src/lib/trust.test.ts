@@ -142,7 +142,7 @@ describe("the project page", () => {
 
 describe("taintNote", () => {
   it("says why a card from a turn that read text from outside asks, and nothing on any other card", () => {
-    const note = "Cobra read an email from outside in this turn, so it asks you before this goes out.";
+    const note = "Cobra read an email from outside in this conversation, so it asks you before this goes out.";
     expect(trust.taintNote({ id: "ap_1", taint: { read: ["an email from outside"], note } })).toBe(note);
     expect(trust.taintNote({ id: "ap_2" })).toBeNull();
     expect(trust.taintNote({ id: "ap_3", taint: { read: [], note: "  " } })).toBeNull();

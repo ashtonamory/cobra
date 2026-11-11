@@ -42,7 +42,7 @@ writeFileSync(
 );
 
 const EMAIL_READ: Taint = { since: "2026-11-08T10:00:00.000Z", at: "2026-11-08T10:00:00.000Z", why: "mail_read", hosts: [], reads: 1, sources: ["email"] };
-const NOTE = "Cobra read an email from outside in this turn, so it asks you before this goes out.";
+const NOTE = "Cobra read an email from outside in this conversation, so it asks you before this goes out.";
 
 /** handleOrch as a Foreman's key calls it, with trust and the taint of each session the test sets. */
 function world(project = "northwind") {
@@ -123,7 +123,7 @@ test("an email whose trust is earned is a card in a tainted turn, and runs on tr
   const asked = await w.call("/orch/action/propose", { ...email, text: "Hi again" });
   assert.equal((asked.body as { trusted?: boolean }).trusted, undefined);
   assert.equal(w.carried.length, 0);
-  assert.equal(w.notified.at(-1)?.taint?.note, "Cobra read web pages (caymanyogaclub.com) in this turn, so it asks you before this goes out.");
+  assert.equal(w.notified.at(-1)?.taint?.note, "Cobra read web pages (caymanyogaclub.com) in this conversation, so it asks you before this goes out.");
 
   w.taints.clear();
   const ran = await w.call("/orch/action/propose", { ...email, text: "Hi a third time" });

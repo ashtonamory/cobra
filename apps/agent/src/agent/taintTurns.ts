@@ -5,7 +5,8 @@ import { orchHeadless, orchState } from "./orchHeadless.ts";
 import type { TurnProbe, TurnSignal } from "./taint.ts";
 
 /**
- * Where a Lead's or a Foreman's turn ends (taint.ts): its own hook's Stop.
+ * Where a Lead's or a Foreman's turn ends, for what its last report carries
+ * (taint.ts reportTaint; its own taint lasts its conversation): its own hook's Stop.
  * Claude Code, Codex's notify and Cobra's Pi extension each leave the
  * session's latest event in the hooks folder (hooks.ts), found by the folder
  * the session runs in, exactly: the Lead's home, a Foreman's own folder. Only

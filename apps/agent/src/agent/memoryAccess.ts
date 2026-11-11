@@ -589,7 +589,7 @@ export function rememberLesson(
   root: string,
   computer: string,
   key: string,
-  input: { kind: string; text: string; from: "lead" | "foreman"; replaces?: string },
+  input: { kind: string; text: string; from: string; replaces?: string },
   now = Date.now(),
 ): { added: boolean; path: string; replaced?: string } | { error: string; status: number } {
   const kind = input.kind.trim().toLowerCase();

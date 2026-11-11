@@ -90,7 +90,7 @@ export function trustApprovalView(approval: Json): ActionView | null {
 
 /**
  * Why a card asks when its turn read text from outside (contracts ApprovalTaint; the agent's
- * taint.ts): "Cobra read an email from outside in this turn, so it asks you before this goes out."
+ * taint.ts): "Cobra read an email from outside in this conversation, so it asks you before this goes out."
  * Trust and Instinct never skip such a card. Null on any other card.
  */
 export function taintNote(approval: Json): string | null {

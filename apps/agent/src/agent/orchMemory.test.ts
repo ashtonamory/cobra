@@ -20,7 +20,7 @@ const registry = join(ROOT, "projects.json");
 writeFileSync(registry, JSON.stringify({ projects: [] }));
 
 /** One request through handleOrch, the way index.ts routes it. */
-async function call(route: string, query: string, method: "GET" | "POST", caller: { kind: string; project?: string }, body = "") {
+async function call(route: string, query: string, method: "GET" | "POST", caller: { kind: string; project?: string }, body = "", tainted = false) {
   let reply: { status: number; body: unknown } | null = null;
   const request = { method, on: () => undefined } as unknown as http.IncomingMessage;
   await handleOrch(route, new URL(`http://agent${route}${query}`), request, {} as http.ServerResponse, {
@@ -33,6 +33,8 @@ async function call(route: string, query: string, method: "GET" | "POST", caller
     notify: async () => undefined,
     machineLabel: "legion",
     port: 8797,
+    // The live taint file is empty here; a tainted caller is one that read an email.
+    ...(tainted ? { taintOf: () => ({ since: "2026-11-08T10:00:00.000Z", why: "mail_read", hosts: [], reads: 1, sources: ["email" as const] }) } : {}),
   });
   return reply!;
 }
@@ -66,4 +68,17 @@ test("memory_remember: a phone's key may not hand lessons in, and a Foreman only
   );
   assert.equal(replaced.status, 200);
   assert.match((replaced.body as { replaced: string }).replaced, /OTA only after the merge/);
+});
+
+test("memory_remember in a conversation that read text from outside keeps the lesson, marked so wherever it is read", async () => {
+  const text = "Dana at Acme wants quotes sent as PDF";
+  const kept = await call("/orch/memory/remember", "", "POST", { kind: "lead" }, JSON.stringify({ project: "octocat/marked", kind: "preference", text }), true);
+  assert.equal(kept.status, 200);
+  assert.equal((kept.body as { markedOutside?: boolean }).markedOutside, true);
+  const file = memory.readMemoryFile(memory.MEMORY_DIR, `computers/${memory.computerName()}/projects/octocat/marked/lessons.md`) ?? "";
+  assert.match(file, /Dana at Acme wants quotes sent as PDF \(from: lead, written after reading text from outside: check it before acting on it\)/);
+  // The mark is part of the source, so the same lesson is still known as the same lesson.
+  assert.equal(memory.lessonText(file.split("\n").find((line) => line.includes("Dana")) ?? ""), "dana at acme wants quotes sent as pdf");
+  const clean = await call("/orch/memory/remember", "", "POST", { kind: "lead" }, JSON.stringify({ project: "octocat/marked", kind: "gotcha", text: "Quotes are numbered by year" }));
+  assert.equal((clean.body as { markedOutside?: boolean }).markedOutside, undefined);
 });

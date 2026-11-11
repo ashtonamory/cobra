@@ -35,71 +35,38 @@ test("a session is tainted from its first read, keeps its hosts, and a fresh con
   assert.equal(taint.loadTaint(path).sessions["foreman:northwind"], undefined);
 });
 
-const quiet: import("./taint.ts").TurnProbe = () => ({ stopAt: null, turns: null });
-
-test("a Lead's or Foreman's taint ends with its turn: the next Stop after its last read", () => {
-  const path = join(STATE, "turn.json");
-  let stopAt: number | null = NOW - 5000;
-  const probe: import("./taint.ts").TurnProbe = () => ({ stopAt, turns: null });
-  taint.noteRead("foreman:northwind", "mail_read", [], NOW, path, "email", probe);
-  assert.ok(taint.isTainted("foreman:northwind", path, probe), "a Stop before the read is the turn before");
-  stopAt = NOW + 60_000;
-  assert.equal(taint.isTainted("foreman:northwind", path, probe), null, "the turn's Stop ends it");
-  // The sweep writes it down, so a later event that hides the Stop does not bring it back.
-  assert.deepEqual(taint.endTurns(() => true, NOW + 61_000, path, probe), ["foreman:northwind"]);
-  stopAt = null;
-  assert.equal(taint.isTainted("foreman:northwind", path, probe), null);
-  // A read in a new turn is a fresh taint, with only what that turn read.
-  taint.noteRead("foreman:northwind", "calendar_read", [], NOW + 120_000, path, "calendar", probe);
-  const fresh = taint.isTainted("foreman:northwind", path, probe);
-  assert.deepEqual(fresh?.sources, ["calendar"]);
-  assert.equal(fresh?.since, new Date(NOW + 120_000).toISOString());
+test("a Lead's or Foreman's taint lasts its conversation: no Stop ends it, a fresh conversation does", () => {
+  const path = join(STATE, "conversation.json");
+  const stopped: import("./taint.ts").TurnProbe = () => ({ stopAt: NOW + 60_000, turns: null });
+  taint.noteRead("foreman:northwind", "mail_read", [], NOW, path, "email", stopped);
+  // The email is still in front of the model after its turn, so the next turn asks too.
+  assert.ok(taint.isTainted("foreman:northwind", path));
+  assert.deepEqual(taint.endGone(() => true, NOW + 24 * 60 * 60_000, path), [], "the sweep never ends an orchestrator's");
+  taint.noteRead("foreman:northwind", "calendar_read", [], NOW + 120_000, path, "calendar", stopped);
+  const kept = taint.isTainted("foreman:northwind", path);
+  assert.deepEqual(kept?.sources, ["email", "calendar"]);
+  assert.equal(kept?.since, new Date(NOW).toISOString());
+  taint.clearTaint("foreman:northwind", NOW + 180_000, path);
+  assert.equal(taint.isTainted("foreman:northwind", path), null);
+  // What the new conversation reads is a fresh taint, with only its own reads.
+  taint.noteRead("foreman:northwind", "WebSearch yoga", [], NOW + 240_000, path, "web", stopped);
+  assert.deepEqual(taint.isTainted("foreman:northwind", path)?.sources, ["web"]);
 });
 
-test("a read after a Stop the agent has not swept yet starts a fresh taint, not the old turn's", () => {
-  const path = join(STATE, "unswept.json");
-  let stopAt: number | null = null;
-  const probe: import("./taint.ts").TurnProbe = () => ({ stopAt, turns: null });
-  taint.noteRead("lead", "WebFetch https://a.example/", ["a.example"], NOW, path, "web", probe);
-  stopAt = NOW + 1000;
-  taint.noteRead("lead", "mail", [], NOW + 2000, path, "email", probe);
-  const now = taint.isTainted("lead", path, () => ({ stopAt: null, turns: null }));
-  assert.deepEqual(now?.sources, ["email"]);
-  assert.deepEqual(now?.hosts, []);
-});
-
-test("a headless session's taint ends when its count of ended turns moves on", () => {
-  const path = join(STATE, "headless.json");
-  let turns = 3;
-  const probe: import("./taint.ts").TurnProbe = () => ({ stopAt: null, turns });
-  taint.noteRead("foreman:acme", "mail_search", [], NOW, path, "email", probe);
-  assert.ok(taint.isTainted("foreman:acme", path, probe));
-  turns = 4;
-  assert.equal(taint.isTainted("foreman:acme", path, probe), null);
-});
-
-test("a hook that never speaks keeps the taint: it asks once more, never less", () => {
-  const path = join(STATE, "silent.json");
-  taint.noteRead("foreman:acme", "mail_read", [], NOW, path, "email", quiet);
-  assert.deepEqual(taint.endTurns(() => true, NOW + 24 * 60 * 60_000, path, quiet), []);
-  assert.ok(taint.isTainted("foreman:acme", path, quiet));
-});
-
-test("a Worker's taint lasts its run: no Stop ends it, its end does", () => {
+test("a Worker's taint lasts its run: its end ends it", () => {
   const path = join(STATE, "worker-run.json");
-  const stopped: import("./taint.ts").TurnProbe = () => ({ stopAt: NOW + 60_000, turns: 99 });
-  taint.noteRead("worker:acme_2", "WebFetch x", ["x.example"], NOW, path, "web", stopped);
-  assert.ok(taint.isTainted("worker:acme_2", path, stopped));
-  assert.deepEqual(taint.endTurns(() => true, NOW + 61_000, path, stopped), []);
-  assert.deepEqual(taint.endTurns((id) => id !== "acme_2", NOW + 62_000, path, stopped), ["worker:acme_2"]);
-  assert.equal(taint.isTainted("worker:acme_2", path, stopped), null);
+  taint.noteRead("worker:acme_2", "WebFetch x", ["x.example"], NOW, path);
+  assert.ok(taint.isTainted("worker:acme_2", path));
+  assert.deepEqual(taint.endGone(() => true, NOW + 61_000, path), []);
+  assert.deepEqual(taint.endGone((id) => id !== "acme_2", NOW + 62_000, path), ["worker:acme_2"]);
+  assert.equal(taint.isTainted("worker:acme_2", path), null);
 });
 
 test("the card's note says plainly what was read and why it asks", () => {
-  assert.equal(taint.taintNote("foreman:acme", { sources: ["email"], hosts: [] }), "Cobra read an email from outside in this turn, so it asks you before this goes out.");
+  assert.equal(taint.taintNote("foreman:acme", { sources: ["email"], hosts: [] }), "Cobra read an email from outside in this conversation, so it asks you before this goes out.");
   assert.equal(
     taint.taintNote("lead", { sources: ["web", "calendar"], hosts: ["a.example", "b.example", "c.example", "d.example"] }),
-    "Cobra read web pages (a.example, b.example, c.example, and 1 more) and calendar events (invites carry other people's words) in this turn, so it asks you before this goes out.",
+    "Cobra read web pages (a.example, b.example, c.example, and 1 more) and calendar events (invites carry other people's words) in this conversation, so it asks you before this goes out.",
   );
   assert.match(taint.taintNote("worker:acme_2", { sources: ["records"], hosts: [] }), /^This Worker read messages people sent in .* in its task/);
   // A file from before sources were kept read the web.
@@ -146,35 +113,32 @@ test("a Drive save the audit read first says so on its receipt", () => {
   assert.match(receiptNotice({ ...base, trusted: { key: DRIVE_CONSENT, grantedAt: "x", audited: "clean" } }).body, /connected Google, checked for planted content first: saved/);
 });
 
-test("a Foreman's report carries its turn's taint after the Stop, until a later turn ends clean", () => {
+test("a Foreman's last report carries its taint past a fresh conversation, until the new one ends a turn", () => {
   const path = join(STATE, "report.json");
   const who = "foreman:northwind";
   const none = () => ({ stopAt: null, turns: null });
   assert.equal(taint.reportTaint(who, path, none), null, "a clean Foreman's report is clean");
   taint.noteRead(who, "mail_read", [], NOW, path, "email", none);
-  assert.deepEqual(taint.reportTaint(who, path, none)?.sources, ["email"], "while its turn runs");
+  assert.deepEqual(taint.reportTaint(who, path, none)?.sources, ["email"], "while its conversation runs");
 
-  // Its Stop ends the taint for its own actions; the report it just wrote still carries it.
-  const stopped = () => ({ stopAt: NOW + 5000, turns: null });
-  assert.deepEqual(taint.endTurns(() => true, NOW + 6000, path, stopped), [who]);
-  assert.equal(taint.isTainted(who, path, stopped), null);
-  assert.deepEqual(taint.reportTaint(who, path, stopped)?.sources, ["email"]);
+  // It slept and woke as a fresh conversation: clean for its own actions, but the report it left is not.
+  taint.clearTaint(who, NOW + 6000, path);
+  assert.equal(taint.isTainted(who, path), null);
+  assert.deepEqual(taint.reportTaint(who, path, () => ({ stopAt: NOW + 5000, turns: null }))?.sources, ["email"]);
   assert.ok(taint.reportTaint(who, path, none), "mid-turn, the agent knows nothing newer: it holds");
-
-  // A later turn that read nothing from outside has ended: its report is clean.
-  assert.equal(taint.reportTaint(who, path, () => ({ stopAt: NOW + 60_000, turns: null })), null);
+  assert.equal(taint.reportTaint(who, path, () => ({ stopAt: NOW + 60_000, turns: null })), null, "the new conversation has reported");
 });
 
-test("a headless Foreman's report carries the taint for the turn that read, and no further", () => {
+test("a headless Foreman's last report carries the taint for the turn that read, and no further", () => {
   const path = join(STATE, "report-headless.json");
   const who = "foreman:northwind";
   taint.noteRead(who, "mail_read", [], NOW, path, "email", () => ({ stopAt: null, turns: 4 }));
-  taint.endTurns(() => true, NOW + 1000, path, () => ({ stopAt: null, turns: 5 }));
+  taint.clearTaint(who, NOW + 1000, path);
   assert.ok(taint.reportTaint(who, path, () => ({ stopAt: null, turns: 5 })));
   assert.equal(taint.reportTaint(who, path, () => ({ stopAt: null, turns: 6 })), null);
 });
 
 test("the card names a connected app's answer and a report in plain words", () => {
-  assert.equal(taint.taintNote("lead", { sources: ["connector"], hosts: [] }), "Cobra read what a connected app sent back in this turn, so it asks you before this goes out.");
-  assert.equal(taint.taintNote("lead", { sources: ["report"], hosts: [] }), "Cobra read a report written after reading text from outside in this turn, so it asks you before this goes out.");
+  assert.equal(taint.taintNote("lead", { sources: ["connector"], hosts: [] }), "Cobra read what a connected app sent back in this conversation, so it asks you before this goes out.");
+  assert.equal(taint.taintNote("lead", { sources: ["report"], hosts: [] }), "Cobra read a report written after reading text from outside in this conversation, so it asks you before this goes out.");
 });

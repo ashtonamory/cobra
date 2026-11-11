@@ -149,7 +149,7 @@ import { drainQueue, handleOrch, liveSiteSettleDeps, ORCH_ROUTES, routerBudget, 
 import { runSpaceTool, setSpaceRunner } from "./workerSpace.ts";
 import { chooseModels, planNews } from "./plans.ts";
 import { finishes, liveFinishTickDeps, tellLine, TICK_MS as FINISH_TICK_MS, type FinishTickDeps } from "./finishes.ts";
-import { endTurns, noteRead, ownerWho, setTurnProbe } from "./taint.ts";
+import { endGone, noteRead, ownerWho, setTurnProbe } from "./taint.ts";
 import { liveTurnProbe } from "./taintTurns.ts";
 import { personCause, waking, wakes, withWake } from "./wakes.ts";
 import { AFRESH_LINE, liveOnCallSpace, needsOfState, onCall, ROTATE_LINE, WRAP_LINE, type Needs } from "./onCall.ts";
@@ -3710,7 +3710,7 @@ async function closeIdleSessions(closes: readonly string[]): Promise<void> {
 
 let relayWorkers: OrchWorker[] = [];
 let relayForemen: OrchForeman[] = [];
-// A Lead's or Foreman's taint ends with its turn (taint.ts): its hook's Stop, or a headless session's ended turns, named here from the relay's look.
+// What a Foreman last said keeps its taint until its next conversation ends a turn (taint.ts reportTaint): its hook's Stop, or a headless session's ended turns, named here from the relay's look.
 const foremanSessions = new Map<string, string>();
 setTurnProbe(liveTurnProbe((project) => foremanSessions.get(project) ?? null));
 const finishDeps: FinishTickDeps = {
@@ -3737,15 +3737,14 @@ const finishDeps: FinishTickDeps = {
 };
 
 /**
- * Each finish tick: a Lead's or Foreman's taint whose turn is over ends, and
- * a Worker's that is gone (taint.ts endTurns). Workers that cannot be read
- * leave every Worker's taint as it is.
+ * Each finish tick: the taint of a Worker that is gone ends (taint.ts
+ * endGone). Workers that cannot be read leave every Worker's taint as it is.
  */
 async function sweepTaint(): Promise<void> {
   const ids = await workerRecords()
     .then((extras) => new Set(extras.map((extra) => extra.id)))
     .catch(() => null);
-  const ended = endTurns((worker) => ids === null || ids.has(worker));
+  const ended = endGone((worker) => ids === null || ids.has(worker));
   if (ended.length) console.log(`[${SERVICE}] taint: ended for ${ended.join(", ")}`);
 }
 

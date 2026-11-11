@@ -52,18 +52,22 @@ by an attacker. These are the protections that are in place now:
 - **The vault.** Secret files are sealed at rest with AES-256-GCM; the key
   is in the OS keychain, or wrapped by your passphrase
   (`cobra-agent vault status`).
-- **Taint always asks.** Once an agent reads text from outside in a turn
-  (a web page, an email, a calendar invite, what someone sent through a
-  website form, what a connector's tool gave back), every action in that turn that sends, spends, deletes or
-  publishes is a card, even where trust, Drive consent, merge on green or
-  Instinct would have let it run alone. The card says what was read. The
-  taint ends with the turn (the session's next Stop); a Worker's lasts its
-  whole run, and a Worker started from a tainted turn starts tainted. A
-  Foreman's report written in a tainted turn taints the Lead's turn that
-  reads it. Its limits: the text read stays in the conversation after the
-  turn, so a later turn can still act on it without a card; a note kept in
-  memory in a tainted turn is read later as trusted; and the connector
-  mark is made only for a Lead or Foreman on Claude Code. A
+- **Taint always asks.** Once an agent reads text from outside (a web
+  page, an email, a calendar invite, what someone sent through a website
+  form, what a connector's tool gave back), every action after it that
+  sends, spends, deletes or publishes is a card, even where trust, Drive
+  consent, merge on green or Instinct would have let it run alone. The card
+  says what was read. The taint lasts the conversation, since what was read
+  stays in front of the model: only a fresh conversation ends it (New
+  conversation, a restart, the Lead's rotation after two quiet hours, an
+  on-call Foreman's next wake). A Worker's lasts its whole run, and a Worker
+  started from a tainted conversation starts tainted. A Foreman's report
+  written in a tainted conversation taints the Lead that reads it. A note
+  kept in memory from a tainted conversation is kept, and says "written
+  after reading text from outside" wherever it is read later. Its limits:
+  that mark is a warning to the reader, not a gate, so reading a marked
+  note does not taint; and the connector mark is made only for a Lead or
+  Foreman on Claude Code. A
   tainted Worker's own network calls under Auto or Instinct still go to the
   judge, which is told the Worker is tainted.
 - **Sandboxed pages.** The desk draws an email Cobra made, or a template a

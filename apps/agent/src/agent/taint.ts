@@ -8,12 +8,12 @@ import { writePrivateFile } from "./private.ts";
  * Taint: a session that has read text from outside (a web page, an email, a
  * calendar invite, what someone sent in through a form) may carry what that
  * text planted, so Cobra stops taking its word for anything that leaves the
- * computer. Taint always asks: in a tainted turn, every action that sends,
+ * computer. Taint always asks: in a tainted conversation, every action that sends,
  * spends, deletes or publishes is a card for the person, whatever trust or
  * Instinct would have let run alone (orch.ts taintedNotify, instinctActs.ts,
  * unanswered.ts). There is no list of trusted senders.
  *
- * What taints (each marks the reading session for its current turn):
+ * What taints (each marks the reading session's conversation):
  *
  *   web       a web search or page read that may run (gate.ts for a Worker,
  *             orchWeb.ts for the Lead and a Foreman), or a shell call to the
@@ -35,11 +35,11 @@ import { writePrivateFile } from "./private.ts";
  *
  * How long it lasts:
  *
- *   lead, foreman:<project>  the turn: until the session's next Stop (its
- *                            Claude Code, Codex or Pi hook; a headless
- *                            session's count of ended turns), seen at a
- *                            check or by the agent's sweep (endTurns). A
- *                            fresh conversation ends it too.
+ *   lead, foreman:<project>  the conversation: what it read stays in front
+ *                            of the model, so a Stop ends nothing. Only a
+ *                            fresh conversation does (a start, New
+ *                            conversation, a rotation, an on-call wake:
+ *                            clearTaint).
  *   worker:<id>              the Worker's run: its whole life. A Worker
  *                            started by a tainted orchestrator starts
  *                            tainted, since its task may carry it.
@@ -50,20 +50,20 @@ import { writePrivateFile } from "./private.ts";
 export type TaintSource = "web" | "email" | "calendar" | "records" | "file" | "worker" | "brief" | "connector" | "report";
 
 export type Taint = {
-  /** When it was first tainted, this turn or Worker. */
+  /** When it was first tainted, this conversation or Worker. */
   since: string;
   /** What did it: the first read, or the orchestrator it came from. */
   why: string;
   /** The hosts it read, for the card (capped). */
   hosts: string[];
   reads: number;
-  /** The last read: the turn that holds it is the tainted one. Absent on a file from before turns (then `since`). */
+  /** The last read. Absent on an old file (then `since`). */
   at?: string;
   /** What kinds of outside text it read. Absent on a file from before sources: the web. */
   sources?: TaintSource[];
-  /** A headless session's ended turns when it was last marked, or first seen by the sweep (orchHeadless.ts). */
+  /** A headless session's ended turns when it was last marked (orchHeadless.ts), for reportTaint. */
   turns?: number;
-  /** When its turn (or its Worker) ended: kept for the record, no longer in force. */
+  /** When its conversation (or its Worker) ended: kept for the record, no longer in force. */
   ended?: string;
 };
 
@@ -85,7 +85,7 @@ const MAX_HOSTS = 200;
 const KNOWS_NOTHING: TurnProbe = () => ({ stopAt: null, turns: null });
 let liveProbe: TurnProbe = KNOWS_NOTHING;
 
-/** index.ts gives the live probe at boot (taintTurns.ts); until then, and in a hook's own process, a taint holds until swept. */
+/** index.ts gives the live probe at boot (taintTurns.ts): what reportTaint knows of a session's turns. */
 export function setTurnProbe(probe: TurnProbe): void {
   liveProbe = probe;
 }
@@ -120,29 +120,20 @@ export function hostOf(url: string): string | null {
 }
 
 const isWorker = (who: string): boolean => who.startsWith("worker:");
-const lastRead = (taint: Taint): number => Date.parse(taint.at ?? taint.since);
 
-/** Whether the turn that holds this taint's last read is over: a Stop after it, or more ended turns than when it was marked. A Worker's lasts its run. */
-export function turnOver(who: string, taint: Taint, signal: TurnSignal): boolean {
-  if (isWorker(who)) return false;
-  if (signal.stopAt !== null && signal.stopAt > lastRead(taint)) return true;
-  return signal.turns !== null && taint.turns !== undefined && signal.turns > taint.turns;
-}
-
-/** The taint in force for `who` now, or null. */
-export function inForce(file: TaintFile, who: string, signal: TurnSignal): Taint | null {
+/** The taint in force for `who` now, or null: one that has not ended. */
+export function inForce(file: TaintFile, who: string): Taint | null {
   const taint = file.sessions[who];
-  if (!taint || taint.ended !== undefined) return null;
-  return turnOver(who, taint, signal) ? null : taint;
+  return taint && taint.ended === undefined ? taint : null;
 }
 
-/** `who` read outside text: tainted from now for this turn (a fresh taint when the last one is over), with these hosts and this source added. */
-export function markRead(file: TaintFile, who: string, read: { why: string; hosts: readonly string[]; source: TaintSource; now: number; turns: number | null }, over = false): TaintFile {
+/** `who` read outside text: tainted from now (a fresh taint when the last one ended), with these hosts and this source added. */
+export function markRead(file: TaintFile, who: string, read: { why: string; hosts: readonly string[]; source: TaintSource; now: number; turns: number | null }): TaintFile {
   const had = file.sessions[who];
   const at = new Date(read.now).toISOString();
   const turns = read.turns !== null ? { turns: read.turns } : {};
   const next: Taint =
-    had && had.ended === undefined && !over
+    had && had.ended === undefined
       ? { ...had, hosts: [...new Set([...had.hosts, ...read.hosts])].slice(0, MAX_HOSTS), reads: had.reads + 1, at, sources: [...new Set([...(had.sources ?? ["web"]), read.source])], ...turns }
       : { since: at, why: read.why.slice(0, 200), hosts: [...new Set(read.hosts)].slice(0, MAX_HOSTS), reads: 1, at, sources: [read.source], ...turns };
   return { sessions: { ...file.sessions, [who]: next } };
@@ -155,33 +146,29 @@ export function end(file: TaintFile, who: string, now: number): TaintFile {
   return { sessions: { ...file.sessions, [who]: { ...had, ended: new Date(now).toISOString() } } };
 }
 
-export function taintOf(file: TaintFile, who: string, signal: TurnSignal = { stopAt: null, turns: null }): Taint | null {
-  return inForce(file, who, signal);
+export function taintOf(file: TaintFile, who: string): Taint | null {
+  return inForce(file, who);
 }
 
 // --- the live file -------------------------------------------------------------------------
 
 /** The taint in force for `who` now (lead, foreman:<project>, worker:<id>), or null. */
-export function isTainted(who: string, path = TAINT_PATH, probe: TurnProbe = liveProbe): Taint | null {
-  const file = loadTaint(path);
-  if (!file.sessions[who]) return null;
-  return inForce(file, who, isWorker(who) ? { stopAt: null, turns: null } : probe(who));
+export function isTainted(who: string, path = TAINT_PATH): Taint | null {
+  return inForce(loadTaint(path), who);
 }
 
 export function noteRead(who: string, why: string, hosts: readonly string[], now = Date.now(), path = TAINT_PATH, source: TaintSource = "web", probe: TurnProbe = liveProbe): void {
   const file = loadTaint(path);
-  const signal = isWorker(who) ? { stopAt: null, turns: null } : probe(who);
-  const had = file.sessions[who];
-  const over = had !== undefined && had.ended === undefined && turnOver(who, had, signal);
-  saveTaint(markRead(file, who, { why, hosts, source, now, turns: signal.turns }, over), now, path);
+  const turns = isWorker(who) ? null : probe(who).turns;
+  saveTaint(markRead(file, who, { why, hosts, source, now, turns }), now, path);
 }
 
 /**
  * The taint on what `who` last said: the one in force, or the one that ended
- * with its last finished turn. A Foreman's taint ends at its Stop, which is
- * when the Lead reads its report, so the report carries it on. Null once a
- * later turn has ended clean. Where the agent knows nothing of the turns
- * since, it holds.
+ * with its conversation. A Foreman's last report is still there to read
+ * after a fresh conversation ended its taint, so the report carries it on
+ * until the new conversation has ended a turn of its own. Where the agent
+ * knows nothing of the turns since, it holds.
  */
 export function reportTaint(who: string, path = TAINT_PATH, probe: TurnProbe = liveProbe): Taint | null {
   const taint = loadTaint(path).sessions[who];
@@ -194,9 +181,9 @@ export function reportTaint(who: string, path = TAINT_PATH, probe: TurnProbe = l
 }
 
 /** Who a new Worker of `owner` ("lead" or a project id) takes taint from, or undefined when its orchestrator's turn is clean. */
-export function taintedOwner(owner: string, path = TAINT_PATH, probe: TurnProbe = liveProbe): string | undefined {
+export function taintedOwner(owner: string, path = TAINT_PATH): string | undefined {
   const who = ownerWho(owner);
-  return isTainted(who, path, probe) ? who : undefined;
+  return isTainted(who, path) ? who : undefined;
 }
 
 /** Worker `worker` starts tainted, from `from` (its orchestrator, when it was asked for). */
@@ -212,7 +199,7 @@ export function taintWorker(worker: string, from: string, now = Date.now(), path
   saveTaint(next, now, path);
 }
 
-/** A fresh conversation (/lead/clear, /foreman/clear, a rotation): its taint ends. */
+/** A fresh conversation (any start of the Lead or a Foreman: lead.ts, foreman.ts): its taint ends. */
 export function clearTaint(who: string, now = Date.now(), path = TAINT_PATH): void {
   const file = loadTaint(path);
   const next = end(file, who, now);
@@ -220,34 +207,19 @@ export function clearTaint(who: string, now = Date.now(), path = TAINT_PATH): vo
 }
 
 /**
- * The agent's sweep (index.ts, each finish tick): ends each Lead's and
- * Foreman's taint whose turn is over, and each Worker's that is gone. A
- * headless session first seen here has its ended turns noted, so its next
- * one ends it. Returns who it ended.
+ * The agent's sweep (index.ts, each finish tick): ends the taint of each
+ * Worker that is gone. A Lead's and a Foreman's end only with their
+ * conversation (clearTaint). Returns who it ended.
  */
-export function endTurns(alive: (worker: string) => boolean, now = Date.now(), path = TAINT_PATH, probe: TurnProbe = liveProbe): string[] {
+export function endGone(alive: (worker: string) => boolean, now = Date.now(), path = TAINT_PATH): string[] {
   let file = loadTaint(path);
   const ended: string[] = [];
-  let changed = false;
   for (const [who, taint] of Object.entries(file.sessions)) {
-    if (taint.ended !== undefined) continue;
-    if (isWorker(who)) {
-      if (!alive(who.slice("worker:".length))) {
-        file = end(file, who, now);
-        ended.push(who);
-      }
-      continue;
-    }
-    const signal = probe(who);
-    if (turnOver(who, taint, signal)) {
-      file = end(file, who, now);
-      ended.push(who);
-    } else if (taint.turns === undefined && signal.turns !== null) {
-      file = { sessions: { ...file.sessions, [who]: { ...taint, turns: signal.turns } } };
-      changed = true;
-    }
+    if (taint.ended !== undefined || !isWorker(who) || alive(who.slice("worker:".length))) continue;
+    file = end(file, who, now);
+    ended.push(who);
   }
-  if (ended.length > 0 || changed) saveTaint(file, now, path);
+  if (ended.length > 0) saveTaint(file, now, path);
   return ended;
 }
 
@@ -283,7 +255,7 @@ export function taintNote(who: string, taint: Pick<Taint, "sources" | "hosts">):
   const read = listed(taintRead(taint));
   return isWorker(who)
     ? `This Worker read ${read} in its task, so Cobra asks you before this goes out.`
-    : `Cobra read ${read} in this turn, so it asks you before this goes out.`;
+    : `Cobra read ${read} in this conversation, so it asks you before this goes out.`;
 }
 
 /**

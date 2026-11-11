@@ -448,6 +448,8 @@ export async function startForeman(project: Project): Promise<{ session: string;
   if (!SESSION_NAME.test(foremanSession(project))) throw new SessionError("the project's session name is not usable", 500);
   requireJail();
   if (await foremanRunning(project)) throw new SessionError(`the Foreman for ${project.name} is already running`, 409);
+  // Every start is a new conversation, which has read nothing yet (taint.ts).
+  clearTaint(`foreman:${project.id}`);
   // The computer's budget: the Foreman at rest the longest sleeps first.
   await foremanRoom?.(project);
   // Its line to the agent (orchSocket.ts), with a fresh key each start that only the agent holds; the last one stops working.
@@ -559,7 +561,6 @@ export async function stopForeman(project: Project, keys: Pick<KeyStore, "remove
 /** A Foreman's New conversation (POST /foreman/clear): a fresh start (lead.ts freshConversation), so it has today's MCP servers. Its Workers keep running. */
 export async function newForemanConversation(project: Project, port: number): Promise<void> {
   await freshConversation({ running: () => foremanRunning(project), stop: () => stopForeman(project), start: () => startForeman(project) });
-  clearTaint(`foreman:${project.id}`);
 }
 
 // --- the Lead's view of one -----------------------------------------------------------
