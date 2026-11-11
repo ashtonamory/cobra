@@ -9,8 +9,7 @@ import { McpEntry, McpPin } from "./mcp.ts";
 
 /**
  * Approvals: something an orchestrator asked for that only you may allow
- * (agent approvals.ts). A merge of Workers' PRs, or, from phase 2, the first
- * Workers on another computer. The agent pushes each one with Allow and Deny,
+ * (agent approvals.ts), such as a merge of Workers' PRs. The agent pushes each one with Allow and Deny,
  * Today lists the ones waiting, and only a phone or desktop key may answer.
  *
  * Strings where a list of values would be tempting (kind, state): an enum
@@ -656,7 +655,7 @@ export type ApprovalTaint = z.infer<typeof ApprovalTaint>;
 export const Approval = z.object({
   id: z.string(),
   machine: z.string(),
-  /** merge, land (any approval with `lands`), remote-spawn, mcp-verify, plan, or action. */
+  /** merge, land (any approval with `lands`), mcp-verify, plan, or action. */
   kind: z.string(),
   title: z.string(),
   body: z.string(),

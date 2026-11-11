@@ -30,7 +30,7 @@ export const PolicyLevel = z.object({
    */
   models: z.object({ fallbacks: FallbackChains.optional() }).optional(),
   /** What the orchestrators may do (phase 6); the most specific level that sets a field wins. */
-  lead: z.object({ webTools: z.boolean().optional(), remoteSpawnHours: z.number().int().optional() }).optional(),
+  lead: z.object({ webTools: z.boolean().optional() }).optional(),
   foreman: z
     .object({
       /** Workers at once in a project. */
@@ -118,7 +118,7 @@ export const PolicyStatus = z.object({
   /** The orchestrators' settings in force on this computer (a project's own are in policy.projects). Absent from an agent before phase 6. */
   roles: z
     .object({
-      lead: z.object({ webTools: z.boolean(), remoteSpawnHours: z.number() }),
+      lead: z.object({ webTools: z.boolean() }),
       foreman: z.object({
         maxWorkers: z.number(),
         /** Absent from an agent before the computer cap was a setting (it was 4). */
@@ -134,7 +134,7 @@ export const PolicyStatus = z.object({
     })
     .optional(),
   /** What no setting passes. */
-  hardCaps: z.object({ workersPerProject: z.number(), workersPerComputer: z.number().optional(), remoteSpawnHours: z.number(), jobsAtOnce: z.number(), localSlots: z.number().optional() }).optional(),
+  hardCaps: z.object({ workersPerProject: z.number(), workersPerComputer: z.number().optional(), jobsAtOnce: z.number(), localSlots: z.number().optional() }).optional(),
   changes: z.array(PolicyChange),
   /**
    * This computer's projects as a project level is keyed (owner/repo from

@@ -370,7 +370,6 @@ export function PermissionsSection({ p }: { p: PermissionsController }) {
           <Switch checked={!!permissions.fleetRole(policy, "lead", "webTools")}
             onChange={(on) => p.edit(permissions.setFleetRole(p.base(), "lead", "webTools", on))} />
         </div>
-        <Stepper p={p} title="Hours a remote Lead's Allow lasts" policy={policy} role="lead" field="remoteSpawnHours" low={1} high={caps.remoteSpawnHours} />
         <Stepper p={p} title="Read-only jobs at once" policy={policy} role="job" field="concurrent" low={0} high={caps.jobsAtOnce} />
       </Group>
 

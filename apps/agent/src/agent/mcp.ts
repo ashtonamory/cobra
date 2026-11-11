@@ -667,11 +667,11 @@ export type HandoffReply = { status: 200; body: { token: string } } | { status: 
  * launcher puts the token straight into the server's built environment.
  */
 export async function githubHandoff(
-  caller: { kind: string; project?: string; remote?: boolean; worker?: string },
+  caller: { kind: string; project?: string; worker?: string },
   deps: Partial<McpDeps> = {},
 ): Promise<HandoffReply> {
   const d = { ...mcpDeps, ...deps };
-  if (caller.kind !== "lead" || caller.remote === true || caller.worker !== undefined) return { status: 403, body: { error: "only the Lead's or a Foreman's GitHub server asks for this" } };
+  if (caller.kind !== "lead" || caller.worker !== undefined) return { status: 403, body: { error: "only the Lead's or a Foreman's GitHub server asks for this" } };
   const role: OrchRole = caller.project === undefined ? "lead" : "foreman";
   const registry = readRegistry(d.registryPath);
   if (registry.refused) return { status: 409, body: { error: `the MCP registry was refused: ${registry.refused}` } };

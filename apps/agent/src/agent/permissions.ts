@@ -165,7 +165,7 @@ export const POLICY_PATH = join(CONFIG_DIR, "policy.json");
  * check of the exact head; the caps never pass HARD_CAPS.
  */
 export type RoleLevel = {
-  lead?: { webTools?: boolean; remoteSpawnHours?: number };
+  lead?: { webTools?: boolean };
   /**
    * maxWorkers is per project; maxWorkersPerComputer is every project's
    * Workers on one computer together, read from the computer and fleet
@@ -184,7 +184,7 @@ export type RoleLevel = {
 
 /** The settings in force, every field filled. */
 export type Roles = {
-  lead: { webTools: boolean; remoteSpawnHours: number };
+  lead: { webTools: boolean };
   foreman: { maxWorkers: number; maxWorkersPerComputer: number; workerModels: string[] | null; mergeOnGreen: boolean; webTools: boolean };
   job: { models: string[] | null; concurrent: number };
   local: { slots: number };
@@ -200,14 +200,14 @@ export type Roles = {
  * false at any level takes them away at its next start.
  */
 export const DEFAULT_ROLES: Roles = {
-  lead: { webTools: false, remoteSpawnHours: 12 },
+  lead: { webTools: false },
   foreman: { maxWorkers: 3, maxWorkersPerComputer: 8, workerModels: null, mergeOnGreen: false, webTools: true },
   job: { models: null, concurrent: 2 },
   local: { slots: 1 },
 };
 
 /** No setting passes these. */
-export const HARD_CAPS = { workersPerProject: 8, workersPerComputer: 16, remoteSpawnHours: 24, jobsAtOnce: 4, localSlots: 8 };
+export const HARD_CAPS = { workersPerProject: 8, workersPerComputer: 16, jobsAtOnce: 4, localSlots: 8 };
 
 const MODEL_NAME = /^(?:claude|opus|sonnet|haiku|fable|claude-[a-z0-9.-]{1,60}|codex|codex:\*|codex:[A-Za-z0-9._-]{1,60}|api|api:\*|api:(?:opus|sonnet|haiku|fable|claude-[a-z0-9.-]{1,60})|local:\*|local:[A-Za-z0-9._:/-]{1,120})$/;
 
@@ -408,8 +408,6 @@ function roleLevel(value: Record<string, unknown>): RoleLevel {
   if (lead && typeof lead === "object") {
     const set: NonNullable<RoleLevel["lead"]> = {};
     if (typeof lead.webTools === "boolean") set.webTools = lead.webTools;
-    const hours = intIn(lead.remoteSpawnHours, 1, HARD_CAPS.remoteSpawnHours);
-    if (hours !== undefined) set.remoteSpawnHours = hours;
     if (Object.keys(set).length) out.lead = set;
   }
   const foreman = value.foreman as Record<string, unknown> | undefined;
@@ -459,7 +457,7 @@ export function resolveRoles(policy: PolicyFile, where: { computer?: string; pro
   // Instinct turns the Lead's web tools on where nobody wrote them: its fetches go to the judge first (orchWeb.ts).
   const leadWeb = levels.map((level) => level?.lead?.webTools).find((set) => set !== undefined) ?? (ESCALATING.has(presetAt(policy, where)) || DEFAULT_ROLES.lead.webTools);
   return {
-    lead: { webTools: leadWeb, remoteSpawnHours: pick("lead", "remoteSpawnHours") },
+    lead: { webTools: leadWeb },
     foreman: {
       maxWorkers: pick("foreman", "maxWorkers"),
       // The whole computer's: a project cannot raise it for itself.

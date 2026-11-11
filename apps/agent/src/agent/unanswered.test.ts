@@ -36,7 +36,7 @@ test("only an import nobody answered for its wait, not lapsed and never judged, 
     card("import", 7 * 60 * MIN),
     card("merge", 3 * 60 * MIN),
     card("action", 3 * 60 * MIN),
-    card("remote-spawn", 25 * MIN),
+    card("mcp-verify", 25 * MIN),
     card("import", 25 * MIN, { imports: { ...imports, files: [] } }),
   ];
   assert.deepEqual(dueForJudge(list, NOW).map((approval) => approval.id), [due.id]);

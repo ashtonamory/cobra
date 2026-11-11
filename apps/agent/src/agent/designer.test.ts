@@ -304,7 +304,6 @@ test("only a Designer Foreman here proposes a brand kit or shows designs; one ca
   const foreman = { id: "foreman:acme-designer", kind: "lead", project: "acme-designer" };
   assert.equal((await handleDesignerOrch("/orch/brand/propose", body, { id: "lead", kind: "lead" }, d)).status, 403, "not the Lead");
   assert.equal((await handleDesignerOrch("/orch/brand/propose", body, { ...foreman, project: "acme-billing" }, d)).status, 403, "not another trade");
-  assert.equal((await handleDesignerOrch("/orch/brand/propose", body, { ...foreman, remote: true }, d)).status, 403, "not from another computer");
   assert.equal((await handleDesignerOrch("/orch/brand/propose", "[1]", foreman, d)).status, 400);
 
   const made = await handleDesignerOrch("/orch/brand/propose", body, foreman, d);

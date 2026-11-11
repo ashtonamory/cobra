@@ -49,14 +49,6 @@ import { decisionLine, liveActivity, liveOnCallSpace, needsOfFinish, routeEvent,
  * never counts) is told to the Lead as stopped, unless that is what it was
  * told last, and then forgotten.
  *
- * A Lead on another computer (the hub's Cobra, briefing a Foreman here) is
- * told the same finishes, of the Foremen it briefed, through
- * `/orch/lead/news` (orch.ts): the hub's agent holds that open for it and
- * types each into its Lead's session (leadNews.ts), so a Foreman here that
- * reports a merge wakes her as one on her own computer does. Which Foremen
- * each such Lead briefed outlives a restart too (REMOTE_BRIEFED_PATH); a
- * first sight after a restart is never news for it.
- *
  * A notice is typed into the owner's session only when its screen shows an
  * empty input box and no turn running, as dispatch types a prompt; until
  * then it waits, and several merge into one line. A notice for an owner whose
@@ -167,8 +159,8 @@ export function noticeLine(finishes: readonly Finish[], audience?: string): stri
 }
 
 /** Who a wait or a notice is for: a Foreman's project id, "lead", or a phone's or desk's own id. */
-export function audienceOf(caller: { id: string; kind: string; remote?: boolean; project?: string }): string {
-  if (caller.kind === "lead" && caller.remote !== true) return caller.project ?? "lead";
+export function audienceOf(caller: { id: string; kind: string; project?: string }): string {
+  if (caller.kind === "lead") return caller.project ?? "lead";
   return caller.id;
 }
 
@@ -275,40 +267,6 @@ export function saveBriefed(path: string, briefed: ReadonlyMap<string, ToldTurn 
   writePrivateFile(path, `${JSON.stringify({ foremen }, null, 2)}\n`);
 }
 
-/** The Foremen each Lead on another computer briefed here, by that Lead's key id. */
-export const REMOTE_BRIEFED_PATH = join(STATE_DIR, "remote-briefed.json");
-
-/** The remote Leads' briefed Foremen as kept; a missing or unreadable file is none. */
-export function loadRemoteBriefed(path: string, log: (line: string) => void): Map<string, Set<string>> {
-  const leads = new Map<string, Set<string>>();
-  let text: string;
-  try {
-    text = readFileSync(path, "utf8");
-  } catch (caught) {
-    const code = (caught as NodeJS.ErrnoException).code;
-    if (code !== "ENOENT") log(`finish: could not read ${path} (${code ?? String(caught)}); no remote Lead hears of a Foreman until it briefs one`);
-    return leads;
-  }
-  try {
-    const raw = JSON.parse(text) as { leads?: unknown };
-    if (!Array.isArray(raw?.leads)) throw new Error("no leads list");
-    for (const entry of raw.leads as unknown[]) {
-      const { lead, projects } = (entry ?? {}) as { lead?: unknown; projects?: unknown };
-      if (typeof lead !== "string" || lead === "" || !Array.isArray(projects)) continue;
-      leads.set(lead, new Set(projects.filter((project): project is string => typeof project === "string" && project !== "")));
-    }
-  } catch (caught) {
-    log(`finish: ${path} is not readable (${caught instanceof Error ? caught.message : String(caught)}); no remote Lead hears of a Foreman until it briefs one`);
-    leads.clear();
-  }
-  return leads;
-}
-
-export function saveRemoteBriefed(path: string, leads: ReadonlyMap<string, ReadonlySet<string>>): void {
-  const list = [...leads].filter(([, projects]) => projects.size > 0).map(([lead, projects]) => ({ lead, projects: [...projects].sort() }));
-  writePrivateFile(path, `${JSON.stringify({ leads: list }, null, 2)}\n`);
-}
-
 /**
  * `path` keeps the briefed Foremen across restarts (this agent's own: BRIEFED_PATH);
  * without one they live only as long as the tracker.
@@ -316,8 +274,6 @@ export function saveRemoteBriefed(path: string, leads: ReadonlyMap<string, Reado
 export function createFinishes(
   options: {
     path?: string;
-    /** Keeps the remote Leads' briefed Foremen across restarts (REMOTE_BRIEFED_PATH); without one, as long as the tracker. */
-    remotePath?: string;
     log?: (line: string) => void;
     /** Each new finish of any Worker or Foreman, told or not: the memory's feed (memory.ts). */
     onFinish?: (finish: Finish, about: { project: string; title?: string }) => void;
@@ -351,24 +307,6 @@ export function createFinishes(
   let queued: Notice[] = [];
   /** Other news for an owner (a check's result, workerChecks.ts), typed with its finishes. Fixed words only. */
   let news: Array<{ owner: string; text: string; cause: WakeCause; needs?: Needs; outside?: TaintSource }> = [];
-  /** For each Lead on another computer, the projects whose Foreman it briefed here; read from `remotePath` on first use. */
-  let remoteKept: Map<string, Set<string>> | null = null;
-  const remote = (): Map<string, Set<string>> => {
-    remoteKept ??= options.remotePath ? loadRemoteBriefed(options.remotePath, log) : new Map<string, Set<string>>();
-    return remoteKept;
-  };
-  const saveRemote = () => {
-    if (!options.remotePath) return;
-    try {
-      saveRemoteBriefed(options.remotePath, remote());
-    } catch (caught) {
-      log(`finish: could not keep the remote Leads' Foremen: ${caught instanceof Error ? caught.message : String(caught)}`);
-    }
-  };
-  /** Other news for a remote Lead, by its key id, until it next asks (`remoteNews`). */
-  const remoteLines = new Map<string, string[]>();
-  /** A Foreman's first sight (the agent just started): kept for foreman_wait, never news for a remote Lead. */
-  const quiet = new WeakSet<Finish>();
   /**
    * Foremen whose turn now was started by a [cobra] line this tracker typed
    * (a Worker's finish, a check, an email's news), not by a brief: such a
@@ -562,15 +500,6 @@ export function createFinishes(
         const listed = registered.every((entry) => entry.listed !== false);
         const running = new Map(registered.map(({ foreman }) => [foreman.project, foreman.running]));
         let changed = false;
-        let remoteChanged = false;
-        for (const projects of remote().values()) {
-          for (const project of [...projects]) {
-            if (running.has(project)) continue;
-            projects.delete(project);
-            remoteChanged = true;
-          }
-        }
-        if (remoteChanged) saveRemote();
         for (const project of [...briefed.keys()]) {
           if (!running.has(project)) {
             forget(project, "its project is gone", deps);
@@ -634,7 +563,6 @@ export function createFinishes(
           return record(foreman.project, kind, foreman.dialog, turn, deps.now(), true);
         }, settleTicks);
         if (heard?.notify) options.onFinish?.(heard.finish, { project: foreman.project });
-        if (heard && !heard.notify) quiet.add(heard.finish);
         const byCode = heard?.notify ? codeStarted.delete(foreman.project) : false;
         if (!briefed.has(foreman.project)) continue;
         if (heard?.notify && heard.finish.kind === "idle" && (byCode || quietBriefs.has(foreman.project))) {
@@ -721,38 +649,6 @@ export function createFinishes(
       save();
     },
 
-    /** A Lead on another computer (its key id) briefed this project's Foreman: from now on `remoteNews` hands it its finishes. */
-    briefedFrom(project: string, lead: string): void {
-      const projects = remote().get(lead) ?? new Set<string>();
-      if (projects.has(project)) return;
-      remote().set(lead, projects.add(project));
-      saveRemote();
-    },
-
-    /** The Leads on other computers that briefed this project's Foreman. */
-    briefersOf(project: string): string[] {
-      return [...remote()].filter(([, projects]) => projects.has(project)).map(([lead]) => lead);
-    },
-
-    /** One more line for a Lead on another computer, handed over with its next `remoteNews`. The agent's own words only. */
-    tellRemote(lead: string, text: string): void {
-      remoteLines.set(lead, [...(remoteLines.get(lead) ?? []), text]);
-    },
-
-    /**
-     * What a Lead on another computer has not been told yet: the new finishes
-     * of the Foremen it briefed here (from now on told to it, as foreman_wait
-     * claims them) and its other lines.
-     */
-    remoteNews(lead: string): { finishes: Finish[]; lines: string[] } {
-      const projects = [...(remote().get(lead) ?? [])];
-      const fresh = unseenOf(projects.map((id) => keyOf({ id, foreman: true })), lead).filter((finish) => !quiet.has(finish) && !held.has(finish));
-      markTold(lead, fresh);
-      const lines = remoteLines.get(lead) ?? [];
-      remoteLines.delete(lead);
-      return { finishes: fresh, lines };
-    },
-
     markTold,
 
     /**
@@ -801,7 +697,6 @@ export type Finishes = ReturnType<typeof createFinishes>;
 /** This agent's own. */
 export const finishes = createFinishes({
   path: BRIEFED_PATH,
-  remotePath: REMOTE_BRIEFED_PATH,
   onFinish: (finish, about) =>
     recordFeed({
       role: finish.foreman ? "foreman" : "worker",

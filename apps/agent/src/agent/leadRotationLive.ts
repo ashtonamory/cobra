@@ -91,7 +91,7 @@ export async function rotationFactsHere(input: RotationInput): Promise<RotationF
     working: lead ? working(lead) : false,
     dialog: !!lead?.needsInput,
     openAsk: pendingAsk(LEAD_SESSION) !== null,
-    // Hers: her key ids start lead_ (lead_from_ when she runs on another computer).
+    // Hers: her key ids start lead_.
     approvals: settle(loadApprovals(), now).filter((approval) => approval.state === "pending" && approval.requestedBy.startsWith("lead_")).length,
     foremenBusy: projects
       .filter((project) => project.foreman && briefed.has(project.parent ?? project.id) && (working(project) || !!project.needsInput))

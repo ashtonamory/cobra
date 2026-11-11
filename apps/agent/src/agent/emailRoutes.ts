@@ -147,7 +147,7 @@ export function lastSendDay(start: Date, count: number, queued: number, left: nu
   return new Date(start.getTime() + days * DAY_MS).toISOString().slice(0, 10);
 }
 
-type Caller = { id: string; kind: string; remote?: boolean; project?: string; worker?: string };
+type Caller = { id: string; kind: string; project?: string; worker?: string };
 
 const bad = (status: number, error: string): Reply => ({ status, body: { error } });
 
@@ -192,7 +192,7 @@ async function withFrom(reply: Reply, space: string, deps: EmailRouteDeps): Prom
 }
 
 export async function handleEmailOrch(route: string, url: URL, bodyText: string, caller: Caller, deps: EmailRouteDeps): Promise<Reply> {
-  if (caller.kind !== "lead" || caller.project === undefined || caller.remote === true) return bad(403, "only a Foreman of a Space on this computer works on its email");
+  if (caller.kind !== "lead" || caller.project === undefined) return bad(403, "only a Foreman of a Space works on its email");
   const project = await deps.project(caller.project);
   if (!project) return bad(403, "only a Foreman of a Space on this computer works on its email");
   const space = deps.space(project);

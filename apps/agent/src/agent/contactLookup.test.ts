@@ -143,7 +143,7 @@ test("the store is opened read-only: a lookup changes no byte, and its handle ca
 
 // --- who may call it ------------------------------------------------------------------------
 
-type Caller = { id: string; kind: string; name: string; remote?: boolean; project?: string; worker?: string };
+type Caller = { id: string; kind: string; name: string; project?: string; worker?: string };
 
 async function route(caller: Caller, deps: ReturnType<typeof setup>["deps"], body: unknown) {
   let reply: { status: number; body: unknown } = { status: 0, body: null };
@@ -161,7 +161,7 @@ async function route(caller: Caller, deps: ReturnType<typeof setup>["deps"], bod
   return reply;
 }
 
-test("POST /orch/contacts/lookup: Cobra on this computer only; a Foreman's key, a Worker's tools and a Lead elsewhere are refused", async () => {
+test("POST /orch/contacts/lookup: Cobra only; a Foreman's key and a Worker's tools are refused", async () => {
   assert.ok(ORCH_ROUTES.has(contacts.CONTACT_LOOKUP_ROUTE));
   assert.equal(FOREMAN_ONLY.has(contacts.CONTACT_LOOKUP_ROUTE), false, "the Lead's fence lets her through");
   const { deps } = setup();
@@ -169,7 +169,6 @@ test("POST /orch/contacts/lookup: Cobra on this computer only; a Foreman's key, 
   const ok = await route({ id: "lead_legion", kind: "lead", name: "Lead on legion" }, deps, body);
   assert.equal(ok.status, 200);
   assert.deepEqual(answers(ok)[0]!.matches.map((m) => m.name), ["Dana Reyes"]);
-  assert.equal((await route({ id: "lead_mini", kind: "lead", name: "Lead on mini", remote: true }, deps, body)).status, 403);
   assert.equal((await route({ id: foremanCallerId(CRM), kind: "lead", name: "Foreman", project: CRM }, deps, body)).status, 403);
   assert.equal((await route({ id: "w1", kind: "lead", name: "Worker", project: "northwind-marketing", worker: "w1" }, deps, body)).status, 403);
   // GET is refused: the query list goes in the body.

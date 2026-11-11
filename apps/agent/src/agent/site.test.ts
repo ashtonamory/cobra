@@ -237,16 +237,15 @@ function harness(opts: FakeOpts & { foremanTemplate?: string; scopes?: string[];
     now: () => now,
   };
   const foreman = { id: "fm", kind: "lead", project: "p1" };
-  const call = (route: string, body?: unknown, caller: { id: string; kind: string; project?: string; remote?: boolean } = foreman) =>
+  const call = (route: string, body?: unknown, caller: { id: string; kind: string; project?: string } = foreman) =>
     handleSiteOrch(route, route === "/orch/site/read" ? "GET" : "POST", body === undefined ? "" : JSON.stringify(body), caller, deps);
   const settleDeps = { grant: deps.grant, fetch: cf.fetcher, github: gh.github, stateDir: deps.stateDir, project: deps.project, place: () => ({ space }), now: deps.now };
   return { root, space, attachments, project, deps, cf, gh, settleDeps, builds, checks, logs, call, approvals: () => approvals, tick: (ms: number) => (now += ms) };
 }
 
-test("only a Website Builder Foreman on this computer reaches the routes", async () => {
+test("only a Website Builder Foreman reaches the routes", async () => {
   const h = harness();
   assert.equal((await h.call("/orch/site/read", undefined, { id: "lead", kind: "lead" })).status, 403);
-  assert.equal((await h.call("/orch/site/read", undefined, { id: "fm", kind: "lead", project: "p1", remote: true })).status, 403);
   assert.equal((await h.call("/orch/site/read", undefined, { id: "phone", kind: "phone", project: "p1" })).status, 403);
   const other = harness({ foremanTemplate: "designer" });
   assert.equal((await other.call("/orch/site/read")).status, 403);

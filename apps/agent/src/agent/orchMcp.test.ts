@@ -545,9 +545,9 @@ test("one computer: status reports this one, and a computer an older Lead still 
   const read = agent({ "/orch/worker": { worker, offset: 0, messages: [] } });
   assert.match(await mcp.runTool("worker_read", { id: "cobra_2", computer: "macbook" }, [computer], read.fetcher), /offset: 0/);
   assert.equal(read.seen[0]?.url, "http://127.0.0.1:8797/orch/worker?id=cobra_2");
-  const spawned = agent({ "/orch/worker/spawn": { waiting: true, approval: { id: "ap_1", title: "Start a Worker?" } } }, 202);
-  const waiting = await mcp.runTool("worker_spawn", { project: "p", task: "t", computer: "mini" }, [computer], spawned.fetcher);
-  assert.match(waiting, /Not started yet: the agent asked the person "Start a Worker\?" \(approval ap_1\)\./);
+  const spawned = agent({ "/orch/worker/spawn": { queued: { id: "q_9", waitingFor: "cap: 2 Workers already run in p" }, position: 1 } }, 202);
+  const queuedSpawn = await mcp.runTool("worker_spawn", { project: "p", task: "t", computer: "mini" }, [computer], spawned.fetcher);
+  assert.match(queuedSpawn, /Queued as q_9, number 1 in line/);
   assert.equal(spawned.seen[0]?.url, "http://127.0.0.1:8797/orch/worker/spawn");
   assert.equal("computer" in (spawned.seen[0]?.body as Record<string, unknown>), false);
   void seen;
@@ -640,10 +640,6 @@ test("foreman_brief posts the brief; a brief that waits for the person says so",
   const sent = seen.find((call) => call.url.endsWith("/orch/foreman/brief"));
   assert.equal(sent?.url, "http://127.0.0.1:8797/orch/foreman/brief");
   assert.deepEqual(sent?.body, { project: "cobra", text: "Ship the push badge fix; the person wants it today." }, "no org yet: none sent");
-
-  const asked = agent({ "/orch/foreman/brief": { waiting: true, approval: { id: "ap_2", title: "Brief Book?" } } }, 202);
-  const waiting = await mcp.runTool("foreman_brief", { project: "book", text: "t" }, [computer], asked.fetcher);
-  assert.match(waiting, /Not briefed yet: the agent asked the person "Brief Book\?" \(approval ap_2\)\./);
 });
 
 test("foreman_read fences what the Foreman wrote as its output, and labels briefs", async () => {

@@ -47,12 +47,10 @@ function setup() {
   return { dir, space, deps, queue, notified, post, approvals: () => approvals };
 }
 
-test("only a Foreman of a Space on this computer works on its email", async () => {
+test("only a Foreman of a Space works on its email", async () => {
   const t = setup();
   const reply = await handleEmailOrch("/orch/email/templates", new URL("http://x/orch/email/templates"), "", { id: "lead", kind: "lead" }, t.deps);
   assert.equal(reply.status, 403);
-  const remote = await handleEmailOrch("/orch/email/templates", new URL("http://x/orch/email/templates"), "", { id: "fm", kind: "lead", project: "p1", remote: true }, t.deps);
-  assert.equal(remote.status, 403);
 });
 
 test("email_templates says which mailbox and address the Space's email goes from; refusals carry no from", async () => {

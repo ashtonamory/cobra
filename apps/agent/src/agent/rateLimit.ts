@@ -26,7 +26,7 @@ import type { Caller } from "./keys.ts";
  * screens. A peer (your own hub dropping files here, one request a file,
  * retried with backoff when refused) gets the same. A widget (and a stored
  * `api` key, a kind nothing mints any more) gets the review's 60. The Lead
- * and the Foremen (and a Lead on another computer) share this HTTP server
+ * and the Foremen share this HTTP server
  * through /orch/*; their bucket is much larger, since a run of tool calls
  * comes in bursts and none of them should wait on a limit meant for a
  * leaked key.

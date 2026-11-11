@@ -74,7 +74,7 @@ export type RoutineDeps = RoutineStore & {
   tz?: string;
 };
 
-type Caller = { id: string; kind: string; remote?: boolean; project?: string };
+type Caller = { id: string; kind: string; project?: string };
 
 const bad = (status: number, error: string): Reply => ({ status, body: { error } });
 
@@ -104,7 +104,6 @@ export async function handleRoutineOrch(route: string, url: URL, bodyText: strin
       const all = deps.load();
       return { status: 200, body: listOf(all.filter((r) => (only === undefined || r.project === only) && (!project || r.project === project))) };
     }
-    if (caller.remote === true) return bad(403, "a Lead on another computer does not set or remove routines here: brief that computer's Foreman to propose it");
     const input = body(bodyText);
     if (!input) return bad(400, "invalid JSON body");
 

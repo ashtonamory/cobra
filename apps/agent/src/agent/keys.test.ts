@@ -112,8 +112,6 @@ test("a desktop gets a key of its own that expires, read and act but no terminal
   assert.match(caller.id, /^desk_[A-Za-z0-9_-]{22}$/);
   assert.deepEqual(caller.scopes, ["read", "act"]);
   assert.equal(caller.expiresAt, 5 + KEY_LIFETIME_MS);
-  assert.equal(caller.remote, undefined);
-  assert.equal(mintDesk("Legion desk", 5, undefined, true).caller.remote, true);
   assert.equal(caller.pushToken, undefined);
   // Only the hash is stored, and it survives a round trip through keys.json.
   assert.equal(JSON.stringify(caller).includes(key), false);
@@ -192,20 +190,16 @@ test("Lead and Foreman keys expire, and are extended only while their orchestrat
     const now = 1_800_000_000_000;
     const { caller: lead, key: leadKey } = mintLead("legion", now);
     const { caller: foreman, key: foremanKey } = mintForeman("site", now);
-    const { caller: remote, key: remoteKey } = mintLead("mini", now, undefined, true);
     assert.equal(lead.expiresAt, now + ORCH_KEY_LIFETIME_MS);
     assert.equal(foreman.expiresAt, now + ORCH_KEY_LIFETIME_MS);
-    // A Lead on another computer holds its key there; it cannot be refreshed from here, so it keeps no expiry yet.
-    assert.equal(remote.expiresAt, undefined);
-    for (const caller of [lead, foreman, remote]) store.upsert(caller);
+    for (const caller of [lead, foreman]) store.upsert(caller);
     assert.equal(store.authenticate(leadKey, now)?.expiresAt, now + ORCH_KEY_LIFETIME_MS, "the expiry survives keys.json");
 
     // A day on, the running Foreman's key is pushed out again; the stopped Lead's is not.
     const later = now + DAY;
-    assert.deepEqual(store.extendOrch([foreman.id, remote.id, "nobody_aaaaaaaaaaaa"], later), [foreman.id]);
+    assert.deepEqual(store.extendOrch([foreman.id, "nobody_aaaaaaaaaaaa"], later), [foreman.id]);
     assert.equal(store.authenticate(foremanKey, later)?.expiresAt, later + ORCH_KEY_LIFETIME_MS);
     assert.equal(store.authenticate(leadKey, later)?.expiresAt, now + ORCH_KEY_LIFETIME_MS);
-    assert.equal(store.authenticate(remoteKey, later)?.expiresAt, undefined);
     // Extended again the same hour: nothing to write.
     assert.deepEqual(store.extendOrch([foreman.id], later + 60_000), []);
 
@@ -283,7 +277,7 @@ test("a rotation swaps the key; the old one works until the new one is used, nev
 
 test("a desktop key that could open terminals loses that; expiry and signing survive keys.json", () => {
   const stored = [
-    { id: "desk_aaaaaaaaaaaaaaaaaaaaaa", name: "Desk", kind: "desk", keyHash: hashKey("d"), scopes: ["read", "act", "terminal"], linkedAt: 1, remote: true },
+    { id: "desk_aaaaaaaaaaaaaaaaaaaaaa", name: "Desk", kind: "desk", keyHash: hashKey("d"), scopes: ["read", "act", "terminal"], linkedAt: 1 },
     {
       ...phone("iphone_aaaaaaaaaaaaaaaa", "p"),
       expiresAt: 9,
@@ -297,7 +291,6 @@ test("a desktop key that could open terminals loses that; expiry and signing sur
   ];
   const [desk, phoneBack, widget] = parseCallers(JSON.stringify(stored));
   assert.deepEqual(desk!.scopes, ["read", "act"]);
-  assert.equal(desk!.remote, true);
   assert.deepEqual(
     [phoneBack!.expiresAt, phoneBack!.rotatedAt, phoneBack!.prevKeyHash, phoneBack!.prevExpiresAt, phoneBack!.signKey],
     [9, 2, hashKey("q"), 8, "A".repeat(43)],

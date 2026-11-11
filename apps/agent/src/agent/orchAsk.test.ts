@@ -18,7 +18,7 @@ const registry = join(ROOT, "projects.json");
 writeFileSync(registry, JSON.stringify({ projects: [] }));
 
 /** One request through handleOrch, the way index.ts routes it. */
-async function call(route: string, query: string, method: "GET" | "POST", caller: { kind: string; project?: string; remote?: boolean }, body = "") {
+async function call(route: string, query: string, method: "GET" | "POST", caller: { kind: string; project?: string }, body = "") {
   let reply: { status: number; body: unknown } | null = null;
   const request = { method, on: () => undefined } as unknown as http.IncomingMessage;
   await handleOrch(route, new URL(`http://agent${route}${query}`), request, {} as http.ServerResponse, {
@@ -50,9 +50,8 @@ test("ask_person: the Lead asks, ask_wait reads nothing yet, your answer is then
   assert.deepEqual((await call("/orch/ask/wait", `?id=${id}&timeout=0`, "GET", { kind: "lead" })).body, { answered: true, answer: 'The person chose "Approve".' });
 });
 
-test("ask_person is refused to a phone's key and a remote Lead, and a question needs options", async () => {
+test("ask_person is refused to a phone's key, and a question needs options", async () => {
   assert.equal((await call("/orch/ask", "", "POST", { kind: "phone" }, question)).status, 403);
-  assert.equal((await call("/orch/ask", "", "POST", { kind: "lead", remote: true }, question)).status, 403);
   assert.equal((await call("/orch/ask", "", "POST", { kind: "lead" }, JSON.stringify({ question: "q", options: [] }))).status, 400);
   assert.equal((await call("/orch/ask/wait", "?id=ask-nope&timeout=0", "GET", { kind: "lead" })).status, 404);
 });

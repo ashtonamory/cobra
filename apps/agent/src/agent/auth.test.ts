@@ -155,14 +155,12 @@ test("/prs is read like /git/repo: a phone's or desk's key, never a Lead's, a wi
   }
 });
 
-test("a remote Lead key keeps its mark through keys.json, and is still /orch/* only", () => {
-  const { caller } = mintLead("legion", 1, (size) => new Uint8Array(size).fill(9), true);
-  assert.equal(caller.id, "lead_from_legion");
-  assert.equal(caller.remote, true);
+test("a key made for another computer no longer loads: it stops working, and never becomes a local key", () => {
+  const { caller } = mintLead("legion", 1, (size) => new Uint8Array(size).fill(9));
   assert.deepEqual(parseCallers(JSON.stringify([caller])), [caller]);
-  const { caller: local } = mintLead("legion", 1, (size) => new Uint8Array(size).fill(9));
-  assert.equal(local.remote, undefined);
-  assert.notEqual(local.id, caller.id);
+  // As keys.json kept a Lead or a desk on another computer, from before Cobra ran on one only.
+  assert.deepEqual(parseCallers(JSON.stringify([{ ...caller, id: "lead_from_legion", remote: true }])), []);
+  assert.deepEqual(parseCallers(JSON.stringify([{ ...mintDesk("Desk", 1).caller, remote: true }, caller])), [caller]);
 });
 
 test("an expired key is told to link again, not just refused", () => {
@@ -179,7 +177,7 @@ test("an expired key is told to link again, not just refused", () => {
 });
 
 test("a desktop key acts, but opens no terminal and writes no file into a folder", () => {
-  const { caller: desk, key } = mintDesk("Desk", 0, undefined, true);
+  const { caller: desk, key } = mintDesk("Desk", 0);
   const store = keys([desk]);
   for (const [route, method] of [["/projects", "GET"], ["/session", "POST"], ["/git", "POST"], ["/approvals/answer", "POST"], ["/keys/rotate", "POST"]] as const) {
     assert.equal(authorize(`Bearer ${key}`, route, method, store, 1).ok, true, route);

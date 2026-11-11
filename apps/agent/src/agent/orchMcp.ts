@@ -2061,12 +2061,7 @@ export async function runTool(name: string, args: Json, computers: OrchAgent[], 
       const reply = (await call(home, "/orch/foreman/brief", { method: "POST", body: { project: projectId, text: str("text") ?? "", ...(args.quiet === true ? { quiet: true } : {}), ...(org ? { org: org as unknown as Json } : {}) }, timeoutMs: 120_000 }, fetcher)) as {
         foreman?: OrchForeman;
         started?: boolean;
-        waiting?: boolean;
-        approval?: { id: string; title: string };
       };
-      if (reply.waiting && reply.approval) {
-        return `Not briefed yet: the agent asked the person "${reply.approval.title}" (approval ${reply.approval.id}). Tell them, check approval_status, and call foreman_brief again once it is allowed.`;
-      }
       if (!reply.foreman) throw new AgentError("the agent did not say whom it briefed");
       // The id it found, when the Lead named the Foreman ("Rusty").
       const briefed = reply.foreman.project;
@@ -2208,16 +2203,11 @@ export async function runTool(name: string, args: Json, computers: OrchAgent[], 
       if (args.spaceTools === true) body.spaceTools = true;
       const reply = (await call(home, "/orch/worker/spawn", { method: "POST", body, timeoutMs: 120_000 }, fetcher)) as {
         worker?: OrchWorker;
-        waiting?: boolean;
-        approval?: { id: string; title: string };
         queued?: { id: string; waitingFor?: string };
         position?: number;
       };
       if (reply.queued) {
         return `Queued as ${reply.queued.id}, number ${reply.position ?? "?"} in line (${localizeText(reply.queued.waitingFor ?? "waiting")}). The agent starts it by itself; the status tool shows when it becomes a Worker.`;
-      }
-      if (reply.waiting && reply.approval) {
-        return `Not started yet: the agent asked the person "${reply.approval.title}" (approval ${reply.approval.id}). Tell them, check approval_status, and call worker_spawn again once it is allowed.`;
       }
       if (!reply.worker) throw new AgentError("the agent did not say what it started");
       return `Started.\n${workerLine(reply.worker)}\nIt installs dependencies first. Use worker_wait with its id.`;

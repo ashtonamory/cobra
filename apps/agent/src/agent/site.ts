@@ -922,7 +922,7 @@ export type OutsideDeps = {
   makeApproval: LinkDeps["makeApproval"];
 };
 
-type Caller = { id: string; kind: string; remote?: boolean; project?: string };
+type Caller = { id: string; kind: string; project?: string };
 
 /** One checked edit at a time per site: the check reads the folder with the change in it. */
 const edits = new Map<string, Promise<unknown>>();
@@ -936,7 +936,7 @@ const bad = (status: number, error: string): Reply => ({ status, body: { error }
 
 /** A Website Builder Foreman's routes. Anyone else, the Lead included, is refused. */
 export async function handleSiteOrch(route: string, method: string | undefined, bodyText: string, caller: Caller, deps: SiteDeps): Promise<Reply> {
-  if (caller.kind !== "lead" || caller.project === undefined || caller.remote === true) return bad(403, "only a Website Builder Foreman on this computer works on a website");
+  if (caller.kind !== "lead" || caller.project === undefined) return bad(403, "only a Website Builder Foreman works on a website");
   const project = await deps.project(caller.project);
   if (!project || project.foremanTemplate !== WEBSITE_BUILDER) return bad(403, "only a Website Builder Foreman works on a website");
   const read = route === "/orch/site/read";

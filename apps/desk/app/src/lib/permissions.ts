@@ -221,12 +221,12 @@ export function refusedLine(row: Dict): string {
 
 /** The agent's permissions.ts DEFAULT_ROLES: the Lead's web tools are off unless the owner turns them on. */
 export const DEFAULT_ROLES: Readonly<Record<string, Readonly<Dict>>> = {
-  lead: { webTools: false, remoteSpawnHours: 12 },
+  lead: { webTools: false },
   foreman: { maxWorkers: 3, maxWorkersPerComputer: 8, workerModels: null, mergeOnGreen: false, webTools: true },
   job: { models: null, concurrent: 2 },
 };
 
-export const HARD_CAPS_FALLBACK = { workersPerProject: 8, workersPerComputer: 16, remoteSpawnHours: 24, jobsAtOnce: 4 };
+export const HARD_CAPS_FALLBACK = { workersPerProject: 8, workersPerComputer: 16, jobsAtOnce: 4 };
 
 export const MODEL_CHOICES: readonly (readonly [string, string])[] = [
   ["claude", "Claude"], ["opus", "Opus"], ["sonnet", "Sonnet"], ["haiku", "Haiku"], ["local:*", "Local"],

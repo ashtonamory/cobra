@@ -32,7 +32,7 @@ const PERSON_KINDS: ReadonlySet<string> = new Set(["phone", "desk"]);
 const WHY_MAX = 400;
 
 export type Reply = { status: number; body: unknown };
-type Caller = { id: string; kind: string; remote?: boolean; project?: string };
+type Caller = { id: string; kind: string; project?: string };
 
 export type OrgDeps = {
   load: () => Org;
@@ -100,9 +100,9 @@ export async function handleOrgPerson(route: string, method: string | undefined,
   return reply;
 }
 
-/** The Lead's org routes (orch.ts): the Lead on this computer only; a Foreman's key or a remote Lead is refused. */
+/** The Lead's org routes (orch.ts): the Lead only; a Foreman's key is refused. */
 export async function handleOrgOrch(route: string, bodyText: string, caller: Caller, deps: OrgDeps): Promise<Reply> {
-  if (caller.kind !== "lead" || caller.project !== undefined || caller.remote) return bad(403, "only the Lead on its own computer keeps the organization");
+  if (caller.kind !== "lead" || caller.project !== undefined) return bad(403, "only the Lead keeps the organization");
   if (route === "/orch/org") {
     const org = deps.load();
     return { status: 200, body: { org, text: orgText(org) } };

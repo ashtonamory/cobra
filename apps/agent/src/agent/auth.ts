@@ -71,8 +71,6 @@ export function scopeFor(route: string, method: string | undefined): Scope {
 /**
  * Routes a desktop key may not call, though they fall inside its `act`: it
  * never writes into a folder of your choosing (the phone's file browser does).
- * A desktop key on another computer (`cobra-desk add --ssh`) is a key that
- * computer holds for this one, so it reaches no further than the desk needs.
  */
 export const DESK_REFUSED_ROUTES: ReadonlySet<string> = new Set(["/fs/put"]);
 
