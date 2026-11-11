@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 
-import type { AlertPushData, ApiLanePushData, ApprovalPushData, FilesPushData, MorningPushData, PushData } from "@cobra/contracts";
+import type { AlertPushData, ApiLanePushData, ApprovalPushData, MorningPushData, PushData } from "@cobra/contracts";
 
 /**
  * Notifications on this computer's own desktop.
@@ -22,7 +22,7 @@ export type PushMessage = {
   title: string;
   body: string;
   /** What the notification is about, for the event log and the desk. */
-  data: PushData | AlertPushData | FilesPushData | ApprovalPushData | ApiLanePushData | MorningPushData;
+  data: PushData | AlertPushData | ApprovalPushData | ApiLanePushData | MorningPushData;
   /** The kind of notification (permission, approval, alert, ...). */
   category?: string;
 };

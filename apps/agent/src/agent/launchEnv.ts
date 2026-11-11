@@ -78,11 +78,6 @@ export function helperEnv(role: string): Record<string, string> | null {
   return env;
 }
 
-/** One chat message: your sign-in and its connectors, unless the subscription is at HOLD and the key can take it. */
-export function chatEnv(): Record<string, string> | null {
-  return keyNeededNow() ? helperEnv("chat") : null;
-}
-
 /**
  * A session of yours, by its tmux name: your sign-in and its connectors,
  * unless it was started on the key (`api`, `api:opus`) or the subscription

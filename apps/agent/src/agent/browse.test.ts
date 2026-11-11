@@ -3,18 +3,14 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Readable } from "node:stream";
 
 import {
   type BrowseRoots,
   disposition,
   isSecret,
-  listFolder,
   mimeFor,
   openFile,
-  putFile,
   resolveInside,
-  searchNames,
   underHome,
 } from "./browse.ts";
 import { SessionError } from "./sessions.ts";
@@ -117,7 +113,7 @@ test("isSecret: keys, credentials, history and the agent's own folders", () => {
   assert.equal(isSecret(".SSH/config"), true, "compared without case");
 });
 
-test("the file browser also hides ~/.gitconfig and the Claude Code transcripts in ~/.claude/projects", async () => {
+test("the file route also hides ~/.gitconfig and the Claude Code transcripts in ~/.claude/projects", async () => {
   const box = sandbox();
   try {
     writeFileSync(join(box.home, ".gitconfig"), "[http]\n\textraheader = AUTHORIZATION: bearer x\n");
@@ -133,13 +129,9 @@ test("the file browser also hides ~/.gitconfig and the Claude Code transcripts i
     for (const path of ["~/.gitconfig", "~/.envrc", "~/.claude/projects", "~/.claude/projects/-home-a/s.jsonl", "~/.config/git/credentials", "~/.config/.wrangler/config/default.toml"]) {
       await refused(resolveInside(box.roots, path), 403);
     }
-    const home = (await listFolder(box.roots, "~")).entries.map((entry) => entry.name);
-    assert.ok(!home.includes(".gitconfig"));
-    assert.ok(!home.includes(".envrc"));
-    assert.deepEqual((await listFolder(box.roots, "~/.claude")).entries.map((entry) => entry.name), ["settings.json"]);
-    assert.deepEqual((await listFolder(box.roots, "~/.config/git")).entries.map((entry) => entry.name), ["ignore"]);
-    assert.ok(!(await listFolder(box.roots, "~/.config")).entries.some((entry) => entry.name === ".wrangler"));
-    assert.deepEqual((await searchNames(box.roots, "~", "jsonl")).results, []);
+    // What sits beside a secret is still served.
+    assert.equal((await openFile(box.roots, "~/.claude/settings.json")).name, "settings.json");
+    assert.equal((await openFile(box.roots, "~/.config/git/ignore")).name, "ignore");
   } finally {
     box.done();
   }
@@ -184,80 +176,14 @@ test("resolveInside: a secret folder that is a link elsewhere in home is still p
   }
 });
 
-test("listFolder: folders first, natural order, secrets and links to secrets left out", async () => {
-  const box = sandbox();
-  try {
-    const listing = await listFolder(box.roots, "~");
-    assert.equal(listing.path, box.home);
-    assert.equal(listing.parent, null);
-    const names = listing.entries.map((entry) => entry.name);
-    assert.ok(!names.includes(".ssh"));
-    assert.ok(!names.includes(".netrc"));
-    assert.ok(!names.includes("innocent.txt"), "a link to a key is a key");
-    assert.ok(!names.includes("agent-data"));
-    assert.ok(names.includes(".bashrc"));
-    const firstFile = listing.entries.findIndex((entry) => entry.kind !== "dir");
-    assert.ok(listing.entries.slice(0, firstFile).every((entry) => entry.kind === "dir"));
-    assert.ok(names.indexOf("Notes 9.txt") < names.indexOf("Notes 10.txt"));
-    const bashrc = listing.entries.find((entry) => entry.name === ".bashrc")!;
-    assert.equal(bashrc.hidden, true);
-    assert.equal(bashrc.size, 5);
-    const work = listing.entries.find((entry) => entry.name === "work")!;
-    assert.deepEqual([work.kind, work.link], ["dir", true]);
-    assert.equal(listing.entries.find((entry) => entry.name === "broken")?.kind, "other");
-
-    const app = await listFolder(box.roots, "~/Projects/app");
-    assert.equal(app.parent, join(box.home, "Projects"));
-    const appNames = app.entries.map((entry) => entry.name);
-    assert.ok(appNames.includes(".env.example"));
-    assert.ok(!appNames.includes(".env"));
-    assert.ok(!appNames.includes("server.pem"));
-
-    const cut = await listFolder(box.roots, "~", 3);
-    assert.equal(cut.entries.length, 3);
-    assert.equal(cut.truncated, true);
-    await refused(listFolder(box.roots, "~/notes.md"), 400);
-  } finally {
-    box.done();
-  }
-});
-
-test("searchNames: breadth first, skips node_modules, hidden folders and secrets", async () => {
-  const box = sandbox();
-  try {
-    const found = await searchNames(box.roots, "~", "INVOICE");
-    assert.deepEqual(
-      found.results.map((hit) => hit.path),
-      [join(box.home, "Projects", "app", "src", "invoice.ts")],
-    );
-    assert.equal(found.truncated, false);
-    const notes = await searchNames(box.roots, "~", "notes");
-    assert.deepEqual(notes.results.map((hit) => hit.name), ["Notes 9.txt", "Notes 10.txt", "notes.md"]);
-    assert.equal((await searchNames(box.roots, "~", "id_ed")).results.length, 0);
-    assert.equal((await searchNames(box.roots, "~", ".env")).results.map((hit) => hit.name).join(), ".env.example");
-    const capped = await searchNames(box.roots, "~", "notes", { results: 1, dirs: 100, ms: 1000 });
-    assert.equal(capped.results.length, 1);
-    assert.equal(capped.truncated, true);
-    await refused(searchNames(box.roots, "~", "a"), 400);
-  } finally {
-    box.done();
-  }
-});
-
-test("openFile and putFile: files only, never over an existing name, never into a secret", async () => {
+test("openFile: files only, and a link to a secret is a secret", async () => {
   const box = sandbox();
   try {
     const file = await openFile(box.roots, "~/notes.md");
     assert.deepEqual([file.name, file.size], ["notes.md", 8]);
     await refused(openFile(box.roots, "~/Projects"), 400);
-
-    const first = await putFile(box.roots, "~", "notes.md", Readable.from([Buffer.from("new")]), 1000);
-    assert.equal(first.path, join(box.home, "notes (2).md"));
-    assert.equal(readFileSync(join(box.home, "notes.md"), "utf8"), "# notes\n");
-    assert.equal(readFileSync(first.path, "utf8"), "new");
-    await refused(putFile(box.roots, "~/.ssh", "authorized_keys", Readable.from([Buffer.from("k")]), 1000), 403);
-    await refused(putFile(box.roots, "~/notes.md", "x.txt", Readable.from([Buffer.from("k")]), 1000), 400);
-    await refused(putFile(box.roots, "~", "big.bin", Readable.from([Buffer.alloc(2000)]), 1000), 413);
+    await refused(openFile(box.roots, "~/innocent.txt"), 403);
+    await refused(openFile(box.roots, "~/Projects/app/.env"), 403);
   } finally {
     box.done();
   }

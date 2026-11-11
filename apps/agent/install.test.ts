@@ -26,7 +26,6 @@ const DEFAULTS = {
   MODEL_PORT: "8789",
   MACHINE_NAME: "",
   GIT_SYNC: "1",
-  HOME_AI: "0",
   TMUX_SOCKET: "cobra",
   // On by default here: the stand-in bubblewrap below works.
   CONTAIN: "1",
@@ -191,7 +190,7 @@ test("an update with only --name keeps everything else (the Legion outage)", () 
 
 test("flags win over the saved settings", () => {
   withHome(LEGION, (run) => {
-    const { status, config } = run("--agent-port", "8787", "--term-port", "8789", "--name", "mini", "--tmux-socket", "cobra", "--home-ai");
+    const { status, config } = run("--agent-port", "8787", "--term-port", "8789", "--name", "mini", "--tmux-socket", "cobra");
     assert.equal(status, 0);
     assert.deepEqual(config, {
       ...DEFAULTS,
@@ -200,7 +199,6 @@ test("flags win over the saved settings", () => {
       MODEL_PORT: "8789",
       MACHINE_NAME: "mini",
       GIT_SYNC: "0",
-      HOME_AI: "1",
       KEPT: "git sync",
     });
   });
@@ -212,14 +210,11 @@ test("--reset-config ignores agent.env and starts from the defaults", () => {
   });
 });
 
-test("--git-sync and --no-home-ai undo kept switches", () => {
-  withHome(`${LEGION}COBRA_HOME_AI=on\n`, (run) => {
-    const kept = run().config;
-    assert.equal(kept.GIT_SYNC, "0");
-    assert.equal(kept.HOME_AI, "1");
-    const undone = run("--git-sync", "--no-home-ai").config;
+test("--git-sync undoes a kept switch", () => {
+  withHome(LEGION, (run) => {
+    assert.equal(run().config.GIT_SYNC, "0");
+    const undone = run("--git-sync").config;
     assert.equal(undone.GIT_SYNC, "1");
-    assert.equal(undone.HOME_AI, "0");
     assert.equal(undone.KEPT, "agent port,terminal port,name,tmux socket");
   });
 });

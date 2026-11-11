@@ -55,7 +55,6 @@ import { KEY_EXPIRES_HEADER, mintForeman, mintLead, type Caller } from "./keys.t
 import { createRateLimiter } from "./rateLimit.ts";
 import { liveSources } from "./modelSources.ts";
 import { foremanLineName, LEAD_LINE, oldComputerFiles, OrchLines, useOrchLines } from "./orchSocket.ts";
-import { generateAtHome, homeModel, validRequest } from "./homeModel.ts";
 import { readEvents, recordEvents } from "./events.ts";
 import { notices } from "./notices.ts";
 import { leadNotice, markHandled } from "./notifyPolicy.ts";
@@ -108,21 +107,9 @@ import { codexModelsHere } from "./brain/codexModels.ts";
 import { acceptBrain, brainView } from "./brain/view.ts";
 import { capturePane, readPane } from "./collect/pane.ts";
 import { askedFor, readAsked, readHookRecords } from "./hooks.ts";
-import {
-  createHub,
-  DEFAULT_DROP_DIR,
-  DEFAULT_FILES_CONFIG,
-  effectiveFilesConfig,
-  DEFAULT_FILES_ROOT,
-  ghRunner,
-  httpDeliver,
-  loadFilesConfig,
-  readSendRequest,
-  receiveFile,
-} from "./files.ts";
+import { DEFAULT_FILES_CONFIG, loadFilesConfig } from "./files.ts";
 import { ensureTmuxConf, TMUX_SOCKET } from "./tmuxHost.ts";
-import { createChats, liveChatDeps } from "./chats.ts";
-import { browseRoots, disposition, FILE_HEADERS, listFolder, mimeFor, openFile, putFile, searchNames } from "./browse.ts";
+import { browseRoots, disposition, FILE_HEADERS, mimeFor, openFile } from "./browse.ts";
 import { ATTACH_MAX_BYTES, saveAttachment } from "./attachments.ts";
 import { isAgentCommand } from "./collect/commands.ts";
 import { listMerged, readCommits, windowStart } from "./worklog.ts";
@@ -2707,30 +2694,8 @@ function handleAlerts(response: http.ServerResponse): void {
  * Fleet → Security → Security audit on the phone and the desk. Read-only, so
  * a `read` key is enough, as for /posture. Two callers at once share one run.
  */
-/**
- * File sending (files.ts). Every computer takes files sent straight to it
- * (effectiveFilesConfig); the one configured as the hub in files.json also
- * keeps its queue for the others. /files/receive is the half a hub delivers to.
- */
+/** The limits and export folders in files.json (files.ts). */
 const filesConfig = () => loadFilesConfig(process.env.COBRA_FILES_CONFIG ?? DEFAULT_FILES_CONFIG);
-const filesHost = process.env.COBRA_FILES_HOST ?? os.hostname();
-const filesGh = await findGh();
-const hub = createHub({
-  root: process.env.COBRA_FILES_ROOT ?? DEFAULT_FILES_ROOT,
-  dropDir: process.env.COBRA_DROP_DIR ?? DEFAULT_DROP_DIR,
-  hostname: filesHost,
-  config: async () => effectiveFilesConfig(await filesConfig(), filesHost, process.env.COBRA_MACHINE_NAME?.trim() || filesHost),
-  gh: filesGh ? ghRunner(filesGh) : null,
-  deliver: httpDeliver(),
-  push: async (message) => {
-    const tokens = await loadPushTokens();
-    if (tokens.length === 0) return;
-    const outcome = await push(tokens, message);
-    for (const error of outcome.errors) console.log(`[${SERVICE}] push ticket: ${error}`);
-    for (const token of outcome.dead) await dropPushToken(token);
-  },
-  log: (line) => console.log(`[${SERVICE}] ${line}`),
-});
 
 function declaredLength(request: http.IncomingMessage): number | null {
   const raw = request.headers["content-length"];
@@ -2738,63 +2703,9 @@ function declaredLength(request: http.IncomingMessage): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
-async function handleFiles(
-  route: string,
-  url: URL,
-  request: http.IncomingMessage,
-  response: http.ServerResponse,
-): Promise<void> {
-  try {
-    if (route === "/files/receive" || route === "/files/upload") {
-      if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
-      const name = url.searchParams.get("name") ?? "";
-      if (route === "/files/upload") {
-        return sendJson(response, 200, await hub.upload(request, name, declaredLength(request)));
-      }
-      const limits = await filesConfig();
-      const declared = declaredLength(request);
-      if (declared !== null && declared > limits.maxBytes) {
-        return sendJson(response, 413, { error: "file is over the limit" });
-      }
-      const received = await receiveFile(request, name, process.env.COBRA_DROP_DIR ?? DEFAULT_DROP_DIR, limits.maxBytes);
-      console.log(`[${SERVICE}] received ${received.path} (${received.size} bytes)`);
-      return sendJson(response, 200, received);
-    }
-    if (route === "/files/send") {
-      if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
-      let body: unknown;
-      try {
-        body = JSON.parse(await readBody(request, 16 * 1024));
-      } catch {
-        return sendJson(response, 400, { error: "invalid JSON body" });
-      }
-      const parsed = readSendRequest(body);
-      if (typeof parsed === "string") return sendJson(response, 400, { error: parsed });
-      return sendJson(response, 200, await hub.send(parsed));
-    }
-    if (route === "/files/retry" || route === "/files/cancel") {
-      if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
-      let body: { id?: unknown };
-      try {
-        body = JSON.parse(await readBody(request)) as typeof body;
-      } catch {
-        return sendJson(response, 400, { error: "invalid JSON body" });
-      }
-      const id = typeof body.id === "string" ? body.id : "";
-      return sendJson(response, 200, route === "/files/retry" ? await hub.retry(id) : await hub.cancel(id));
-    }
-    if (route === "/files") return sendJson(response, 200, await hub.list());
-    return sendJson(response, 404, { error: "not found", route });
-  } catch (caught) {
-    if (caught instanceof SessionError) return sendJson(response, caught.status, { error: caught.message });
-    throw caught;
-  }
-}
-
 /**
- * The phone looking at this computer's files (browse.ts): a folder, one
- * file's bytes, a name search, and a file sent into a folder. Reads need
- * `read`; /fs/put is a POST and so needs `act` (auth.ts scopeFor).
+ * One file's bytes from this computer (browse.ts), for the desk: a report, a
+ * picture, a page a Worker wrote. A GET, so `read` is enough.
  */
 async function handleBrowse(
   route: string,
@@ -2805,18 +2716,7 @@ async function handleBrowse(
   const roots = browseRoots();
   const path = url.searchParams.get("path") ?? "";
   try {
-    if (route === "/fs/put") {
-      if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
-      const limits = await filesConfig();
-      const declared = declaredLength(request);
-      if (declared !== null && declared > limits.maxBytes) return sendJson(response, 413, { error: "file is over the limit" });
-      const put = await putFile(roots, path, url.searchParams.get("name") ?? "", request, limits.maxBytes);
-      console.log(`[${SERVICE}] fs put ${put.path} (${put.size} bytes)`);
-      return sendJson(response, 200, put);
-    }
     if (request.method !== "GET") return sendJson(response, 405, { error: "GET only" });
-    if (route === "/fs/list") return sendJson(response, 200, await listFolder(roots, path));
-    if (route === "/fs/search") return sendJson(response, 200, await searchNames(roots, path, url.searchParams.get("q") ?? ""));
     if (route === "/fs/get") {
       const file = await openFile(roots, path);
       const stream = createReadStream(file.path);
@@ -2898,64 +2798,6 @@ const loadPushTokens = async (): Promise<Recipient[]> => config.keys.pushRecipie
 const dropPushToken = async (_token: string): Promise<void> => undefined;
 const push = (recipients: Recipient[], message: PushMessage) => sendPush(recipients, message);
 
-
-/** The home-node lane (homeModel.ts): what model is here, and one job on it. */
-async function handleHomeAi(route: string, request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
-  const home = await homeModel();
-  if (route === "/ai") return sendJson(response, 200, home);
-  if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
-  if (!home.available || !home.model) return sendJson(response, 503, { error: "No home model is turned on on this computer." });
-  let body: unknown;
-  try {
-    body = JSON.parse(await readBody(request, 500_000));
-  } catch {
-    return sendJson(response, 400, { error: "invalid JSON body" });
-  }
-  const job = validRequest(body);
-  if (!job) return sendJson(response, 400, { error: "not a request this lane takes" });
-  try {
-    return sendJson(response, 200, await generateAtHome(job, home.model));
-  } catch (error) {
-    return sendJson(response, 502, { error: error instanceof Error ? error.message : String(error) });
-  }
-}
-
-/**
- * General chat (chats.ts): Claude on this computer's subscription, read-only,
- * with the project roots to read from.
- */
-const chats = createChats(
-  liveChatDeps(
-    os.hostname(),
-    async () => (await loadRegistry(process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH)).roots,
-    (line) => console.log(`[${SERVICE}] ${line}`),
-  ),
-);
-
-async function handleChats(route: string, url: URL, request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
-  try {
-    if (route === "/chats") return sendJson(response, 200, await chats.list());
-    if (route === "/chats/thread") return sendJson(response, 200, await chats.thread(url.searchParams.get("id")));
-    if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
-    let body: { id?: unknown; text?: unknown; context?: unknown };
-    try {
-      body = JSON.parse(await readBody(request, 200_000)) as typeof body;
-    } catch {
-      return sendJson(response, 400, { error: "invalid JSON body" });
-    }
-    if (route === "/chats/send") {
-      // The answer streams in the background; the phone polls /chats/thread.
-      const { id } = await chats.send(body);
-      return sendJson(response, 200, { id });
-    }
-    if (route === "/chats/stop") return sendJson(response, 200, { ok: true, stopped: chats.stop(body.id) });
-    await chats.remove(body.id);
-    return sendJson(response, 200, { ok: true });
-  } catch (caught) {
-    if (caught instanceof SessionError) return sendJson(response, caught.status, { error: caught.message });
-    throw caught;
-  }
-}
 
 // The agent's own tmux server reads this when it starts (tmuxHost.ts).
 ensureTmuxConf();
@@ -3062,7 +2904,6 @@ const server = http.createServer((request, response) => {
         return sendJson(response, reply.status, reply.body);
       }
 
-      if (route === "/ai" || route === "/ai/generate") return await handleHomeAi(route, request, response);
       if (route === "/notices") {
         // What the watcher told you about sessions (notices.ts), for the desk: after= the last seq it read, boot= the run it read it from.
         const after = Number(url.searchParams.get("after") ?? "");
@@ -3456,23 +3297,7 @@ const server = http.createServer((request, response) => {
           return await handlePrs(response);
         case "/worklog":
           return await handleWorkLog(url, response);
-        case "/files":
-        case "/files/upload":
-        case "/files/send":
-        case "/files/retry":
-        case "/files/cancel":
-        case "/files/receive":
-          return await handleFiles(route, url, request, response);
-        case "/chats":
-        case "/chats/thread":
-        case "/chats/send":
-        case "/chats/stop":
-        case "/chats/delete":
-          return await handleChats(route, url, request, response);
-        case "/fs/list":
         case "/fs/get":
-        case "/fs/search":
-        case "/fs/put":
           return await handleBrowse(route, url, request, response);
         default:
           return sendJson(response, 404, { error: "not found", route });
@@ -3959,9 +3784,6 @@ const prNewsDeps = livePrNewsDeps(
 );
 const stopPrNews = startPrNews(prNewsDeps);
 
-// Repository commits and queued deliveries. A no-op tick on every machine but the hub.
-const stopFiles = hub.start();
-
 // The Executive Assistant's hourly round-up into the memory repository (ea.ts).
 const stopEa = startEa(process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH, (line) => console.log(`[${SERVICE}] ${line}`));
 
@@ -4291,7 +4113,6 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     stopRecorder();
     stopGitSync();
     stopPrNews();
-    stopFiles();
     stopEa();
     stopRoutines();
     stopEmail();
