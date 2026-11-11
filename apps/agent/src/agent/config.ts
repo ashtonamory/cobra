@@ -46,7 +46,7 @@ if (keysRead.refused) {
 
 export const config = {
   port: Number(process.env.COBRA_AGENT_PORT ?? 8787),
-  /** The terminal gateway's port (src/gateway), where a relay stream for /term/ goes. */
+  /** The terminal gateway's port (src/gateway), which serves /term/. */
   termPort: Number(process.env.COBRA_TERM_PORT ?? 8788),
   bind,
   ticketKey: ticket.key!,

@@ -110,7 +110,7 @@ export type TradeSchema = {
   sent?: string;
 };
 
-/** Who the person's own changes from the phone or the desk are journaled as: the only caller a `personOnly` mutation accepts. */
+/** Who the person's own changes from the desk are journaled as: the only caller a `personOnly` mutation accepts. */
 export const BY_PERSON = "person";
 
 /** Who the agent's own writes are journaled as (JournalEntry.by): the only caller a trade's `sent` mutation accepts. */

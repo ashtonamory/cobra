@@ -1,5 +1,5 @@
 // The Marketing board: what a Space's
-// Marketing seat shows on the desk and the phone, worked out from four places
+// Marketing seat shows on the desk, worked out from four places
 // at once, which the view engine (views.ts, one store's SQL) cannot join:
 //
 //   - the template folders (email/templates/<slug>/vN.json, emailFiles.ts),

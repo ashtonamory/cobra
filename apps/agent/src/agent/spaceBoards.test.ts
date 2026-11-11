@@ -202,7 +202,7 @@ test("a board can bring a file: previewed before, a table only after Add; snapsh
 test("board_schema answers the Lead's GET, which carries no body, and lists the store's tables with the accounts", async () => {
   const { deps } = setup();
   const reply = { status: 0, body: null as unknown };
-  const lead = { id: "lead_legion_____", kind: "lead", name: "Lead on legion" };
+  const lead = { id: "lead_laptop_____", kind: "lead", name: "Lead on laptop" };
   await handleOrch("/orch/board/schema", new URL(`http://x/orch/board/schema?space=${SPACE}`), { method: "GET", on: () => undefined } as never, {} as never, {
     send: (_response, status, sent) => void Object.assign(reply, { status, body: sent }),
     readBody: async () => "",
@@ -210,7 +210,7 @@ test("board_schema answers the Lead's GET, which carries no body, and lists the 
     log: () => undefined,
     caller: lead,
     notify: async () => undefined,
-    machineLabel: "legion",
+    machineLabel: "laptop",
     port: 8797,
     boards: deps as never,
   });

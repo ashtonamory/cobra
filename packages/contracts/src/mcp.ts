@@ -88,7 +88,7 @@ export type McpSignIn = z.infer<typeof McpSignIn>;
 
 /**
  * One integration as Settings → Integrations draws it:
- * the agent works out `state`, so the phone and the desk only put words to it.
+ * the agent works out `state`, so the desk only put words to it.
  */
 export const McpIntegration = z.object({
   /** The preset: "github". */

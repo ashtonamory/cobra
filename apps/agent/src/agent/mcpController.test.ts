@@ -314,8 +314,8 @@ function world(options: { pat?: string | null; login?: TokenLogin; check?: Token
     verify: async () => {
       throw new Error("not here");
     },
-    machine: "legion",
-    label: "Legion",
+    machine: "laptop",
+    label: "Laptop",
     controller,
   };
   return { dir, registryPath, patPath, authPath, deps, fakes, checked };

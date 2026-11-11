@@ -6,7 +6,7 @@
  */
 import type { NotebookBrain, NotebookBrains, NotebookCompany, NotebookDayPart, NotebookHit, NotebookHits, NotebookLine, NotebookPlace, NotebookSection, NotebookShelfPart, NotebookThread, NotebookVolumePart } from "./notebook.ts";
 
-/** A tick as the phone or desk sends it: `{day, text, done}`, or null when it is not one (the agent's check, without zod). */
+/** A tick as the desk sends it: `{day, text, done}`, or null when it is not one (the agent's check, without zod). */
 export function readTick(value: unknown): { day: string; text: string; done: boolean } | null {
   if (typeof value !== "object" || value === null) return null;
   const v = value as Record<string, unknown>;
@@ -89,11 +89,12 @@ export function noteParts(text: string): NoteParts {
 
 /** "Open threads" in any spelling the fold uses. */
 export const isThreadsHeading = (heading: string): boolean => /^open\s+threads?$/i.test(heading.trim());
-export const isFleetHeading = (heading: string): boolean => /^fleet$/i.test(heading.trim());
+/** What belongs to no one project: "This computer", or "Fleet" in a note from before. */
+export const isFleetHeading = (heading: string): boolean => /^(fleet|this computer)$/i.test(heading.trim());
 
 /** A project key as words when its company is not known: "local/acme-marketing" → "Acme marketing". */
 export function keyTitle(key: string): string {
-  if (isFleetHeading(key)) return "Fleet";
+  if (isFleetHeading(key)) return "This computer";
   const repo = key.split("/").pop() ?? key;
   const words = repo.replace(/[-_]+/g, " ").trim();
   return words ? words[0]!.toUpperCase() + words.slice(1) : key;
@@ -102,10 +103,10 @@ export function keyTitle(key: string): string {
 /**
  * A section's heading on paper: the company, then the project when the key names more than the
  * company ("Acme · Marketing" for local/acme-marketing, "Example.com" for octo-org/example.com),
- * the project alone when no company is known, "Fleet" for the Fleet.
+ * the project alone when no company is known, "This computer" for what belongs to no one project.
  */
 export function sectionHeading(section: Pick<NotebookSection, "key" | "title" | "company">): string {
-  if (section.key === "fleet") return "Fleet";
+  if (section.key === "fleet") return "This computer";
   if (!section.company) return section.title;
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
   let repo = (section.key.split("/").pop() ?? "").toLowerCase();

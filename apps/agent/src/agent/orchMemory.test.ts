@@ -15,7 +15,7 @@ process.env.COBRA_MEMORY_DIR = join(ROOT, "memory");
 const { handleOrch } = await import("./orch.ts");
 const memory = await import("./memory.ts");
 
-memory.writeMemoryFile(join(ROOT, "memory"), "computers/legion/daily/2026-10-11.md", "# legion · daily\nShipped.");
+memory.writeMemoryFile(join(ROOT, "memory"), "computers/laptop/daily/2026-10-11.md", "# laptop · daily\nShipped.");
 const registry = join(ROOT, "projects.json");
 writeFileSync(registry, JSON.stringify({ projects: [] }));
 
@@ -31,7 +31,7 @@ async function call(route: string, query: string, method: "GET" | "POST", caller
     log: () => undefined,
     caller: { id: "k1", name: "test", ...caller },
     notify: async () => undefined,
-    machineLabel: "legion",
+    machineLabel: "laptop",
     port: 8797,
     // The live taint file is empty here; a tainted caller is one that read an email.
     ...(tainted ? { taintOf: () => ({ since: "2026-11-08T10:00:00.000Z", why: "mail_read", hosts: [], reads: 1, sources: ["email" as const] }) } : {}),
@@ -40,11 +40,11 @@ async function call(route: string, query: string, method: "GET" | "POST", caller
 }
 
 test("memory_read is a GET with no body: the Lead reads a file and a folder (the route ran after the body parse once)", async () => {
-  const file = await call("/orch/memory/file", "?path=computers/legion/daily/2026-10-11.md", "GET", { kind: "lead" });
+  const file = await call("/orch/memory/file", "?path=computers/laptop/daily/2026-10-11.md", "GET", { kind: "lead" });
   assert.equal(file.status, 200);
-  assert.deepEqual(file.body, { kind: "file", path: "computers/legion/daily/2026-10-11.md", text: "# legion · daily\nShipped.\n" });
-  const folder = await call("/orch/memory/file", "?path=computers/legion", "GET", { kind: "lead" });
-  assert.deepEqual(folder.body, { kind: "folder", path: "computers/legion", entries: ["daily/"] });
+  assert.deepEqual(file.body, { kind: "file", path: "computers/laptop/daily/2026-10-11.md", text: "# laptop · daily\nShipped.\n" });
+  const folder = await call("/orch/memory/file", "?path=computers/laptop", "GET", { kind: "lead" });
+  assert.deepEqual(folder.body, { kind: "folder", path: "computers/laptop", entries: ["daily/"] });
 });
 
 test("memory_read refuses a path out of memory, and a POST", async () => {

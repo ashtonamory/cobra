@@ -166,7 +166,7 @@ export type AuditGit = (args: string[]) => Promise<{ code: number; stdout: strin
  * A PR's change as GitHub would merge it: from its base commit (GitHub's
  * baseRefOid) to `head`, both by commit id. A name such as origin/main would
  * resolve a ref the Worker's sandbox can write (refs/origin/main wins over
- * refs/remotes/origin/main), so it is never used (OV-SEC-VPS-001 F5). A
+ * refs/remotes/origin/main), so it is never used. A
  * base not here yet is fetched by its id; anything that cannot be read is
  * unreadable, which the audit flags.
  */

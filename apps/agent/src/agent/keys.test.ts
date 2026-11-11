@@ -118,9 +118,9 @@ test("a key of a kind Cobra no longer has stops working, and never becomes a des
 });
 
 test("a desk gets a key of its own that expires: read and act, no terminal", () => {
-  const { caller, key } = mintDesk("  Legion desk  ", 5);
+  const { caller, key } = mintDesk("  Laptop desk  ", 5);
   assert.equal(caller.kind, "desk");
-  assert.equal(caller.name, "Legion desk");
+  assert.equal(caller.name, "Laptop desk");
   assert.match(caller.id, /^desk_[A-Za-z0-9_-]{22}$/);
   assert.deepEqual(caller.scopes, ["read", "act"]);
   assert.equal(caller.expiresAt, 5 + KEY_LIFETIME_MS);
@@ -130,7 +130,7 @@ test("a desk gets a key of its own that expires: read and act, no terminal", () 
   assert.deepEqual(back, caller);
   assert.equal(findCaller([back!], key)?.id, caller.id);
   assert.equal(findCaller([back!], `${key}x`), null);
-  assert.notEqual(mintDesk("Legion desk", 5).key, key);
+  assert.notEqual(mintDesk("Laptop desk", 5).key, key);
 });
 
 const DAY = 24 * 60 * 60_000;
@@ -149,12 +149,12 @@ test("the key list shows each key's age and expiry, never a hash", () => {
   assert.equal(other.you, false);
 });
 
-test("Lead and Foreman keys expire, and are extended only while their orchestrator runs (OV-SEC-VPS-001 F23b)", () => {
+test("Lead and Foreman keys expire, and are extended only while their orchestrator runs", () => {
   const { dir, done } = scratch();
   try {
     const store = createKeyStore(join(dir, "keys.json"));
     const now = 1_800_000_000_000;
-    const { caller: lead, key: leadKey } = mintLead("legion", now);
+    const { caller: lead, key: leadKey } = mintLead("laptop", now);
     const { caller: foreman, key: foremanKey } = mintForeman("site", now);
     assert.equal(lead.expiresAt, now + ORCH_KEY_LIFETIME_MS);
     assert.equal(foreman.expiresAt, now + ORCH_KEY_LIFETIME_MS);
@@ -183,7 +183,7 @@ test("a Lead key made before orchestrator keys expired gets its 30 days on first
   try {
     const store = createKeyStore(join(dir, "keys.json"));
     const now = 1_800_000_000_000;
-    const { caller, key } = mintLead("legion", 1);
+    const { caller, key } = mintLead("laptop", 1);
     const { expiresAt: _drop, ...old } = caller;
     store.upsert(old);
     assert.equal(store.authenticate(key, now)?.expiresAt, now + ORCH_KEY_LIFETIME_MS);
@@ -230,7 +230,7 @@ test("a rotation swaps the key; the old one works until the new one is used, nev
     assert.equal(store.authenticate("old-key", now), null);
     // A hash already in use, or a caller whose key does not rotate, is refused.
     assert.equal(store.rotate("desk_aaaaaaaaaaaaaaaa", "newer-key", hashKey("newer-key"), now), null);
-    const { caller: lead, key: leadKey } = mintLead("legion", now);
+    const { caller: lead, key: leadKey } = mintLead("laptop", now);
     store.upsert(lead);
     assert.equal(store.rotate(lead.id, leadKey, hashKey("x"), now), null);
   } finally {
@@ -243,7 +243,7 @@ test("a desk key that could open terminals loses that; expiry and the rotated-ou
   const stored = [
     { id: "desk_aaaaaaaaaaaaaaaaaaaaaa", name: "Desk", kind: "desk", keyHash: hashKey("d"), scopes: ["read", "act", "terminal"], linkedAt: 1, expiresAt: 9, rotatedAt: 2, prevKeyHash: hashKey("q"), prevExpiresAt: 8 },
     // A Lead's key is never rotated by its holder, so it keeps no old key.
-    { ...mintLead("legion", 1).caller, prevKeyHash: hashKey("q"), prevExpiresAt: 8 },
+    { ...mintLead("laptop", 1).caller, prevKeyHash: hashKey("q"), prevExpiresAt: 8 },
   ];
   const [back, lead] = parseCallers(JSON.stringify(stored));
   assert.deepEqual(back!.scopes, ["read", "act"]);

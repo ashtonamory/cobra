@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * The person's mailboxes as the phone and the desk read them (agent
+ * The person's mailboxes as the desk read them (agent
  * mailboxRoutes.ts): iCloud and Zoho
  * boxes added on a computer, never with their passwords, and the box each of
  * its Spaces sends from ("gmail" when it names none). The words both apps

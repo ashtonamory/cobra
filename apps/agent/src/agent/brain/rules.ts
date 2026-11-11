@@ -8,8 +8,7 @@ import { isKind, TASK_KINDS, type TaskKind } from "./catalog.ts";
  * Your rules for the router (rules always win). Kept in brain.json beside
  * policy.json, not in it: a rule only orders the models the policy already
  * allows (foreman.workerModels), so it never grants anything and needs no
- * Face ID. The phone and the desk send the same file to every computer, the
- * newest revision winning, as they do the policy.
+ * second press. The newest revision wins, as with the policy.
  */
 
 export const BRAIN_FILE = join(CONFIG_DIR, "brain.json");

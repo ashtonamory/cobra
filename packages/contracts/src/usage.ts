@@ -33,9 +33,9 @@ export const UsageDay = z.object({
 export const AgentUsage = z.object({
   /**
    * "claude", "codex", "fireworks" — deliberately a plain string and never an
-   * enum. Omarchy gains a subscription by dropping in a collector, and by
-   * gotcha 18 an unknown enum value would make an installed build reject the
-   * whole response and read it as "offline".
+   * enum. A new subscription arrives by dropping in a collector, and an
+   * unknown enum value would make an installed build reject the whole
+   * response and read it as "offline".
    */
   id: z.string(),
   name: z.string(),

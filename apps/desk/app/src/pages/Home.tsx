@@ -298,7 +298,7 @@ function DecidedCard({ state }: { state: ReturnType<typeof useDecided> }) {
       {state.caps && <span className="dim">{state.caps}</span>}
       {state.instinct && (
         <div className="row">
-          <Button small kind="flat" disabled={busy !== null} title={`Turns Instinct to Balanced on every computer, so ${LEAD_NAME} asks you again.`}
+          <Button small kind="flat" disabled={busy !== null} title={`Turns Instinct to Balanced, so ${LEAD_NAME} asks you again.`}
             onClick={pause}>{decided.PAUSE_LABEL}</Button>
           <span className="dim">{LEAD_NAME} asks you again</span>
         </div>
@@ -534,7 +534,7 @@ function BlockerRow({ b }: { b: ops.Blocker }) {
     return (
       <BoardRow time={b.time} title={b.title} word={b.word} tone="signal" machine={b.machine}
         detail={String(b.alert?.body || "") || null}
-        actions={<Button kind="flat" small onClick={() => app.show("fleet")}>Fleet</Button>} />
+        actions={<Button kind="flat" small onClick={() => app.show("fleet")}>This computer</Button>} />
     );
   }
   const r = b.row;

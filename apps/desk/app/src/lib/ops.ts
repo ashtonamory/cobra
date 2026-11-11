@@ -1,7 +1,6 @@
 /**
  * Home's charts, as data: today's project lanes, the budget, the throughput,
- * Done today and what waits on you. Pure, a port of the desk's ops.py (itself the phone's
- * apps/mobile/src/opsRules.ts, opsToday.ts and boardRules.ts); keep them in step by hand.
+ * Done today and what waits on you. Pure.
  * components/Charts.tsx draws it; ops.test.ts pins it.
  */
 import { LEAD_NAME } from "./appName.ts";

@@ -22,7 +22,7 @@ export const SESSION_NAME = /^[A-Za-z0-9._-]{1,64}$/;
 
 /**
  * Mirrors the contract's SessionAction enum, which the agent can only import
- * as a type (gotcha 16: no node_modules on the machines, so zod values are
+ * as a type (the installed agent has no node_modules, so zod values are
  * unreachable here). This list is what the HTTP layer will accept, so an
  * action missing from it is refused however well it is implemented.
  *

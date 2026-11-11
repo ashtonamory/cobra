@@ -56,7 +56,7 @@ async function draw(page: string, extra: Partial<Parameters<typeof FinanceRail>[
   const seeAll: string[] = [];
   const ctx = { ...plainCtx("USD"), act: (a: { label: string }, id: string | null) => void acted.push(`${a.label}:${id}`) };
   await act(async () => {
-    root.render(<FinanceRail machine="mini" project="paws-money" list={LIST} pages={["Overview", "Transactions"]} ctx={ctx} round={0}
+    root.render(<FinanceRail machine="office" project="paws-money" list={LIST} pages={["Overview", "Transactions"]} ctx={ctx} round={0}
       page={page} onPage={() => {}} month="2026-10" onMonth={() => {}} onDrill={() => {}}
       onSeeAll={(v, month) => void seeAll.push(`${v.id}:${month}`)} allowAll={(_b, ids, label) => void allowed.push(`${label}:${ids}`)} onChanged={() => {}} {...extra} />);
   });

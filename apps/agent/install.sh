@@ -4,7 +4,7 @@
 #
 #   ./install.sh                      # ports 8787 (agent), 8788 (terminal), 8789 (model gateway), or the next free set
 #   ./install.sh --agent-port 8797 --term-port 8798
-#   ./install.sh --name legion        # the short name for this computer's wip/ branches
+#   ./install.sh --name laptop        # the short name for this computer's wip/ branches
 #   ./install.sh --no-git-sync        # no fetch and fast-forward timer (another agent has it)
 #   ./install.sh --git-sync           # git sync back on (undoes a kept --no-git-sync)
 #   ./install.sh --widget-engine      # removes the old life-sync engine link (life sync has ended)
@@ -41,7 +41,7 @@
 # stays on each computer, and a saved COBRA_MEMORY_REPO line is dropped.)
 #
 # Ports: with no --agent-port/--term-port and none saved, the first install
-# looks before it chooses (issue #400). The agent, the terminal and the model
+# looks before it chooses. The agent, the terminal and the model
 # gateway (the agent's port + 2) need three loopback ports. When
 # 8787/8788/8789 are taken by anything but this install's own agent, it takes
 # the next free set (8797/8798/8799, ...). It says what it chose and why.
@@ -135,7 +135,7 @@ while (($#)); do
     --ollama-url) ARG_OLLAMA_URL=${2:?--ollama-url needs a URL, or default}; shift 2 ;;
     --allow-remote-ollama) ARG_OLLAMA_REMOTE=1; shift ;;
     --no-remote-ollama) ARG_OLLAMA_REMOTE=0; shift ;;
-    # --contain require: nothing starts out of Cobra's sandbox (OV-SEC-VPS-001 F13). --contain on is --contain.
+    # --contain require: nothing starts out of Cobra's sandbox. --contain on is --contain.
     --contain)
       case ${2:-} in
         require) ARG_CONTAIN=2; shift 2 ;;
@@ -156,7 +156,7 @@ done
 # This computer's saved settings. agent.env is read line by line as data and
 # never sourced: the keys below are settings, any other COBRA_* key is kept
 # as it is (EXTRA), and anything else in it is skipped. An update with one
-# flag once rewrote it from the built-in defaults and moved Legion off its
+# flag once rewrote it from the built-in defaults and moved a computer off its
 # ports and its own tmux server; another dropped COBRA_CONTAIN=on, and
 # Workers left Cobra's sandbox without a word.
 declare -A SAVED=()
@@ -348,7 +348,7 @@ taken_by() { # taken_by <port>: what holds it, or nothing when it is free or our
 # The model gateway sits two above the agent (modelGateway.ts), unless COBRA_MODEL_PORT says.
 model_port() { echo "${EXTRA[COBRA_MODEL_PORT]:-$(($1 + 2))}"; }
 
-# With no port given and none saved, look before choosing (issue #400).
+# With no port given and none saved, look before choosing.
 PORTS_WHY=
 if [[ -z $ARG_AGENT_PORT && -z $ARG_TERM_PORT && -z ${SAVED[COBRA_AGENT_PORT]+x} && -z ${SAVED[COBRA_TERM_PORT]+x} ]] && port_tool; then
   busy=()
@@ -501,7 +501,7 @@ esac
 [[ $HERE == *"$TARGET"* ]] || fail "This package is not for this computer; it needs the $TARGET package."
 
 # A port held by something other than our own units is a refusal, not a
-# surprise at start: on the first demo a Control Plane agent holds 8787. The
+# surprise at start: another program may already hold 8787. The
 # model gateway's port too: the agent starts without it, and every Cobra
 # session's Claude request then fails.
 [[ $PORTS_WHY != *"all taken"* ]] || fail "Ports 8787 to 8879 are all in use. Pick free ones with --agent-port and --term-port."

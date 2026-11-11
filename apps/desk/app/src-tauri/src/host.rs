@@ -237,8 +237,8 @@ mod tests {
     fn agent_env_is_read_as_a_shell_would() {
         let env = parse_agent_env("# the agent\nCOBRA_AGENT_PORT=8797\nCOBRA_TERM_PORT=8798\nCOBRA_TMUX_SOCKET=default\nPATH=/usr/bin\n");
         assert_eq!(env, AgentEnv { port: 8797, tmux_socket: "default".into(), name: String::new() });
-        let env = parse_agent_env("export COBRA_AGENT_PORT=\"9001\"\nCOBRA_TMUX_SOCKET='cobra-2'\nCOBRA_MACHINE_NAME=legion\n");
-        assert_eq!(env, AgentEnv { port: 9001, tmux_socket: "cobra-2".into(), name: "legion".into() });
+        let env = parse_agent_env("export COBRA_AGENT_PORT=\"9001\"\nCOBRA_TMUX_SOCKET='cobra-2'\nCOBRA_MACHINE_NAME=laptop\n");
+        assert_eq!(env, AgentEnv { port: 9001, tmux_socket: "cobra-2".into(), name: "laptop".into() });
     }
 
     #[test]

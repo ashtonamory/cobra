@@ -5,7 +5,7 @@
 import { APP_NAME } from "./appName.ts";
 import type { Dict } from "./json.ts";
 
-export const BLURB = `The folders each computer's ${APP_NAME} looks in for your repositories, offered under New project → ` +
+export const BLURB = `The folders ${APP_NAME} looks in for your repositories, offered under New project → ` +
   "On this computer, and where a new one may be made. A folder of repositories two levels down is looked into too.";
 
 /** A path as the person reads it: ~/… inside that computer's home. */

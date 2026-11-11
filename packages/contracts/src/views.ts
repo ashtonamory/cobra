@@ -1,5 +1,5 @@
 /**
- * Views: how the phone and the desk show a trade's records without a screen per
+ * Views: how the desk show a trade's records without a screen per
  * trade. A trade ships a list of view
  * specs as data; one renderer on each app draws them, so a trade Cobra defines
  * gets a dashboard too (`autoViews`, agent views.ts).

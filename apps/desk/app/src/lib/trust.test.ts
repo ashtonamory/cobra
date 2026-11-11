@@ -13,13 +13,13 @@ const subject = {
 };
 
 const card = (extra: Record<string, unknown> = {}) => ({
-  id: "ap-trust", machine: "legion", kind: "trust", state: "pending",
+  id: "ap-trust", machine: "laptop", kind: "trust", state: "pending",
   title: "Let Pete's Payroll send pay-stub to these 2 addresses without asking?", body: "You allowed this 3 times in a row…",
   trust: { ...subject, runs: 3, examples: ["Send: run 1", "Send: run 2", "Send: run 3"], ...extra },
 });
 
 const receipt = (id: string, createdAt: string, extra: Record<string, unknown> = {}) => ({
-  id, machine: "legion", kind: "action", state: "done", title: "Send: 2 pay stubs", body: "", createdAt,
+  id, machine: "laptop", kind: "action", state: "done", title: "Send: 2 pay stubs", body: "", createdAt,
   results: [{ ok: true, message: "sent to 2 addresses from pete@example.com" }],
   action: { channel: "email", project: "payroll", projectName: "Pete's Payroll", summary: "2 pay stubs" },
   trusted: { key: subject.key, grantedAt: at(11, 13, 9) },
@@ -78,25 +78,25 @@ describe("receipts", () => {
 
   it("Landed: today's receipts on every computer, newest first, nothing else", () => {
     const lists = [
-      ["legion", { receipts: [receipt("a", at(11, 27, 9)), receipt("old", at(11, 26, 9)), { id: "asked", kind: "action", createdAt: at(11, 27, 10) }] }],
-      ["mini", { receipts: [receipt("b", at(11, 27, 11))] }],
+      ["laptop", { receipts: [receipt("a", at(11, 27, 9)), receipt("old", at(11, 26, 9)), { id: "asked", kind: "action", createdAt: at(11, 27, 10) }] }],
+      ["office", { receipts: [receipt("b", at(11, 27, 11))] }],
       ["mbp", null],
     ] as const;
-    expect(trust.landedToday(lists, NOW).map((x) => [x.machine, x.approval.id])).toEqual([["mini", "b"], ["legion", "a"]]);
+    expect(trust.landedToday(lists, NOW).map((x) => [x.machine, x.approval.id])).toEqual([["office", "b"], ["laptop", "a"]]);
   });
 
   it("Next: the soonest routine that runs, on any computer", () => {
     const lists = [
-      ["legion", { routines: [
+      ["laptop", { routines: [
         { id: "r1", name: "Fortnightly payroll", projectName: "Pete's Payroll", project: "payroll", enabled: true, nextRun: at(12, 11, 9) },
         { id: "r2", name: "Paused", enabled: false, nextRun: at(11, 28, 9) },
       ] }],
-      ["mini", { routines: [{ id: "r3", name: "Month-end summary", projectName: "Billing", project: "billing", enabled: true, nextRun: at(11, 30, 17) }] }],
+      ["office", { routines: [{ id: "r3", name: "Month-end summary", projectName: "Billing", project: "billing", enabled: true, nextRun: at(11, 30, 17) }] }],
     ] as const;
     const next = trust.nextRoutine(lists, NOW)!;
-    expect(next.machine).toBe("mini");
+    expect(next.machine).toBe("office");
     expect(next.line).toBe("Next: Month-end summary · Billing · Mon 30 Nov at 17:00");
-    expect(trust.nextRoutine([["legion", { routines: [] }]], NOW)).toBeNull();
+    expect(trust.nextRoutine([["laptop", { routines: [] }]], NOW)).toBeNull();
   });
 });
 

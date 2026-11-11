@@ -151,7 +151,7 @@ export default async function (pi: Pi): Promise<void> {
       const out = (reply.output as { hookSpecificOutput?: { permissionDecision?: string; permissionDecisionReason?: string } } | null)?.hookSpecificOutput;
       if (out?.permissionDecision === "allow") return undefined;
       if (out?.permissionDecision === "deny") return { block: true, reason: `Cobra refused this: ${out.permissionDecisionReason ?? "the owner's policy"}` };
-      // "ask", or no answer: the person decides, from the phone or the desk.
+      // "ask", or no answer: the person decides, from the desk.
       record("Notification", { message: "Cobra needs your permission", tool }, cwd);
       const decision = await held({ tool_name: tool, input, ...(typeof event.toolCallId === "string" ? { tool_use_id: event.toolCallId } : {}) });
       record("PostToolUse", { tool }, cwd);

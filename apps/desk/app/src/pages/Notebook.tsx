@@ -568,7 +568,7 @@ export function NotebookPage() {
 
 function emptyWords(book: Book | null, loaded: Loaded | null): string {
   if (!book || !loaded) return "";
-  if (book.kind === "binder") return "No company brains on these computers yet.";
+  if (book.kind === "binder") return "No company brains yet.";
   if (book.kind === "volume") return "Nothing in this volume.";
   if (loaded.missing) return "Nothing was written that day.";
   return loaded.pages.length > 1 ? `${LEAD_NAME} writes the day page at 4 AM, when the day is over.` : "";

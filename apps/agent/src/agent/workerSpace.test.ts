@@ -147,7 +147,7 @@ test("a Worker's record: the flag, its owner here, its trade and its taint", asy
 const told: StoredApproval[] = [];
 const store = { load: () => loadApprovals(), save: (list: StoredApproval[]) => saveApprovals(list) };
 /** handleOrch as index.ts gives it to the runner, over this test's registry. */
-const handle: import("./workerSpace.ts").OrchHandle = (route, url, req, res, io) => handleOrch(route, url, req, res, { ...io, configPath: CONFIG, log: () => undefined, machineLabel: "legion", port: 1 });
+const handle: import("./workerSpace.ts").OrchHandle = (route, url, req, res, io) => handleOrch(route, url, req, res, { ...io, configPath: CONFIG, log: () => undefined, machineLabel: "laptop", port: 1 });
 const run = (worker: string, project: string, tool: string, args: Record<string, unknown>, tainted = false) =>
   space.runSpaceTool({ worker, project, tool, args, tainted }, handle, async (approval) => void told.push(approval), store);
 const textOf = (content: Awaited<ReturnType<typeof run>>) => content.map((part) => ("text" in part ? part.text : "")).join("\n");
@@ -187,7 +187,7 @@ test("a Worker's call reaches only the Space routes, even as its project's Forem
     log: () => undefined,
     caller: space.workerCaller({ worker: "acme-billing_1", project: "acme-billing" }),
     notify: async () => undefined,
-    machineLabel: "legion",
+    machineLabel: "laptop",
     port: 1,
   });
   assert.deepEqual(reply, { status: 403, body: { error: "a Worker's Space tools do not reach this" } });
@@ -250,7 +250,7 @@ test("spawn with spaceTools: a Foreman's, for a trade that has Space tools; refu
       log: () => undefined,
       caller,
       notify: async () => undefined,
-      machineLabel: "legion",
+      machineLabel: "laptop",
       port: 1,
     });
     return reply as unknown as { status: number; body: { error?: string } };

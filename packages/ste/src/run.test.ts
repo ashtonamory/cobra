@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 import { DeepRunError, runDeepAnswer, sourceWasFound, type DeepCall, type DeepCallRequest } from "./run.ts";
 
-const clean = readFileSync(new URL("./fixtures/legion-linger.json", import.meta.url), "utf8");
+const clean = readFileSync(new URL("./fixtures/laptop-linger.json", import.meta.url), "utf8");
 const withPassive = clean.replace("you can lose work that you did not save", "work that is not saved can be lost");
 
 function reply(text: string, extra: Partial<DeepCall> = {}): DeepCall {
@@ -20,7 +20,7 @@ function scripted(replies: DeepCall[], seen: DeepCallRequest[] = []) {
   };
 }
 
-const base = { question: "Why is the Legion offline after a reboot?", now: "Monday 5 October 2026", diagrams: 1 };
+const base = { question: "Why is the Laptop offline after a reboot?", now: "Monday 5 October 2026", diagrams: 1 };
 
 test("a clean first draft takes one call, and research searches", async () => {
   const seen: DeepCallRequest[] = [];

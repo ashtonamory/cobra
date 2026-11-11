@@ -198,8 +198,8 @@ test("GET /local: Ollama's state, each model with its check, and a fix only when
   resetChecksForTests();
   const dir = mkdtempSync(join(tmpdir(), "cobra-local-status-"));
   try {
-    const status = await localStatus({ fetcher: model({}).fetcher, target: { url: "http://ollama", asked: "", remote: false }, computer: "legion", fallbacks: () => ({}), path: join(dir, "none.json") });
-    assert.equal(status.computer, "legion");
+    const status = await localStatus({ fetcher: model({}).fetcher, target: { url: "http://ollama", asked: "", remote: false }, computer: "laptop", fallbacks: () => ({}), path: join(dir, "none.json") });
+    assert.equal(status.computer, "laptop");
     assert.deepEqual(status.ollama, { url: "http://ollama", remote: false, refused: null, running: true, version: "0.33.3" });
     assert.deepEqual(status.models, [{ name: "qwen3:4b", tools: true, size: 2_500_000_000, check: null, checking: false }]);
     assert.equal(status.fix, null);
@@ -207,7 +207,7 @@ test("GET /local: Ollama's state, each model with its check, and a fix only when
     const down: Fetch = async () => {
       throw new Error("ECONNREFUSED");
     };
-    const off = await localStatus({ fetcher: down, target: { url: "http://ollama", asked: "", remote: false }, computer: "legion", fallbacks: () => ({}), path: join(dir, "none.json") });
+    const off = await localStatus({ fetcher: down, target: { url: "http://ollama", asked: "", remote: false }, computer: "laptop", fallbacks: () => ({}), path: join(dir, "none.json") });
     assert.equal(off.ollama.running, false);
     assert.match(off.fix ?? "", /isn't running/);
   } finally {

@@ -8,7 +8,7 @@
 //                                                          `routine` pushed to the person; Allow writes it
 //   POST /orch/routine/remove {id}                         200 {removed}: removing grants nothing, so no Allow
 //
-// For the person's phone and desk (their own keys, never a Lead's):
+// For the person's the desk (their own keys, never a Lead's):
 //   GET  /routines?project=                                RoutineList, soonest first
 //   POST /routines/pause {id, enabled}                     200 {routine}: paused, or resumed from now
 //   POST /routines/remove {id}                             200 {removed}
@@ -176,7 +176,7 @@ export async function handleRoutineOrch(route: string, url: URL, bodyText: strin
   }
 }
 
-/** The person's routes, from a phone's or a desk's key. */
+/** The person's routes, from the desk's key. */
 export async function handleRoutinePerson(route: string, method: string | undefined, url: URL, bodyText: string, caller: { kind: string }, deps: RoutineDeps): Promise<Reply> {
   if (!PERSON_KINDS.has(caller.kind)) return bad(403, "only the desk app you linked uses /routines; the Lead and Foremen use routine_set, routine_list and routine_remove");
   const post = PERSON_ROUTINE_POSTS.has(route);

@@ -7,13 +7,13 @@ const at = (h: number, m = 0, dayOffset = 0) => new Date(2026, 10, 1 + dayOffset
 const NOW = new Date(2026, 10, 1, 12, 14);
 
 const seats: SpaceSeat[] = [
-  { machine: "legion", project: "prospecting", skill: "Prospecting", working: true },
-  { machine: "legion", project: "crm", skill: "CRM" },
-  { machine: "legion", project: "money", skill: "Money" },
+  { machine: "laptop", project: "prospecting", skill: "Prospecting", working: true },
+  { machine: "laptop", project: "crm", skill: "CRM" },
+  { machine: "laptop", project: "money", skill: "Money" },
 ];
 
 const routine = (id: string, project: string, name: string, over: Partial<MachineRoutine["routine"]> = {}): MachineRoutine => ({
-  machine: "legion",
+  machine: "laptop",
   routine: { id, project, name, enabled: true, nextRun: null, lastRun: null, ...over },
 });
 
@@ -76,12 +76,12 @@ test("the card: what runs now with the waits, else the last result", () => {
 test("activity: the Space's own lines today, newest first, What Cobra did marked", () => {
   const { items, more } = spaceActivity(
     [
-      { machine: "legion", at: at(10, 31), kind: "routine-ran", project: "crm", title: "Import 10:30" },
-      { machine: "legion", at: at(11), kind: "pr-merged", project: "other", title: "Not ours" },
-      { machine: "legion", at: at(9, 0, -1), kind: "routine-ran", project: "crm", title: "Yesterday" },
-      { machine: "legion", at: at(11, 5), kind: "answered", project: "crm" },
+      { machine: "laptop", at: at(10, 31), kind: "routine-ran", project: "crm", title: "Import 10:30" },
+      { machine: "laptop", at: at(11), kind: "pr-merged", project: "other", title: "Not ours" },
+      { machine: "laptop", at: at(9, 0, -1), kind: "routine-ran", project: "crm", title: "Yesterday" },
+      { machine: "laptop", at: at(11, 5), kind: "answered", project: "crm" },
     ],
-    [{ machine: "legion", at: at(12, 11), kind: "web-run", title: "Research: small businesses", project: "prospecting" }],
+    [{ machine: "laptop", at: at(12, 11), kind: "web-run", title: "Research: small businesses", project: "prospecting" }],
     seats,
     NOW,
   );
@@ -91,7 +91,7 @@ test("activity: the Space's own lines today, newest first, What Cobra did marked
 });
 
 test("activity: an on-call Space's news kept while its Foreman slept shows by its own words", () => {
-  const { items } = spaceActivity([{ machine: "legion", at: at(11, 40), kind: "space-event", project: "crm", title: "All 3 emails of \"Spring\" are done: 3 sent." }], [], seats, NOW);
+  const { items } = spaceActivity([{ machine: "laptop", at: at(11, 40), kind: "space-event", project: "crm", title: "All 3 emails of \"Spring\" are done: 3 sent." }], [], seats, NOW);
   assert.deepEqual(items.map((i) => [i.title, i.tone]), [["All 3 emails of \"Spring\" are done: 3 sent.", "ok"]]);
 });
 

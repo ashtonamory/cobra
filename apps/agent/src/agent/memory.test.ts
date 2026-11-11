@@ -29,13 +29,13 @@ test("a project is keyed by its GitHub remote, else local/<id>; every part is pa
 
 test("paths sit under the computer's own folder, named for the memory day and hour", () => {
   const late = at(2026, 10, 12, 1, 30);
-  assert.equal(memory.memoryPaths.hourly("legion", late), "computers/legion/hourly/2026-10-11/01.md");
-  assert.equal(memory.memoryPaths.state("legion", "octocat/cobra"), "computers/legion/projects/octocat/cobra/state.md");
+  assert.equal(memory.memoryPaths.hourly("laptop", late), "computers/laptop/hourly/2026-10-11/01.md");
+  assert.equal(memory.memoryPaths.state("laptop", "octocat/cobra"), "computers/laptop/projects/octocat/cobra/state.md");
   assert.equal(memory.memoryPaths.lessons("my mac", "local/x"), "computers/my-mac/projects/local/x/lessons.md");
 });
 
 test("the computer's name is path-safe", () => {
-  assert.equal(memory.computerName({ COBRA_MACHINE_NAME: "legion" }), "legion");
+  assert.equal(memory.computerName({ COBRA_MACHINE_NAME: "laptop" }), "laptop");
   assert.equal(memory.computerName({ COBRA_MACHINE_NAME: "../x y" }), "x-y");
 });
 
@@ -74,13 +74,13 @@ test("hourlies older than 7 days are removed, this computer's only", () => {
   const root = mkdtempSync(join(tmpdir(), "cobra-memory-prune-"));
   const now = at(2026, 10, 20, 12);
   for (const day of ["2026-10-11", "2026-10-13", "2026-10-20"]) {
-    mkdirSync(join(root, "computers", "legion", "hourly", day), { recursive: true });
-    writeFileSync(join(root, "computers", "legion", "hourly", day, "10.md"), "x");
+    mkdirSync(join(root, "computers", "laptop", "hourly", day), { recursive: true });
+    writeFileSync(join(root, "computers", "laptop", "hourly", day, "10.md"), "x");
   }
-  mkdirSync(join(root, "computers", "mini", "hourly", "2026-10-01"), { recursive: true });
-  assert.deepEqual(memory.pruneHourlies(root, "legion", now), ["2026-10-11"]);
-  assert.equal(existsSync(join(root, "computers", "legion", "hourly", "2026-10-13")), true);
-  assert.equal(existsSync(join(root, "computers", "mini", "hourly", "2026-10-01")), true);
+  mkdirSync(join(root, "computers", "office", "hourly", "2026-10-01"), { recursive: true });
+  assert.deepEqual(memory.pruneHourlies(root, "laptop", now), ["2026-10-11"]);
+  assert.equal(existsSync(join(root, "computers", "laptop", "hourly", "2026-10-13")), true);
+  assert.equal(existsSync(join(root, "computers", "office", "hourly", "2026-10-01")), true);
 });
 
 // --- the repository, with real git and no remote --------------------------------------------
@@ -95,20 +95,20 @@ function realGit(): import("./memory.ts").GitRun {
 test("memory is committed to its own history, made the first time, never pushed", async () => {
   const dir = join(mkdtempSync(join(tmpdir(), "cobra-memory-git-")), "memory");
   const deps = { git: realGit(), log: () => undefined };
-  memory.writeMemoryFile(dir, memory.memoryPaths.daily("legion", "2026-10-11"), "# legion day");
-  assert.deepEqual(await memory.commitMemory(deps, dir, "memory: legion"), { ok: true, committed: true });
+  memory.writeMemoryFile(dir, memory.memoryPaths.daily("laptop", "2026-10-11"), "# laptop day");
+  assert.deepEqual(await memory.commitMemory(deps, dir, "memory: laptop"), { ok: true, committed: true });
   assert.equal(existsSync(join(dir, ".git")), true);
   const log = spawnSync("git", ["-C", dir, "log", "--format=%an|%s"], { encoding: "utf8" }).stdout.trim();
-  assert.equal(log, "Cobra's Executive Assistant|memory: legion", "the EA's own name, never the person's");
+  assert.equal(log, "Cobra's Executive Assistant|memory: laptop", "the EA's own name, never the person's");
   assert.equal(spawnSync("git", ["-C", dir, "remote"], { encoding: "utf8" }).stdout.trim(), "", "no remote");
   // Nothing new: nothing committed.
-  assert.deepEqual(await memory.commitMemory(deps, dir, "memory: legion"), { ok: true, committed: false });
+  assert.deepEqual(await memory.commitMemory(deps, dir, "memory: laptop"), { ok: true, committed: false });
 });
 
 test("nothing that looks like a secret is written into the memory folder, so none is ever committed", () => {
   const dir = mkdtempSync(join(tmpdir(), "memory-redact-"));
-  memory.writeMemoryFile(dir, "computers/legion/hourly/2026-10-11/14.md", "- Set ANTHROPIC_API_KEY=sk-ant-api03-AbCdEf0123456789_xyzXYZ-0123456789 on the mini\n- Merged #12");
-  assert.equal(readFileSync(join(dir, "computers/legion/hourly/2026-10-11/14.md"), "utf8"), "- Set ANTHROPIC_API_KEY=sk-ant-[redacted] on the mini\n- Merged #12\n");
+  memory.writeMemoryFile(dir, "computers/laptop/hourly/2026-10-11/14.md", "- Set ANTHROPIC_API_KEY=sk-ant-api03-AbCdEf0123456789_xyzXYZ-0123456789 on the office\n- Merged #12");
+  assert.equal(readFileSync(join(dir, "computers/laptop/hourly/2026-10-11/14.md"), "utf8"), "- Set ANTHROPIC_API_KEY=sk-ant-[redacted] on the office\n- Merged #12\n");
 });
 
 
@@ -127,30 +127,30 @@ test("days and ISO weeks: month ends, daylight saving, and the weeks that stradd
 
 test("the projects a day touched are read off its written round-ups", () => {
   const runs: import("./memory.ts").RunRecord[] = [
-    { at: new Date(at(2026, 10, 11, 10)).toISOString(), kind: "roundup", outcome: "written", files: ["computers/legion/hourly/2026-10-11/09.md", "computers/legion/projects/octocat/cobra/state.md"] },
-    { at: new Date(at(2026, 10, 12, 2)).toISOString(), kind: "roundup", outcome: "written", files: ["computers/legion/projects/local/notes/state.md"] },
-    { at: new Date(at(2026, 10, 12, 5)).toISOString(), kind: "roundup", outcome: "written", files: ["computers/legion/projects/x/y/state.md"] },
-    { at: new Date(at(2026, 10, 11, 11)).toISOString(), kind: "roundup", outcome: "skipped", files: ["computers/legion/projects/a/b/state.md"] },
+    { at: new Date(at(2026, 10, 11, 10)).toISOString(), kind: "roundup", outcome: "written", files: ["computers/laptop/hourly/2026-10-11/09.md", "computers/laptop/projects/octocat/cobra/state.md"] },
+    { at: new Date(at(2026, 10, 12, 2)).toISOString(), kind: "roundup", outcome: "written", files: ["computers/laptop/projects/local/notes/state.md"] },
+    { at: new Date(at(2026, 10, 12, 5)).toISOString(), kind: "roundup", outcome: "written", files: ["computers/laptop/projects/x/y/state.md"] },
+    { at: new Date(at(2026, 10, 11, 11)).toISOString(), kind: "roundup", outcome: "skipped", files: ["computers/laptop/projects/a/b/state.md"] },
   ];
-  assert.deepEqual(memory.touchedKeys(runs, memory.dayStart("2026-10-11"), memory.dayStart("2026-10-12"), "legion"), ["local/notes", "octocat/cobra"]);
+  assert.deepEqual(memory.touchedKeys(runs, memory.dayStart("2026-10-11"), memory.dayStart("2026-10-12"), "laptop"), ["local/notes", "octocat/cobra"]);
 });
 
 test("a day's hourlies read in memory-day order: 04 … 23, then 00 … 03", () => {
   const root = mkdtempSync(join(tmpdir(), "cobra-memory-hours-"));
-  for (const hour of ["00", "23", "04", "03", "12"]) memory.writeMemoryFile(root, `computers/legion/hourly/2026-10-11/${hour}.md`, `h${hour}`);
-  assert.deepEqual(memory.readHourlies(root, "legion", "2026-10-11").map(([hour]) => hour), ["04", "12", "23", "00", "03"]);
-  assert.deepEqual(memory.readHourlies(root, "legion", "2026-10-12"), []);
+  for (const hour of ["00", "23", "04", "03", "12"]) memory.writeMemoryFile(root, `computers/laptop/hourly/2026-10-11/${hour}.md`, `h${hour}`);
+  assert.deepEqual(memory.readHourlies(root, "laptop", "2026-10-11").map(([hour]) => hour), ["04", "12", "23", "00", "03"]);
+  assert.deepEqual(memory.readHourlies(root, "laptop", "2026-10-12"), []);
 });
 
 test("lessons are added at the end of Active, once, across every computer's file; your own edits stay", () => {
-  const first = memory.addLessons(null, "octocat/cobra", "legion", [memory.lessonLine("2026-10-11", "gotcha", "OTA before merge breaks the build.", "daily 2026-10-11")]);
+  const first = memory.addLessons(null, "octocat/cobra", "laptop", [memory.lessonLine("2026-10-11", "gotcha", "OTA before merge breaks the build.", "daily 2026-10-11")]);
   assert.equal(
     first.text,
-    "# octocat/cobra · lessons (legion)\n\n## Active\n- 2026-10-11 · gotcha · OTA before merge breaks the build. (from: daily 2026-10-11)\n\n## Retired\n",
+    "# octocat/cobra · lessons (laptop)\n\n## Active\n- 2026-10-11 · gotcha · OTA before merge breaks the build. (from: daily 2026-10-11)\n\n## Retired\n",
   );
   const edited = first.text.replace("## Active\n", "## Active\nA note Sam wrote by hand.\n");
   const known = ["- 2026-10-09 · decision · Squash every merge (from: daily 2026-10-09)"];
-  const second = memory.addLessons(edited, "octocat/cobra", "legion", [
+  const second = memory.addLessons(edited, "octocat/cobra", "laptop", [
     memory.lessonLine("2026-10-12", "gotcha", "ota BEFORE merge breaks the build", "daily 2026-10-12"),
     memory.lessonLine("2026-10-12", "decision", "Squash every merge.", "daily 2026-10-12"),
     memory.lessonLine("2026-10-12", "preference", "Plain words in prompts.", "daily 2026-10-12"),
@@ -161,7 +161,7 @@ test("lessons are added at the end of Active, once, across every computer's file
 });
 
 test("a retired lesson moves to Retired with the day and the reason; an unknown line is skipped", () => {
-  const { text } = memory.addLessons(null, "k/k", "legion", ["- 2026-10-01 · decision · Use Expo 54 (from: daily 2026-10-01)", "- 2026-10-02 · gotcha · B (from: daily 2026-10-02)"]);
+  const { text } = memory.addLessons(null, "k/k", "laptop", ["- 2026-10-01 · decision · Use Expo 54 (from: daily 2026-10-01)", "- 2026-10-02 · gotcha · B (from: daily 2026-10-02)"]);
   const result = memory.retireLessons(text, [{ line: "- 2026-10-01 · decision · Use Expo 54 (from: daily 2026-10-01)", reason: "moved to SDK 57 on 10-08" }, { line: "- not there", reason: "x" }], "2026-10-11");
   assert.deepEqual(memory.activeLessons(result.text), ["- 2026-10-02 · gotcha · B (from: daily 2026-10-02)"]);
   assert.match(result.text, /## Retired\n- 2026-10-01 · decision · Use Expo 54 \(from: daily 2026-10-01\) — retired 2026-10-11: moved to SDK 57 on 10-08\n$/);

@@ -36,7 +36,7 @@ const site = project("site", "Site");
 const session: Project = { ...project("payroll_2", "Payroll"), parent: "payroll" };
 
 type Caller = { id: string; kind: string; name: string; project?: string };
-const LEAD: Caller = { id: "lead_legion", kind: "lead", name: "Lead on legion" };
+const LEAD: Caller = { id: "lead_laptop", kind: "lead", name: "Lead on laptop" };
 const foremanOf = (id: string): Caller => ({ id: foremanCallerId(id), kind: "lead", name: `Foreman for ${id}`, project: id });
 const PHONE: Caller = { id: "phone_1", kind: "desk", name: "Phone" };
 const DESK: Caller = { id: "desk_1", kind: "desk", name: "Desk" };
@@ -255,7 +255,7 @@ test("the person's routes: the list soonest first, pause and resume, remove and 
 
   for (const caller of [LEAD, foremanOf("payroll")]) assert.equal((await w.person("/routines", caller, {}, "GET")).status, 403);
   // And auth.ts never lets a Lead key past /orch/* anyway.
-  const orchKey = { authenticate: () => ({ id: "lead_legion", kind: "lead", name: "Lead", scopes: ["orch"], createdAt: 0 }) } as never;
+  const orchKey = { authenticate: () => ({ id: "lead_laptop", kind: "lead", name: "Lead", scopes: ["orch"], createdAt: 0 }) } as never;
   assert.equal(authorize("Bearer x", "/routines/pause", "POST", orchKey).ok, false);
   assert.equal(authorize("Bearer x", "/orch/routine/set", "POST", orchKey).ok, true);
 });
@@ -275,7 +275,7 @@ test("through handleOrch: the routes are /orch routes the Lead reaches (not Fore
       log: () => undefined,
       caller,
       notify: async () => undefined,
-      machineLabel: "legion",
+      machineLabel: "laptop",
       port: 8797,
       routines: w.deps,
     });
@@ -299,7 +299,7 @@ test("the tools: routine_set, routine_list and routine_remove for the Lead and t
   assert.equal("computer" in (set.inputSchema as { properties: Record<string, unknown> }).properties, false);
 
   // routine_set goes to /orch/routine/set and says what to do next; routine_list reads in local time.
-  const computer = { name: "legion", url: "http://127.0.0.1:8797", key: "k".repeat(43), local: true };
+  const computer = { name: "laptop", url: "http://127.0.0.1:8797", key: "k".repeat(43), local: true };
   const seen: Array<{ url: string; body: unknown }> = [];
   const fetcher = (async (input: string | URL | Request, init?: RequestInit) => {
     seen.push({ url: String(input), body: init?.body ? JSON.parse(String(init.body)) : undefined });

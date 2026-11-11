@@ -7,8 +7,8 @@ describe("What Cobra did", () => {
   it("every computer's decisions, newest first, without trusted sends", () => {
     const rows = d.decidedRows(
       [
-        ["legion", { decided: [{ id: "a", at: "2026-10-25T09:00:00", kind: "merge", title: "Merged #12 on green", body: "a/b#12 Fix", undoLabel: "Open a revert PR" }] }],
-        ["mini", {
+        ["laptop", { decided: [{ id: "a", at: "2026-10-25T09:00:00", kind: "merge", title: "Merged #12 on green", body: "a/b#12 Fix", undoLabel: "Open a revert PR" }] }],
+        ["office", {
           decided: [
             { id: "b", at: "2026-10-25T10:00:00", kind: "plan", title: "Cobra started 2 Workers", body: "", undoLabel: "Stop its Workers", undone: "2026-10-25T11:00:00", undoNote: "stopped 2 of 2 Workers" },
             { id: "c", at: "2026-10-25T11:00:00", kind: "action", title: "Sent the invoice", body: "", undoLabel: null },
@@ -19,7 +19,7 @@ describe("What Cobra did", () => {
       ],
       NOW,
     );
-    expect(rows.map((row) => [row.id, row.machine, row.undoable])).toEqual([["b", "mini", false], ["a", "legion", true], ["d", "mini", false]]);
+    expect(rows.map((row) => [row.id, row.machine, row.undoable])).toEqual([["b", "office", false], ["a", "laptop", true], ["d", "office", false]]);
     expect(rows[1]!.time).toBe("09:00");
     expect(d.decidedDetail(rows[0]!)).toBe("Undone: stopped 2 of 2 Workers");
     expect(d.decidedDetail(rows[1]!)).toBe("a/b#12 Fix");
@@ -38,7 +38,7 @@ describe("What Cobra did", () => {
       ],
       ...over,
     });
-    const [live] = d.decidedRows([["legion", { decided: [receipt] }, { runs: [run()] }]], NOW);
+    const [live] = d.decidedRows([["laptop", { decided: [receipt] }, { runs: [run()] }]], NOW);
     expect(live!.undoable).toBe(true);
     expect(live!.research!.line).toBe("3 of 60 reads · until 18:30");
     expect(live!.research!.reads.map((read) => [read.word, read.subject, read.tone])).toEqual([
@@ -46,11 +46,11 @@ describe("What Cobra did", () => {
       ["Read", "caymanyogaclub.com/contact", "ok"],
       ["Searched", '"yoga studio grand cayman"', "ok"],
     ]);
-    const [over] = d.decidedRows([["legion", { decided: [receipt] }, { runs: [run({ endsAt: "2026-10-25T17:00:00" })] }]], NOW);
+    const [over] = d.decidedRows([["laptop", { decided: [receipt] }, { runs: [run({ endsAt: "2026-10-25T17:00:00" })] }]], NOW);
     expect(over!.undoable).toBe(false);
     expect(over!.research!.line).toBe("Ended · 3 of 60 reads");
-    expect(d.decidedRows([["legion", { decided: [receipt] }, { runs: [run({ state: "stopped", stoppedBy: "new-run" })] }]], NOW)[0]!.research!.line).toBe("Stopped for a newer run · 3 of 60 reads");
-    const [plain] = d.decidedRows([["legion", { decided: [receipt] }, null]], NOW);
+    expect(d.decidedRows([["laptop", { decided: [receipt] }, { runs: [run({ state: "stopped", stoppedBy: "new-run" })] }]], NOW)[0]!.research!.line).toBe("Stopped for a newer run · 3 of 60 reads");
+    const [plain] = d.decidedRows([["laptop", { decided: [receipt] }, null]], NOW);
     expect(plain!.research).toBeUndefined();
     expect(plain!.undoable).toBe(true);
     expect(d.undoQuestion(plain!)).toMatch(/ask again/);
@@ -73,7 +73,7 @@ describe("What Cobra did", () => {
       version: 1,
       revision: 9,
       preset: "auto",
-      computers: { legion: { preset: "instinct" }, mini: { preset: "locked" } },
+      computers: { laptop: { preset: "instinct" }, office: { preset: "locked" } },
       projects: { "a/b": { preset: "instinct", foreman: { mergeOnGreen: true } } },
     };
     expect(d.instinctAnywhere(policy)).toBe(true);
@@ -82,7 +82,7 @@ describe("What Cobra did", () => {
       version: 1,
       revision: 9,
       preset: "auto",
-      computers: { legion: { preset: "balanced" }, mini: { preset: "locked" } },
+      computers: { laptop: { preset: "balanced" }, office: { preset: "locked" } },
       projects: { "a/b": { preset: "balanced", foreman: { mergeOnGreen: true } } },
     });
     expect(d.instinctAnywhere(paused)).toBe(false);

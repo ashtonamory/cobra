@@ -1,6 +1,6 @@
 /**
- * The desk's passcode, drawn (src-tauri/src/passcode.rs; words and rules in lib/passcode.ts): the dialog
- * that stands where the phone asks for Face ID, and the hook a screen asks it through.
+ * The desk's passcode, drawn (src-tauri/src/passcode.rs; words and rules in lib/passcode.ts): the dialog,
+ * and the hook a screen asks it through.
  *
  *   const gate = usePasscodeAsk();
  *   if (!(await gate.ask("Show a hidden value"))) return;   // unlocked, or cancelled

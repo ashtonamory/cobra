@@ -1,6 +1,6 @@
 // Trust's routes and flows (the rules are actionTrust.ts).
 //
-// For the person's phone and desk (their own keys, never a Lead's):
+// For the person's the desk (their own keys, never a Lead's):
 //   GET  /trust?project=         TrustList: the grants, the keys that always ask, the receipts (newest first)
 //   POST /trust/revoke {key}     200 {removed}: the grant goes; those actions are cards again
 //   POST /trust/clear {key}      200 {removed}: a key that always asked may earn trust again

@@ -190,7 +190,7 @@ describe("ReadableTitles", () => {
     expect(model.humanizeSlug("push_badge.fix")).toBe("Push badge fix");
     expect(model.fallbackTitle("docs/lab-ste-guide-setup")).toBe("Lab ste guide setup");
     expect(model.fallbackTitle("fix/push-badge-2")).toBe("Push badge 2");
-    expect(model.fallbackTitle("wip/legion/2026-10-05")).toBe("Legion 2026 10 05");
+    expect(model.fallbackTitle("wip/laptop/2026-10-05")).toBe("Laptop 2026 10 05");
     expect(model.fallbackTitle("main")).toBe("Main");
     expect(model.fallbackTitle("wip/")).toBe("wip/");
   });

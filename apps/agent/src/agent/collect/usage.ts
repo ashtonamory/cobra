@@ -58,10 +58,10 @@ function fraction(value: unknown): number {
  * than from the collector's `tierLabel`.
  *
  * The collector takes its label from `~/.claude/.credentials.json`, which is
- * per-machine and goes stale: on 2026-09-21 one laptop's copy said `pro` /
- * `default_claude_ai` for an account that `~/.claude.json` — and the Mini —
- * both report as `claude_max` / `default_claude_max_5x`. One account cannot be
- * two tiers, so the file that agrees across machines wins.
+ * a copy that goes stale: it has said `pro` / `default_claude_ai` for an
+ * account that `~/.claude.json` reports as `claude_max` /
+ * `default_claude_max_5x`. One account cannot be two tiers, so the profile
+ * wins.
  */
 export function planLabel(rateLimitTier: string, organizationType: string): string {
   const scaled = /max_(\d+x)/i.exec(rateLimitTier)?.[1];

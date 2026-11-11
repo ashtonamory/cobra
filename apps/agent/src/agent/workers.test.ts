@@ -41,7 +41,7 @@ function fixture() {
   sh(repo, "commit", "-q", "-m", "init");
   sh(repo, "push", "-q", "-u", "origin", "main");
   sh(repo, "remote", "set-head", "origin", "main");
-  const parent: Project = { id: "cobra", name: "Cobra", machine: "legion", path: repo, session: "cobra" };
+  const parent: Project = { id: "cobra", name: "Cobra", machine: "laptop", path: repo, session: "cobra" };
   return { root, origin, repo, parent };
 }
 
@@ -62,7 +62,7 @@ function deps(over: { running?: string[]; extras?: Extra[]; install?: WorkerDeps
   const phases: Array<[string, WorkerPhase["phase"]]> = [];
   const written = new Map<string, WorkerPhase>();
   const session: NewSessionDeps = {
-    hostname: "legion",
+    hostname: "laptop",
     loadExtras: async () => stored,
     saveExtras: async (extras) => {
       stored = extras;
@@ -117,7 +117,7 @@ test("parseModel: claude, Codex, an alias, and a local model", () => {
 });
 
 test("installCommand: the repository's frozen install, from its lockfile", () => {
-  // Lifecycle scripts off, and pnpm's .pnpmfile.cjs too (OV-SEC-VPS-001 F2).
+  // Lifecycle scripts off, and pnpm's .pnpmfile.cjs too.
   assert.deepEqual(workers.installCommand(new Set(["pnpm-lock.yaml", "package.json"])), PNPM);
   assert.deepEqual(workers.installCommand(new Set(["package-lock.json"])), ["npm", "ci", "--prefer-offline", "--ignore-scripts"]);
   assert.deepEqual(workers.installCommand(new Set(["bun.lock"])), ["bun", "install", "--frozen-lockfile", "--ignore-scripts"]);
@@ -143,7 +143,7 @@ test("workerCommand: the Worker settings, no MCP servers and no Claude in Chrome
 });
 
 test("Codex Workers fail closed before touching a project when containment or the broker credential is absent", async () => {
-  const parent = { id: "cobra", name: "Cobra", machine: "legion", path: "/not-used", session: "cobra" };
+  const parent = { id: "cobra", name: "Cobra", machine: "laptop", path: "/not-used", session: "cobra" };
   await assert.rejects(workers.spawnWorker({} as WorkerDeps, parent, [parent], { task: "x", model: "codex" }), /only in Cobra.s sandbox/);
   await assert.rejects(workers.spawnWorker({ contain: {} as WorkerDeps["contain"], codexReady: () => false } as WorkerDeps, parent, [parent], { task: "x", model: "codex" }), /no Codex ChatGPT sign-in/);
 });
@@ -1139,7 +1139,7 @@ test("Space tools are refused before anything is made: a Codex or local Worker, 
   await refused(deps().deps, { task: "t", owner: "cobra", spaceTools: true }, 409, /Cobra's sandbox/);
 });
 
-test("with COBRA_CONTAIN=require and no jail, no Worker starts, is woken or handed over (OV-SEC-VPS-001 F13)", async () => {
+test("with COBRA_CONTAIN=require and no jail, no Worker starts, is woken or handed over", async () => {
   const { parent } = fixture();
   const { deps: d, calls, stored } = deps();
   const first = await workers.spawnWorker(d, parent, [parent], { task: "fix the badge", model: "sonnet" });

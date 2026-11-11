@@ -10,7 +10,7 @@ import { createRecorder, labelOf, localDay, pruneTimeline, readHistory, stateOfP
 
 const at = (h: number, m = 0) => new Date(2026, 9, 9, h, m).getTime();
 const project = (id: string, activity: string, extra: Partial<ProjectState> = {}) =>
-  ({ id, name: id, machine: "legion", path: `/p/${id}`, session: id, activity, lastActivityAt: null, ...extra }) as unknown as ProjectState;
+  ({ id, name: id, machine: "laptop", path: `/p/${id}`, session: id, activity, lastActivityAt: null, ...extra }) as unknown as ProjectState;
 
 test("a session's chart state: work, wait, idle; a shell is not an agent; an ended Worker is stopped", () => {
   assert.equal(stateOfProject(project("a", "agent-working")), "work");

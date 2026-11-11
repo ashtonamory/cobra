@@ -31,24 +31,24 @@ test("the most specific level that sets a field wins, field by field; nothing pa
     JSON.stringify({
       ...base,
       foreman: { maxWorkers: 3, workerModels: ["sonnet", "local:*"] },
-      computers: { mini: { foreman: { maxWorkers: 1 }, lead: { webTools: false } } },
+      computers: { office: { foreman: { maxWorkers: 1 }, lead: { webTools: false } } },
       projects: { "a/b": { foreman: { mergeOnGreen: true, maxWorkers: 99 } }, "c/d": { foreman: { workerModels: ["evil; rm -rf /", "haiku"] } } },
     }),
   );
   assert.equal(resolveRoles(policy).foreman.maxWorkers, 3);
-  assert.equal(resolveRoles(policy, { computer: "mini" }).foreman.maxWorkers, 1);
-  assert.equal(resolveRoles(policy, { computer: "mini" }).lead.webTools, false);
+  assert.equal(resolveRoles(policy, { computer: "office" }).foreman.maxWorkers, 1);
+  assert.equal(resolveRoles(policy, { computer: "office" }).lead.webTools, false);
   // An explicit true stays true, at the fleet or a computer, and a computer's false still wins over the fleet's true.
-  const on = parsePolicy(JSON.stringify({ ...base, lead: { webTools: true }, computers: { mini: { lead: { webTools: false } }, mbp: { lead: { remoteSpawnHours: 6 } as never } } })).policy;
+  const on = parsePolicy(JSON.stringify({ ...base, lead: { webTools: true }, computers: { office: { lead: { webTools: false } }, mbp: { lead: { remoteSpawnHours: 6 } as never } } })).policy;
   assert.equal(resolveRoles(on).lead.webTools, true);
   assert.equal(resolveRoles(on, { computer: "mbp" }).lead.webTools, true);
-  assert.equal(resolveRoles(on, { computer: "mini" }).lead.webTools, false);
+  assert.equal(resolveRoles(on, { computer: "office" }).lead.webTools, false);
   assert.equal(resolveRoles(parsePolicy(JSON.stringify({ ...base, computers: { mbp: { lead: { webTools: true } } } })).policy, { computer: "mbp" }).lead.webTools, true);
   // A Foreman's: a project may turn its own off, and anything but a boolean is read past.
   const fm = parsePolicy(JSON.stringify({ ...base, foreman: { webTools: "no" }, projects: { "a/b": { foreman: { webTools: false } } } })).policy;
   assert.equal(resolveRoles(fm).foreman.webTools, true);
   assert.equal(resolveRoles(fm, { project: "a/b" }).foreman.webTools, false);
-  const ab = resolveRoles(policy, { computer: "mini", project: "a/b" });
+  const ab = resolveRoles(policy, { computer: "office", project: "a/b" });
   assert.equal(ab.foreman.mergeOnGreen, true);
   assert.equal(ab.foreman.maxWorkers, 1, "99 is past the hard cap, so the project's value is dropped and the computer's stands");
   assert.deepEqual(ab.foreman.workerModels, ["sonnet", "local:*"]);
@@ -62,14 +62,14 @@ test("the computer's Worker cap comes from the computer or the fleet, never a pr
     JSON.stringify({
       ...base,
       foreman: { maxWorkersPerComputer: 12 },
-      computers: { mini: { foreman: { maxWorkersPerComputer: 4 } }, big: { foreman: { maxWorkersPerComputer: 17 } } },
+      computers: { office: { foreman: { maxWorkersPerComputer: 4 } }, big: { foreman: { maxWorkersPerComputer: 17 } } },
       projects: { "a/b": { foreman: { maxWorkers: 8, maxWorkersPerComputer: 16 } } },
     }),
   );
   assert.equal(resolveRoles(policy).foreman.maxWorkersPerComputer, 12);
-  assert.equal(resolveRoles(policy, { computer: "mini" }).foreman.maxWorkersPerComputer, 4);
+  assert.equal(resolveRoles(policy, { computer: "office" }).foreman.maxWorkersPerComputer, 4);
   assert.equal(resolveRoles(policy, { computer: "big" }).foreman.maxWorkersPerComputer, 12, "17 is past the hard cap, so the fleet's stands");
-  const ab = resolveRoles(policy, { computer: "mini", project: "a/b" });
+  const ab = resolveRoles(policy, { computer: "office", project: "a/b" });
   assert.equal(ab.foreman.maxWorkers, 8, "a project sets its own cap");
   assert.equal(ab.foreman.maxWorkersPerComputer, 4, "but not the computer's");
 });
@@ -128,10 +128,10 @@ test("the Lead's web tools follow the policy", () => {
 test("local slots: one by default, a computer's or the fleet's, never a project's, never past the hard cap", () => {
   const read = (raw: object) => parsePolicy(JSON.stringify({ version: 1, revision: 1, ...raw })).policy;
   assert.equal(resolveRoles(read({})).local.slots, 1);
-  const policy = read({ local: { slots: 2 }, computers: { legion: { local: { slots: 3 } } }, projects: { x: { local: { slots: 8 } } } });
-  assert.equal(resolveRoles(policy, { computer: "mini" }).local.slots, 2);
-  assert.equal(resolveRoles(policy, { computer: "legion" }).local.slots, 3);
-  assert.equal(resolveRoles(policy, { computer: "legion", project: "x" }).local.slots, 3, "a project cannot raise the computer's GPU");
+  const policy = read({ local: { slots: 2 }, computers: { laptop: { local: { slots: 3 } } }, projects: { x: { local: { slots: 8 } } } });
+  assert.equal(resolveRoles(policy, { computer: "office" }).local.slots, 2);
+  assert.equal(resolveRoles(policy, { computer: "laptop" }).local.slots, 3);
+  assert.equal(resolveRoles(policy, { computer: "laptop", project: "x" }).local.slots, 3, "a project cannot raise the computer's GPU");
   assert.equal(HARD_CAPS.localSlots, 8);
   assert.equal(resolveRoles(read({ local: { slots: 20 } })).local.slots, 1, "past the cap: not read");
   assert.equal(resolveRoles(read({ local: { slots: 0 } })).local.slots, 1, "at least one");
@@ -139,6 +139,6 @@ test("local slots: one by default, a computer's or the fleet's, never a project'
 
 test("raising the local slots grants more, in words", () => {
   const base = { version: 1 as const, revision: 3, computers: {}, projects: {} };
-  const lines = describeChange(base, { ...base, computers: { legion: { local: { slots: 2 } } } });
-  assert.deepEqual(lines.map((line) => `${line.widens ? "+" : "-"} ${line.text}`), ["+ legion: 2 local-model sessions run at once on a computer (was 1)"]);
+  const lines = describeChange(base, { ...base, computers: { laptop: { local: { slots: 2 } } } });
+  assert.deepEqual(lines.map((line) => `${line.widens ? "+" : "-"} ${line.text}`), ["+ laptop: 2 local-model sessions run at once on a computer (was 1)"]);
 });

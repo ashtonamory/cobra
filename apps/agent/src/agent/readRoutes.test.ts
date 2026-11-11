@@ -146,8 +146,8 @@ test("a read not turned on is a 409 with the step; the connection's own problems
 
 type OrchCaller = { id: string; kind: string; name: string; remote?: boolean; project?: string };
 const foremanFor = (id: string): OrchCaller => ({ id: `foreman_${id}`, kind: "lead", name: `Foreman for ${id}`, project: id });
-const LEAD: OrchCaller = { id: "lead_legion", kind: "lead", name: "Lead on legion" };
-const REMOTE_LEAD: OrchCaller = { id: "lead_mini", kind: "lead", name: "Lead on mini", remote: true };
+const LEAD: OrchCaller = { id: "lead_laptop", kind: "lead", name: "Lead on laptop" };
+const REMOTE_LEAD: OrchCaller = { id: "lead_office", kind: "lead", name: "Lead on office", remote: true };
 const PHONE: OrchCaller = { id: "phone_1", kind: "desk", name: "Sam's phone" };
 const DESK: OrchCaller = { id: "desk_1", kind: "desk", name: "Desk" };
 
@@ -165,7 +165,7 @@ async function routes() {
       log,
       caller,
       notify: async () => undefined,
-      machineLabel: "legion",
+      machineLabel: "laptop",
       port: 8797,
       reads: reads.deps,
     });

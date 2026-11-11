@@ -93,7 +93,7 @@ test("a month asked for, in a currency asked for; a month after this one reads a
 });
 
 test("a reply read leniently: a Space with no id is left out, and a null amount is counted, not added", () => {
-  const read = parseAllMoney({ machine: "mini", month: "2026-11", currency: "eh", spaces: [{ name: "No id" }, { space: "a", name: "A", kind: "own", kept: null, owed: 500, waiting: 2, months: [{ month: "bad" }] }] });
+  const read = parseAllMoney({ machine: "office", month: "2026-11", currency: "eh", spaces: [{ name: "No id" }, { space: "a", name: "A", kind: "own", kept: null, owed: 500, waiting: 2, months: [{ month: "bad" }] }] });
   assert.equal(read.currency, "USD");
   assert.equal(read.spaces.length, 1);
   assert.deepEqual(read.spaces[0]!.months, []);

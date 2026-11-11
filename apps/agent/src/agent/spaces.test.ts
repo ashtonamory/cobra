@@ -58,10 +58,10 @@ test("opening again keeps the first opened time and takes the new name and Sensi
 test("a Space is opened only on its home computer and never moved", () => {
   const root = fresh();
   try {
-    assert.throws(() => openSpace(input, "mini", root), (e: unknown) => e instanceof SpaceError && e.status === 409 && /runs on omarchy, not on mini/.test(e.message));
+    assert.throws(() => openSpace(input, "office", root), (e: unknown) => e instanceof SpaceError && e.status === 409 && /runs on omarchy, not on office/.test(e.message));
     assert.equal(existsSync(join(root, "maya-s-soccer")), false, "nothing was made on the wrong computer");
     openSpace(input, "omarchy", root);
-    assert.throws(() => openSpace({ ...input, home: "mini" }, "mini", root), (e: unknown) => e instanceof SpaceError && e.status === 409 && /pinned to omarchy/.test(e.message));
+    assert.throws(() => openSpace({ ...input, home: "office" }, "office", root), (e: unknown) => e instanceof SpaceError && e.status === 409 && /pinned to omarchy/.test(e.message));
     assert.throws(() => openSpace({ ...input, kind: "nope" as never }, "omarchy", root), (e: unknown) => e instanceof SpaceError && e.status === 400);
     assert.throws(() => openSpace({ ...input, name: "   " }, "omarchy", root), (e: unknown) => e instanceof SpaceError && e.status === 400);
   } finally {

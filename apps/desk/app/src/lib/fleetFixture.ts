@@ -6,8 +6,8 @@
 import { setMachines, testMachine, type Machine } from "./config.ts";
 
 export const FLEET: readonly Machine[] = [
-  testMachine("omarchy", { label: "legion", title: "Legion", tmuxSocket: "default", hue: "blue" }),
-  testMachine("mini", { label: "mini", title: "Mini", hue: "cyan" }),
+  testMachine("omarchy", { label: "laptop", title: "Laptop", tmuxSocket: "default", hue: "blue" }),
+  testMachine("office", { label: "office", title: "Office", hue: "cyan" }),
   testMachine("macbook", { label: "macbook", title: "Macbook", hue: "magenta" }),
 ];
 

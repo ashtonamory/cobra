@@ -398,11 +398,11 @@ const MODEL_PICKER_NARROW = `✻ Churned for 2s · done 10:51 AM
 
 const SHELL = ["probe master ❯ ls", "hello.txt", "probe master ❯ "];
 const SHELL_RAN = [
-  "control-plane hue-full-control ❯ pnpm test",
+  "plant-nursery hue-full-control ❯ pnpm test",
   "ℹ tests 59",
   "ℹ pass 59",
   "",
-  "control-plane hue-full-control ❯",
+  "plant-nursery hue-full-control ❯",
 ];
 
 test("a permission prompt is a dialog, and the preview says what it is about", () => {

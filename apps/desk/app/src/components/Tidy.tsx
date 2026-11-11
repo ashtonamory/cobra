@@ -131,7 +131,7 @@ export function Tidy({ onClose }: { onClose: () => void }) {
 
   return (
     <Sheet title="Tidy" width={720} canClose={confirm === null} onClose={onClose}
-      extra={<button className="btn icon flat" title="Ask every computer again" onClick={reload}>⟳</button>}>
+      extra={<button className="btn icon flat" title="Ask again" onClick={reload}>⟳</button>}>
       <div className="col" style={{ gap: 16 }}>
         {asked < total && (
           <div className="row">

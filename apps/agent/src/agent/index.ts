@@ -245,7 +245,7 @@ async function kernelVersion(): Promise<string> {
 
 async function buildSystemStats(): Promise<SystemStats> {
   // Collectors are independent and all I/O-bound, so run them together rather
-  // than serially — on the Mini's spinning disk the difference is noticeable.
+  // than serially: on a slow disk the difference is noticeable.
   const [cpu, memory, disks, network, thermal, kernel, power] = await Promise.all([
     collectCpu(),
     collectMemory(),
@@ -306,7 +306,7 @@ function buildHealth(): Health {
     ok: true,
     service: SERVICE,
     version: config.version,
-    // The name this computer was given (`install.sh --name`), else its hostname (issue #403);
+    // The name this computer was given (`install.sh --name`), else its hostname;
     // `hostname` keeps the real one for anything that needs it.
     host: process.env.COBRA_MACHINE_NAME?.trim() || os.hostname(),
     hostname: os.hostname(),
@@ -794,7 +794,7 @@ async function tellPerson(input: {
     body: checked.body,
     data: { machine: os.hostname(), projectId: opens.id, session: opens.session, path: opens.path },
   });
-  console.log(`[${SERVICE}] pushed "${checked.title}" for the Lead to ${tokens.length} phone(s)`);
+  console.log(`[${SERVICE}] pushed "${checked.title}" for the Lead as a desktop notification`);
   for (const error of outcome.errors) console.log(`[${SERVICE}] push ticket: ${error}`);
   for (const token of outcome.dead) await dropPushToken(token);
   return null;
@@ -1309,9 +1309,9 @@ const mcpLogin = loginCache((token) => readAccount(token));
  */
 /**
  * GET /policy, POST /policy/preview, POST /policy, GET /policy/refused
- *. Only a phone or a desk you linked
+ *. Only the desk you linked
  * may change it; a change that grants more is refused until it says you
- * confirmed it (Face ID on the phone, the second press on the desk).
+ * confirmed it (the second press in the desk).
  */
 async function handlePolicy(route: string, caller: Caller, request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
   const computer = computerName();
@@ -1718,7 +1718,6 @@ const thread = createThreadStore();
  * A notice the person must read (the Lead's notify_person, a routine's, a
  * website's), kept in Cobra's thread as her words as well as pushed, so
  * nothing she tells them lives only on the lock screen.
- * Only where the thread is kept: the hub.
  */
 function threadNotice(title: string, body: string): void {
   if (!thread.exists()) return;
@@ -1872,7 +1871,7 @@ async function handleThreadWait(url: URL, response: http.ServerResponse): Promis
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     now: Date.now,
   });
-  if (!thread.exists()) return sendJson(response, 404, { error: "Cobra keeps no thread on this computer: she runs on the hub" });
+  if (!thread.exists()) return sendJson(response, 404, { error: "Cobra keeps no thread on this computer yet" });
   const first = result.entries[0];
   return sendJson(response, 200, {
     machine: os.hostname(),
@@ -1961,9 +1960,9 @@ function liveVoiceCalls(): VoiceCalls {
   return calls;
 }
 
-/** /voice/* (voiceRoutes.ts): calls with Cobra, on the hub, where her thread is. */
+/** /voice/* (voiceRoutes.ts): calls with Cobra, where her thread is. */
 async function handleVoice(route: string, url: URL, request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
-  if (!thread.exists()) return sendJson(response, 409, { error: "Cobra runs on the hub: call her there" });
+  if (!thread.exists()) return sendJson(response, 409, { error: "Cobra keeps no thread on this computer yet, so there is nothing to call" });
   let body: Record<string, unknown> = {};
   if (request.method === "POST") {
     try {
@@ -2353,9 +2352,9 @@ async function handleCapabilities(response: http.ServerResponse): Promise<void> 
 /**
  * Settings → Brain (brain/view.ts): GET /brain is this computer's rules,
  * the benchmark table, its accounts' models and windows, and the pick per
- * kind and size; POST {brain} writes a newer brain.json, a phone's or
- * desk's key only. A rule only orders the models the policy already allows,
- * so it grants nothing and needs no Face ID.
+ * kind and size; POST {brain} writes a newer brain.json, the desk's key
+ * only. A rule only orders the models the policy already allows, so it
+ * grants nothing and needs no second press.
  */
 async function handleBrain(caller: Caller, request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
   const view = async () => {
@@ -2397,7 +2396,7 @@ async function handleBrain(caller: Caller, request: http.IncomingMessage, respon
 /**
  * Settings → Engines (engines.ts): GET /settings/engines says which engine
  * each role starts on here; POST {lead?, foreman?, session?, worker?} changes
- * them, a phone's or desk's key only. A change applies to each role's next
+ * them, the desk's key only. A change applies to each role's next
  * conversation; a running session keeps the engine it started on.
  */
 async function handleEngines(caller: Caller, request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
@@ -2430,8 +2429,7 @@ async function handleEngines(caller: Caller, request: http.IncomingMessage, resp
 /**
  * Settings → Projects (folders.ts): GET /settings/folders lists where this
  * computer looks for projects (`roots`) and which of them were added here
- * (`added`); POST {add} or {remove} changes the added ones, a phone's or
- * desk's key only, and answers with the new view and a line to show.
+ * (`added`); POST {add} or {remove} changes the added ones, the desk's key only, and answers with the new view and a line to show.
  */
 async function handleFolders(caller: Caller, request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
   const configPath = process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH;
@@ -2617,7 +2615,7 @@ async function handleProjectRemove(
   const removed = await removeLocal(id);
   if (!removed) {
     return sendJson(response, 409, {
-      error: "no phone-created project with that id; a tracked one is removed in the repo",
+      error: "no project made here has that id; a tracked one is removed in the repo",
     });
   }
   console.log(`[${SERVICE}] removed local project "${id}"`);
@@ -2691,7 +2689,7 @@ function handleAlerts(response: http.ServerResponse): void {
 
 /**
  * The security audit (audit.ts, auditGather.ts): every check, run now, for
- * Fleet → Security → Security audit on the phone and the desk. Read-only, so
+ * Fleet → Security → Security audit on the desk. Read-only, so
  * a `read` key is enough, as for /posture. Two callers at once share one run.
  */
 /** The limits and export folders in files.json (files.ts). */
@@ -2884,7 +2882,7 @@ const server = http.createServer((request, response) => {
         });
       }
       const caller = gate.caller;
-      // When this key stops working, so a phone or desktop rotates it in time (keys.ts).
+      // When this key stops working, so the desk rotates it in time (keys.ts).
       if (caller.expiresAt !== undefined) response.setHeader(KEY_EXPIRES_HEADER, String(caller.expiresAt));
 
       // How often each key may call, and how many waits and searches it holds open (rateLimit.ts).
@@ -2923,25 +2921,23 @@ const server = http.createServer((request, response) => {
       // Approvals (approvals.ts): what the Lead asked and only you may allow.
       if (route === "/approvals" || route === "/approvals/answer") return await handleApprovals(route, request, response, caller);
 
-      // The owner's permission policy (permissions.ts, policyEdit.ts): Settings → Permissions on the phone and the desk.
+      // The owner's permission policy (permissions.ts, policyEdit.ts): Settings → Permissions on the desk.
       if (route === "/policy" || route === "/policy/preview" || route === "/policy/refused") return await handlePolicy(route, caller, request, response);
 
-      // The API lane here (modelGateway.ts): Settings → Claude on the phone and the desk.
+      // The API lane here (modelGateway.ts): Settings → Claude on the desk.
       if (route === "/api-lane") {
         if (request.method !== "GET") return sendJson(response, 405, { error: "GET only" });
         return sendJson(response, 200, apiLaneView());
       }
 
-      // Local models here and Cobra's check of each (localCheck.ts): Settings → Local models on the phone and the desk.
+      // Local models here and Cobra's check of each (localCheck.ts): Settings → Local models on the desk.
       if (route === "/local" || route === "/local/check") return await handleLocal(route, request, response);
 
-      // The router's rules, benchmarks, windows and picks here (brain/view.ts): Settings → Brain on the phone and the desk.
+      // The router's rules, benchmarks, windows and picks here (brain/view.ts): Settings → Brain on the desk.
       if (route === "/brain") return await handleBrain(caller, request, response);
 
-      // Which engine each role starts on here (engines.ts): Settings → Engines on the phone and the desk.
+      // Which engine each role starts on here (engines.ts): Settings → Engines on the desk.
       if (route === "/settings/engines") return await handleEngines(caller, request, response);
-
-      // Which computer is the hub, the only one Cobra runs on (hub.ts): the phone tells every computer.
 
       // Where projects are looked for here (folders.ts): Settings → Projects → Add a folder.
       if (route === "/settings/folders") return await handleFolders(caller, request, response);
@@ -2967,7 +2963,7 @@ const server = http.createServer((request, response) => {
         return sendJson(response, reply.status, reply.body);
       }
 
-      // Cobra's Notebook (notebook.ts): this computer's memory notes for the phone and the desk. A phone's or desk's key only.
+      // Cobra's Notebook (notebook.ts): this computer's memory notes for the desk. A phone's or desk's key only.
       if (NOTEBOOK_ROUTES.has(route)) {
         if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked reads the notebook" });
         const body = request.method === "POST" ? await readBody(request).catch(() => "") : "";
@@ -3026,7 +3022,7 @@ const server = http.createServer((request, response) => {
         return sendJson(response, reply.status, reply.body);
       }
 
-      // How a Space's Foremen work here, standing or on-call (spaceForemen.ts): the person's phone or desk, signed as above.
+      // How a Space's Foremen work here, standing or on-call (spaceForemen.ts): the person's desk, signed as above.
       const foremenRoute = SPACE_FOREMEN_ROUTE.exec(route);
       if (foremenRoute) {
         const body = request.method === "POST" ? await readBody(request).catch(() => "") : "";
@@ -3068,7 +3064,7 @@ const server = http.createServer((request, response) => {
         return sendJson(response, reply.status, reply.body);
       }
 
-      // Mailboxes with an app password (mailboxes.ts, phase 7): iCloud and Zoho, added on the phone or the desk, chosen per Space.
+      // Mailboxes with an app password (mailboxes.ts, phase 7): iCloud and Zoho, added on the desk, chosen per Space.
       if (MAILBOX_ROUTES.has(route)) {
         const boxBody = request.method === "POST" ? await readBody(request).catch(() => "") : "";
         const reply = await handleMailboxes(route, request.method ?? "GET", boxBody, caller, { spaces: () => listSpaces().map((space) => ({ id: space.id, name: space.name })), now: () => new Date(), log: (line) => console.log(`[${SERVICE}] ${line}`) }, PERSON_KINDS);
@@ -3100,14 +3096,14 @@ const server = http.createServer((request, response) => {
         return sendJson(response, reply.status, reply.body);
       }
 
-      // Routines (routines.ts, routineRoutes.ts): the list, Pause or Resume, Remove and Run now, for the phone and the desk.
+      // Routines (routines.ts, routineRoutes.ts): the list, Pause or Resume, Remove and Run now, for the desk.
       if (PERSON_ROUTINE_ROUTES.has(route)) {
         const body = PERSON_ROUTINE_POSTS.has(route) && request.method === "POST" ? await readBody(request).catch(() => "") : "";
         const reply = await handleRoutinePerson(route, request.method, url, body, caller, routineDeps());
         return sendJson(response, reply.status, reply.body);
       }
 
-      // My Organization (orgRoutes.ts): which company each Foreman works for, for the phone and the desk.
+      // My Organization (orgRoutes.ts): which company each Foreman works for, for the desk.
       if (PERSON_ORG_ROUTES.has(route)) {
         const body = request.method === "POST" ? await readBody(request).catch(() => "") : "";
         const reply = await handleOrgPerson(route, request.method, body, caller, orgDeps());
@@ -3134,27 +3130,27 @@ const server = http.createServer((request, response) => {
         return sendJson(response, stopped.status, stopped.run ? { run: stopped.run } : { error: stopped.error });
       }
 
-      // What Cobra did (decided.ts): everything decided without you this week, each with its Undo; for the phone and the desk.
+      // What Cobra did (decided.ts): everything decided without you this week, each with its Undo; for the desk.
       if (route === "/decided" || route === "/decided/undo") {
         return await handleDecided(route, url, request, response, caller);
       }
 
-      // Trust (actionTrust.ts, trustRoutes.ts): the grants, the keys that always ask and the receipts; Revoke and Clear, for the phone and the desk.
+      // Trust (actionTrust.ts, trustRoutes.ts): the grants, the keys that always ask and the receipts; Revoke and Clear, for the desk.
       if (PERSON_TRUST_ROUTES.has(route)) {
         const body = PERSON_TRUST_POSTS.has(route) && request.method === "POST" ? await readBody(request).catch(() => "") : "";
         const reply = await handleTrustPerson(route, request.method, url, body, caller, trustDeps());
         return sendJson(response, reply.status, reply.body);
       }
 
-      // A project's Foreman (foreman.ts): start, stop, a new conversation, for the phone and the desk.
+      // A project's Foreman (foreman.ts): start, stop, a new conversation, for the desk.
       if (route === "/foreman" || route === "/foreman/start" || route === "/foreman/stop" || route === "/foreman/clear") {
         return await handleForeman(route, url, request, response);
       }
 
-      // A Foreman's name and look (crew.ts), for the phone and the desk.
+      // A Foreman's name and look (crew.ts), for the desk.
       if (route === "/crew") return await handleCrew(request, response);
 
-      // The Lead (lead.ts): its state, and start and stop, for the phone and the desk.
+      // The Lead (lead.ts): its state, and start and stop, for the desk.
       if (route === "/lead" || route === "/lead/start" || route === "/lead/stop" || route === "/lead/clear") {
         try {
           if (route === "/lead/start" && request.method === "POST") await startLead();
@@ -3480,7 +3476,7 @@ const queueTimer = setInterval(() => {
 }, 20_000);
 
 // Each Worker's finished turn, told to its Foreman or the Lead (finishes.ts). Its own
-// tick: unlike the watcher's, it runs whether or not a phone or desk is linked.
+// tick: unlike the watcher's, it runs whether or not the desk is linked.
 const relayDeps = liveFinishTickDeps(process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH, (line) => console.log(`[${SERVICE}] ${line}`));
 // Work a Foreman still has in flight past its Workers at work: a [cobra] line's turn at rest is no news for the Lead until it ends.
 relayDeps.busy = async (project) => waitingFor(loadQueue(), project, Date.now()) || emailInFlight(project);
@@ -4089,7 +4085,7 @@ testSwitchTimer.unref();
 }
 
 {
-  // The sandbox (bubblewrap, sandbox-exec on macOS) probed again every 5 minutes (OV-SEC-VPS-001 F13): a sysctl or a
+  // The sandbox (bubblewrap, sandbox-exec on macOS) probed again every 5 minutes: a sysctl or a
   // kernel update that takes the jail away, or gives it back, shows in the
   // journal now, and with COBRA_CONTAIN=require stops or frees the workforce
   // (contain.ts jailRefusal reads the same cached answer).

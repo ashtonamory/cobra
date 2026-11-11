@@ -219,7 +219,7 @@ test("checkBrand: four colours, two shipped fonts, a logo only from the photos t
 });
 
 function approvalOf(brand: ReturnType<typeof checkBrand>, state: string): StoredApproval {
-  return { id: "ap_1", machine: "legion", kind: "brand", title: "Brand kit", body: "", createdAt: "", expiresAt: "", state, requestedBy: "foreman:p", brand };
+  return { id: "ap_1", machine: "laptop", kind: "brand", title: "Brand kit", body: "", createdAt: "", expiresAt: "", state, requestedBy: "foreman:p", brand };
 }
 
 test("settleBrand: Allow writes exactly the card, and the logo only if its bytes are unchanged", () => {
@@ -281,7 +281,7 @@ test("designsEntry: 1 to 6 PNGs from the exports folder, with their sizes, and a
 });
 
 function deps({ space, entries = [], approvals = [], website }: { space: string; entries?: NewEntry[]; approvals?: StoredApproval[]; website?: string | null }): DesignerDeps {
-  const designer: Project = { id: "acme-designer", name: "Designer", path: join(space, "designer"), machine: "legion", session: "acme_designer", foremanTemplate: "designer" } as Project;
+  const designer: Project = { id: "acme-designer", name: "Designer", path: join(space, "designer"), machine: "laptop", session: "acme_designer", foremanTemplate: "designer" } as Project;
   const billing: Project = { ...designer, id: "acme-billing", foremanTemplate: "billing" } as Project;
   return {
     project: async (id) => [designer, billing].find((project) => project.id === id),
@@ -331,8 +331,8 @@ test("only a Designer Foreman here proposes a brand kit or shows designs; one ca
   assert.match(kept.path, new RegExp(`^${join(space, "designs", "shown")}/2026-10-31T10-00-00-000Z/post\\.png$`));
   writeFileSync(join(space, "designs", "exports", "post.png"), png(10, 10));
   assert.deepEqual(readFileSync(kept.path), png(1080, 1350));
-  const offHub = await handleDesignerOrch("/orch/designs/show", show, foreman, { ...shows, thread: () => ({ notHub: "Cobra's thread is on the hub, legion" }) });
-  assert.deepEqual(offHub, { status: 409, body: { error: "Cobra's thread is on the hub, legion" } });
+  const offHub = await handleDesignerOrch("/orch/designs/show", show, foreman, { ...shows, thread: () => ({ notHub: "Cobra's thread is on the hub, laptop" }) });
+  assert.deepEqual(offHub, { status: 409, body: { error: "Cobra's thread is on the hub, laptop" } });
 });
 
 test("the picked website concept goes to design/concept/ with its images and renders, replacing the last", async () => {

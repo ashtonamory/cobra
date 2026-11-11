@@ -165,7 +165,7 @@ What was built:
   | A tainted Worker's words (`worker_read`, `worker_wait`) | yes, for the reader | `orch.ts` |
   | A brief, answer or message from a tainted turn | yes, for the Foreman's turn or the Worker's run | `orch.ts` |
   | A Worker started by a tainted turn | yes (as before) | `orch.ts` startOrQueue |
-  | Attachments the person sends from the phone or the desk | no: the person's own | |
+  | Attachments the person sends from the desk | no: the person's own | |
   | Drive | no: Cobra only writes there (`drive.file`) | |
   | Sent files (`sentFiles.ts`) | no: they only mark what went out | |
   | CSV and sheet imports | no: rows move by code and never through a model; a later `db_query` of people rows taints as above | |

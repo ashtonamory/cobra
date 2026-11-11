@@ -21,7 +21,7 @@ import { THEME_CHOICES, readPref, savePref, type ThemePref } from "../../lib/the
 import { SHOW_CREW_HELP, SHOW_CREW_LABEL, saveShowCrew, useShowCrew } from "../../lib/crewVisibility.ts";
 import { FlowRow, Group, Toggles, why } from "./common.tsx";
 
-/** Settings → This app → Passcode: what stands where the phone asks for Face ID (src-tauri/src/passcode.rs). */
+/** Settings → This app → Passcode: the desk's own check (src-tauri/src/passcode.rs). */
 function PasscodeGroup() {
   const { toast } = useApp();
   const [status, setStatus] = useState<PasscodeStatus | null>(null);

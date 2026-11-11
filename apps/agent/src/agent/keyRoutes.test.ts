@@ -19,8 +19,8 @@ function scratch() {
 test("GET /keys lists every key with its age and expiry, in the contract's shape", () => {
   const { store, done } = scratch();
   try {
-    const { caller: desk, key } = mintDesk("Legion desktop", NOW);
-    const { caller: lead } = mintLead("legion", NOW);
+    const { caller: desk, key } = mintDesk("Laptop desktop", NOW);
+    const { caller: lead } = mintLead("laptop", NOW);
     store.upsert(desk);
     store.upsert(lead);
     const reply = keyRoute("/keys", "GET", desk, key, "", store, "omarchy", NOW);
@@ -39,13 +39,13 @@ test("GET /keys lists every key with its age and expiry, in the contract's shape
 test("the desk rotates with its key alone; a Lead does not rotate this way", () => {
   const { store, done } = scratch();
   try {
-    const { caller: desk, key } = mintDesk("Legion desktop", NOW);
+    const { caller: desk, key } = mintDesk("Laptop desktop", NOW);
     store.upsert(desk);
     const reply = keyRoute("/keys/rotate", "POST", desk, key, JSON.stringify({ keyHash: hashKey("desk-next") }), store, "m", NOW + 1);
     assert.equal(reply.status, 200);
     assert.equal(store.authenticate("desk-next", NOW + 1)?.id, desk.id);
     assert.equal(store.authenticate(key, NOW + 1), null);
-    const { caller: lead, key: leadKey } = mintLead("legion", NOW);
+    const { caller: lead, key: leadKey } = mintLead("laptop", NOW);
     assert.equal(keyRoute("/keys/rotate", "POST", lead, leadKey, JSON.stringify({ keyHash: hashKey("x") }), store, "m", NOW).status, 403);
   } finally {
     done();

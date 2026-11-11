@@ -6,11 +6,10 @@ const run = promisify(execFile);
 /**
  * Whether this machine's own systemd user units are up.
  *
- * The distinction that matters is enabled versus active. cp-home only exists on
- * the Mini, so asking the Legion whether it is running would report "inactive"
- * forever and alert on a unit that was never supposed to be there. Checking
- * is-enabled first means each machine only answers for the units it actually
- * installs, and the deploy script's unit list is the single source of that.
+ * The distinction that matters is enabled versus active. A unit that was
+ * never installed here would report "inactive" forever and alert on
+ * something that was never supposed to be there, so is-enabled is checked
+ * first: this computer answers only for the units it has.
  */
 
 export type UnitState = { unit: string; enabled: boolean; active: boolean };

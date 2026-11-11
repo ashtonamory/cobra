@@ -20,7 +20,7 @@ type Screen = import("./dispatch.ts").Screen;
 function worker(id: string, patch: Partial<OrchWorker> = {}): OrchWorker {
   return {
     id,
-    machine: "legion",
+    machine: "laptop",
     parent: "cobra",
     parentName: "cobra",
     branch: `feat/${id}`,
@@ -136,7 +136,7 @@ test("noticeLine: one line, newest finish per Worker, offsets, fixed words only"
 });
 
 test("audienceOf: a Foreman by its project, the Lead as lead, anyone else by id", () => {
-  assert.equal(audienceOf({ id: "lead_legion_____", kind: "lead" }), "lead");
+  assert.equal(audienceOf({ id: "lead_laptop_____", kind: "lead" }), "lead");
   assert.equal(audienceOf({ id: "foreman_cobra", kind: "lead", project: "cobra" }), "cobra");
   assert.equal(audienceOf({ id: "desk_x", kind: "desk" }), "desk_x");
 });

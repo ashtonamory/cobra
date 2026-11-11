@@ -1,6 +1,6 @@
 /**
  * The desk's passcode (src-tauri/src/passcode.rs), what the web side says and checks around it: Show on a
- * dashboard and a write that is the person's alone ask for it where the phone asks for Face ID. The
+ * dashboard and a write that is the person's alone ask for it. The
  * check itself, the unlock and the lockout are the Rust side's; this is only the words and the form's rules.
  * Pure, so vitest pins it.
  */

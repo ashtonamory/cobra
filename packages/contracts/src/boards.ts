@@ -3,7 +3,7 @@
  * Space's screen. Overview is the screen as it was; then the boards its trades ship, each
  * named by the Space's kind (a business's CRM and Finance, a team's Roster and Dues, a
  * family's Contacts and Budget); then the boards Cobra made, marked as hers; then + to ask
- * her for one. Shared by the phone and the desk so both list the same tabs in one order.
+ * her for one. Shared by the desk so both list the same tabs in one order.
  *
  * No zod here: the agent imports this file by path, as views.ts.
  */

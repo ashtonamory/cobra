@@ -79,7 +79,7 @@ const REPORT = [
   "  ██████████████████████████████▌                    61% used",
   "  Resets Sep 25, 11am (America/New_York)",
   "  Skills                  % of usage",
-  "  /control-plane                  5%",
+  "  /plant-nursery                  5%",
   "  d to day · w to week",
   "  Esc to cancel",
 ];

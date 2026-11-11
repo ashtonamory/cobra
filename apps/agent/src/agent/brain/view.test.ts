@@ -7,7 +7,7 @@ import { acceptBrain, brainView, type BrainWindowInput } from "./view.ts";
 
 const view = (over: { budget?: BrainWindowInput[]; rules?: Parameters<typeof brainView>[0]["brain"]["rules"]; codex?: string[] | null } = {}) =>
   brainView({
-    machine: "legion",
+    machine: "laptop",
     brain: { revision: 2, rules: over.rules ?? [] },
     refused: null,
     candidates: catalog({ codexModels: over.codex === undefined ? ["gpt-6.1-sol", "gpt-5.6-terra"] : over.codex }),

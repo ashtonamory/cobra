@@ -11,7 +11,7 @@ process.env.COBRA_AGENT_STATE_DIR = STATE;
 
 const jobs = await import("./jobs.ts");
 
-const project: Project = { id: "cobra", name: "Cobra", machine: "legion", path: "/p/cobra", session: "cobra" };
+const project: Project = { id: "cobra", name: "Cobra", machine: "laptop", path: "/p/cobra", session: "cobra" };
 
 function deps(answer = "It is policy.ts.") {
   const execs: Array<{ program: string; args: string[]; env: Record<string, string> }> = [];
@@ -166,7 +166,7 @@ test("a Codex job that wrote no answer fails in words rather than answering noth
   await assert.rejects(jobs.runJob({ ...d, readFile: async () => "  \n" }, project, { question: "Where?", model: "codex" }), /codex wrote no answer/);
 });
 
-test("with COBRA_CONTAIN=require and no jail, no job runs (OV-SEC-VPS-001 F13)", async () => {
+test("with COBRA_CONTAIN=require and no jail, no job runs", async () => {
   const { d, execs } = deps();
   const refused = { ...d, jailRefusal: () => "COBRA_CONTAIN is require and bubblewrap cannot make its namespaces here" };
   for (const model of [undefined, "codex"]) {

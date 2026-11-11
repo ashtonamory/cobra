@@ -96,13 +96,13 @@ test("an anchor still in the kept files passes; one that has gone is reported", 
 test("the day's anchor goes into this computer's memory folder, once per change", () => {
   const path = fresh();
   const root = mkdtempSync(join(tmpdir(), "memory-"));
-  assert.equal(anchorPolicyLog(root, "legion", "2026-10-12", path), null, "no log, no anchor");
+  assert.equal(anchorPolicyLog(root, "laptop", "2026-10-12", path), null, "no log, no anchor");
   appendChained(path, { at: 1, rule: "a" });
-  assert.equal(anchorPolicyLog(root, "legion", "2026-10-12", path), memoryPaths.policyAnchors("legion"));
-  assert.equal(anchorPolicyLog(root, "legion", "2026-10-13", path), null, "nothing new since the last anchor");
+  assert.equal(anchorPolicyLog(root, "laptop", "2026-10-12", path), memoryPaths.policyAnchors("laptop"));
+  assert.equal(anchorPolicyLog(root, "laptop", "2026-10-13", path), null, "nothing new since the last anchor");
   appendChained(path, { at: 2, rule: "b" });
-  anchorPolicyLog(root, "legion", "2026-10-13", path);
-  const anchors = parseAnchors(readMemoryFile(root, memoryPaths.policyAnchors("legion")));
+  anchorPolicyLog(root, "laptop", "2026-10-13", path);
+  const anchors = parseAnchors(readMemoryFile(root, memoryPaths.policyAnchors("laptop")));
   assert.deepEqual(anchors.map((anchor) => anchor.day), ["2026-10-12", "2026-10-13"]);
   assert.equal(verifyChain(path, anchors).ok, true);
 });

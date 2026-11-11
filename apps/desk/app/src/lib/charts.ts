@@ -34,7 +34,7 @@ export function laneMarks(lane: Dict, span: readonly [number, number]): Array<{ 
   return out;
 }
 
-/** "game · Mac Mini" when one project's name shows twice on Today, else the name. */
+/** "game · Office" when one project's name shows twice on Today, else the name. */
 export function laneName(name: string, machine: string, names: readonly string[]): string {
   return names.filter((n) => n === name).length > 1 ? `${name} · ${config.label(machine)}` : name;
 }

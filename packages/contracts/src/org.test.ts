@@ -78,14 +78,14 @@ test("seat keys, words and the Lead's text", () => {
 });
 
 test("a seat's place and a brief's company line", () => {
-  const org = applyOrg(opened(), { op: "assign", seat: "mini/site", company: "happy-tails" }).org;
+  const org = applyOrg(opened(), { op: "assign", seat: "office/site", company: "happy-tails" }).org;
   const retired = applyOrg(org, { op: "retire", seat: "omarchy/old" }).org;
   assert.equal(seatPlace(retired, "omarchy", "invoicing"), "Happy Tails");
   assert.equal(seatPlace(retired, "omarchy", "old"), "retired (Outskirts)");
   assert.equal(seatPlace(retired, "omarchy", "elsewhere"), null);
   assert.equal(
     companyNote(retired, "omarchy", "invoicing"),
-    "[Company: your project works for Happy Tails, alongside the Foremen of schedule, site on mini. Their work reaches you only through Cobra: say in your report what of theirs this touches.]",
+    "[Company: your project works for Happy Tails, alongside the Foremen of schedule, site on office. Their work reaches you only through Cobra: say in your report what of theirs this touches.]",
   );
   assert.equal(companyNote(retired, "omarchy", "old"), null);
   assert.equal(companyNote(retired, "omarchy", "elsewhere"), null);
@@ -118,8 +118,8 @@ test("space makes an existing company a Space; its home stays once set", () => {
   assert.deepEqual([org.companies[0]!.kind, org.companies[0]!.home], ["client", "omarchy"]);
   org = applyOrg(org, { op: "space", company: "happy-tails", kind: "own", home: "omarchy" }).org;
   assert.equal(org.companies[0]!.kind, "own", "the kind may change");
-  assert.throws(() => applyOrg(org, { op: "space", company: "happy-tails", kind: "own", home: "mini" }), (e: unknown) => e instanceof OrgError && e.status === 409);
-  assert.throws(() => applyOrg(org, { op: "space", company: "nope", kind: "own", home: "mini" }), (e: unknown) => e instanceof OrgError && e.status === 404);
+  assert.throws(() => applyOrg(org, { op: "space", company: "happy-tails", kind: "own", home: "office" }), (e: unknown) => e instanceof OrgError && e.status === 409);
+  assert.throws(() => applyOrg(org, { op: "space", company: "nope", kind: "own", home: "office" }), (e: unknown) => e instanceof OrgError && e.status === 404);
 });
 
 test("a Space's kind and home are read from a request together or not at all", () => {

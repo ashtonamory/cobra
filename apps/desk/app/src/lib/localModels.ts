@@ -1,8 +1,7 @@
 /**
  * Settings → LOCAL MODELS in words: what each computer's
  * Ollama has, how each model did in the agent's check (the agent's localCheck.ts, `GET /local`), and
- * the next policy when a helper is set to use one. A port of the desk's localmodels.py (itself the
- * phone's src/localModelsRules.ts): change them together. Pure.
+ * the next policy when a helper is set to use one. Pure.
  */
 import { APP_NAME } from "./appName.ts";
 import { truthy, type Dict, type Json } from "./json.ts";
@@ -25,8 +24,8 @@ export const UNCHECKED_DETAIL = "Not checked yet. Check loads it onto the GPU fo
 export const NO_TOOLS_DETAIL = "Ollama says it cannot call tools, and every session needs them.";
 export const NONE_LABEL = "None (Claude only)";
 export const USE_FOOTER =
-  "On that computer only, each helper turns to its local model as your plan nears its limit " +
-  "(titles and explanations at 80%, the rest at the limit). A change goes to every computer.";
+  "Each helper turns to its local model as your plan nears its limit " +
+  "(titles and explanations at 80%, the rest at the limit).";
 
 const has = (d: object, key: string) => Object.prototype.hasOwnProperty.call(d, key);
 

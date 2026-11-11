@@ -1,6 +1,6 @@
 /**
  * Settings → ACCOUNTS, as words: each computer's Claude and Codex accounts and which one is in use
- * there (the agent's accounts.ts, `GET /accounts`). A port of the desk's accounts.py. Pure.
+ * there (the agent's accounts.ts, `GET /accounts`). Pure.
  *
  * Claude: the account picked is what every agent session on that computer sends (Workers, Foremen,
  * the Lead, jobs); your own `claude` keeps its own sign-in. Codex: the account picked becomes that

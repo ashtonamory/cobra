@@ -2,8 +2,7 @@
  * Settings → BRAIN, as words and edits (the agent's brain/view.ts): the benchmark scores the router ships with, which computers'
  * accounts offer each model, each computer's usage windows and picks, and your rules. brain.json is
  * the fleet's: the newest revision any computer has is the one edited, and the next goes to every
- * computer. A port of the desk's brain.py (itself the phone's src/brainRules.ts): change them
- * together. Pure.
+ * computer. Pure.
  */
 import { APP_NAME } from "./appName.ts";
 import { truthy, type Dict, type Json } from "./json.ts";
@@ -16,11 +15,11 @@ export const RULES_FOOTER = "A rule only orders the models your permissions allo
 export const PICKS_FOOTER =
   "A small task may take a model up to 4 points behind the best when it uses less of its window, a " +
   "medium one 2, a large one none. TIGHT takes 4 points off; HOLD leaves a model out.";
-export const UPDATE_AGENTS = `Update ${APP_NAME} on your computers to see the router here.`;
+export const UPDATE_AGENTS = `Update ${APP_NAME} to see the router here.`;
 export const ANY = "any";
 
 export function benchmarksFooter(asOf: string): string {
-  return `Published scores as of ${asOf}; they change with an update of ${APP_NAME}. Code is FrontierCode, Terminal is Terminal-Bench 4.0. Offered: which computers' accounts list it.`;
+  return `Published scores as of ${asOf}; they change with an update of ${APP_NAME}. Code is FrontierCode, Terminal is Terminal-Bench 4.0. Offered: whether your accounts list it.`;
 }
 const STATES: Record<string, string> = { ok: "OK", tight: "TIGHT", hold: "HOLD" };
 

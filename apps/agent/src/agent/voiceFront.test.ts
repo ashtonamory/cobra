@@ -273,7 +273,7 @@ test("the status names Spaces, never the crew", () => {
     now: Date.parse("2026-11-02T15:00:00Z"),
     projects: [project({ id: "bakery-site", name: "bakery-site", needsInput: true }), project({ id: "bakery-site_fm", name: "Bella", parent: "bakery-site", activity: "agent-working" })],
     approvals: [{ id: "ap1", title: "Publish the menu page?", body: "" }],
-    spaces: [{ version: 1, id: "bakery", name: "Bakery", kind: "food" as never, home: "legion", sensitive: false, opened: "2026-10-01T00:00:00Z" }],
+    spaces: [{ version: 1, id: "bakery", name: "Bakery", kind: "food" as never, home: "laptop", sensitive: false, opened: "2026-10-01T00:00:00Z" }],
     spaceOf: (id) => (id === "bakery-site" ? "bakery" : null),
     leadWorking: false,
     doneToday: "2 tasks finished.",

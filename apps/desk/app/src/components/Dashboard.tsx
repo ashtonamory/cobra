@@ -58,7 +58,7 @@ export function Dashboard({ machine, project, space }: { machine: string; projec
   // Bumped after a write, so the board reads its charts again.
   const [written, setWritten] = useState(0);
   const round = useRef(0);
-  // The passcode stands where the phone asks for Face ID: before Show, and before a write that is the person's alone.
+  // The passcode is asked before Show, and before a write that is the person's alone.
   const { ask: askPasscode, node: passcodeNode } = usePasscodeAsk();
 
   useEffect(() => {

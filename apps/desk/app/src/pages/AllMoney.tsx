@@ -46,7 +46,7 @@ export function AllMoneyPage() {
           <button className="chart-month-step" aria-label={`On to ${monthTitle(shiftMonth(month, 1))}`} disabled={month >= monthOf(today)} onClick={() => setMonth((m) => shiftMonth(m, 1))}>›</button>
         </div>
       </div>
-      {!read.loaded ? <div className="dim">Asking your computers…</div> : read.spaces.length === 0 ? (
+      {!read.loaded ? <div className="dim">Reading…</div> : read.spaces.length === 0 ? (
         <div className="fin-card"><b>No Space keeps money yet.</b><span className="dim">A Space's Money skill keeps its books; ask {LEAD_NAME} to add one.</span></div>
       ) : (<>
         <div className="dash-tiles">

@@ -7,7 +7,7 @@ import { join } from "node:path";
 
 const CLI = new URL("./cli.ts", import.meta.url).pathname;
 
-// Issue #404: `cobra-agent --help` printed the usage and exited 1, as for an unknown command.
+// `cobra-agent --help` once printed the usage and exited 1, as for an unknown command.
 test("cobra-agent --help, -h and help print the usage and exit 0; an unknown command exits 1", () => {
   const home = mkdtempSync(join(tmpdir(), "cobra-cli-"));
   try {

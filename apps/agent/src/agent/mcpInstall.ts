@@ -51,7 +51,7 @@ export type InstallDeps = {
 };
 
 const installDeps: InstallDeps = {
-  // GitHub's release download redirects to its asset host: each hop checked public and pinned (publicFetch.ts, OV-SEC-VPS-001 F8).
+  // GitHub's release download redirects to its asset host: each hop checked public and pinned (publicFetch.ts).
   fetch: (url, init) => publicFetch(url, init),
   platform: `${process.platform}-${process.arch}`,
   dir: MANAGED_DIR,

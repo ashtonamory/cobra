@@ -78,7 +78,7 @@ function world(project = "northwind") {
       log: () => undefined,
       caller: { id: `foreman_${project}____`, kind: "lead", name: `Foreman for ${project}`, project },
       notify: async (approval) => void notified.push(approval),
-      machineLabel: "legion",
+      machineLabel: "laptop",
       port: 8797,
       reads,
       trust: { deps: trustDeps, carryOut: (approval) => void carried.push(approval) },

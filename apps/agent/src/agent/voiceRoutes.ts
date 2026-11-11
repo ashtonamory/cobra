@@ -1,8 +1,7 @@
 import { VoiceError, type VoiceCalls } from "./voiceFront.ts";
 
 /**
- * The call routes (phase V4), a phone's or
- * desk's key (POST is act, GET read), on the hub only:
+ * The call routes (phase V4), the desk's key (POST is act, GET read), on the hub only:
  *
  *   POST /voice/call/start                       → CallStart
  *   POST /voice/turn {call, text}                → TurnReply, as soon as the first part is whole

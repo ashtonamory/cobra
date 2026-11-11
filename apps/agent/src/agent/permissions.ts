@@ -297,7 +297,7 @@ export type PolicyLevel = RoleLevel & {
   network?: { allow?: string[] };
 };
 
-/** policy.json as written by the phone or the desk. */
+/** policy.json as written by the desk. */
 export type PolicyFile = PolicyLevel & {
   version: 1;
   /** Bumped by every change. A running Worker keeps the revision it started with. */

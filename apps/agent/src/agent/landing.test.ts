@@ -470,7 +470,7 @@ test("localMergedHeads reads the trailers; the landed branch reads merged and ti
   assert.deepEqual([...landing.unionHeads(heads, new Map([["feat/badge", new Set(["x"])]])).get("feat/badge")!].sort(), [local.head, "x"].sort());
 
   // Tidy: the unchanged merged test of liveTidyDeps, fed these heads.
-  const parent = { id: "myproj", name: "myproj", machine: "legion", path: repo, session: "myproj" };
+  const parent = { id: "myproj", name: "myproj", machine: "laptop", path: repo, session: "myproj" };
   let stored: Extra[] = [extra];
   const merged = extras.liveTidyDeps([parent], () => heads).merged;
   assert.equal(await merged(extra.path, extra.branch), true);
@@ -534,7 +534,7 @@ test("Tidy offers a stopped Worker whose land you denied or let lapse, not one t
   const land = (worker: string) => ({ worker, project: "myproj", branch: `feat/${worker}`, title: "t", head: "h", base: "b", commits: 1, files: 1, insertions: 1, deletions: 0 });
   const approval = (id: string, worker: string, state: string, createdAt: string): Approval => ({
     id,
-    machine: "legion",
+    machine: "laptop",
     kind: "land",
     title: "t",
     body: "b",

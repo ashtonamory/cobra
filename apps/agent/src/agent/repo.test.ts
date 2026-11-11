@@ -52,7 +52,7 @@ test("tidy rows: merged branches delete, stale unique ones ask Claude, old PRs c
       branch({ name: "fix/login", merged: false, aheadOfMain: 2, stale: true, ageDays: 40 }),
       branch({ name: "fix/fresh", merged: false, aheadOfMain: 1, stale: false }),
       branch({ name: "feat/now", merged: true, current: true }),
-      branch({ name: "wip/legion/2026-09-20", merged: false, aheadOfMain: 1, stale: true, ageDays: 31, parked: true }),
+      branch({ name: "wip/laptop/2026-09-20", merged: false, aheadOfMain: 1, stale: true, ageDays: 31, parked: true }),
       branch({ name: "fix/routine-sync-atomic", merged: false, aheadOfMain: 3, stale: true, ageDays: 31 }),
     ],
     [pr({ number: 98, head: "fix/routine-sync-atomic", ageDays: 10 }), pr({ number: 83, head: "fix/cloud", ageDays: 45, mergeable: "CONFLICTING" })],
@@ -177,7 +177,7 @@ test("prune takes only pushed, merged, gone-from-origin local copies that no wor
     branch({ name: "fix/still-on-origin", merged: true, gone: false, local: true, remote: true }),
     branch({ name: "feat/never-pushed", merged: true, gone: false, local: true, remote: false, aheadOfMain: 0 }),
     branch({ name: "fix/more-after-merge", merged: false, gone: true, local: true, remote: false, aheadOfMain: 1 }),
-    branch({ name: "wip/legion/2026-10-01", merged: true, gone: true, local: true, remote: false, parked: true }),
+    branch({ name: "wip/laptop/2026-10-01", merged: true, gone: true, local: true, remote: false, parked: true }),
     branch({ name: "feat/here", merged: true, gone: true, local: true, remote: false, current: true }),
   ];
   const checkedOut = new Set(["fix/other-worktree", "feat/here"]);

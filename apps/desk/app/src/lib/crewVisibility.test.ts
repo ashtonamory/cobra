@@ -10,11 +10,11 @@ import {
 } from "./crewVisibility.ts";
 
 const seat = (key: string, name: string, over: Partial<Seat> = {}): Seat => ({
-  key, machine: "legion", project: key.split("/")[1]!, name, projectName: name, repo: {}, label: "Code", company: null, retired: false, state: "idle", needing: null, foreman: null, ...over,
+  key, machine: "laptop", project: key.split("/")[1]!, name, projectName: name, repo: {}, label: "Code", company: null, retired: false, state: "idle", needing: null, foreman: null, ...over,
 });
 const town = (seats: Seat[]): Town => ({ data: {} as never, seats: new Map(seats.map((s) => [s.key, s])), proposal: null });
 const org = (): Org => {
-  let o = applyOrg(EMPTY_ORG, { op: "company", name: "Happy Tails", kind: "client", home: "legion" }).org;
+  let o = applyOrg(EMPTY_ORG, { op: "company", name: "Happy Tails", kind: "client", home: "laptop" }).org;
   return applyOrg(o, { op: "company", name: "Fern & Field" }).org;
 };
 
@@ -109,11 +109,11 @@ describe("where work happens", () => {
   const t = town(seats);
 
   it("a project's place is its Space and skill; a code project or a retired one has none", () => {
-    expect(placeOf(t, org(), "legion", "crm")).toEqual({ space: "Happy Tails", skill: "People" });
-    expect(placeOf(t, org(), "legion", "books")).toEqual({ space: "Fern & Field", skill: "Money" });
-    expect(placeOf(t, org(), "legion", "cobra")).toBeNull();
-    expect(placeOf(t, org(), "legion", "gone")).toBeNull();
-    expect(placeOf(t, org(), "mini", "crm")).toBeNull();
+    expect(placeOf(t, org(), "laptop", "crm")).toEqual({ space: "Happy Tails", skill: "People" });
+    expect(placeOf(t, org(), "laptop", "books")).toEqual({ space: "Fern & Field", skill: "Money" });
+    expect(placeOf(t, org(), "laptop", "cobra")).toBeNull();
+    expect(placeOf(t, org(), "laptop", "gone")).toBeNull();
+    expect(placeOf(t, org(), "office", "crm")).toBeNull();
     expect(rowProject({ id: "crm_fm", parent: "crm" })).toBe("crm");
     expect(rowProject({ id: "crm", parent: null })).toBe("crm");
   });

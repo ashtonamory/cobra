@@ -118,7 +118,7 @@ test("an orch answer (an HTTP error body to cobra-orch) holds no secret value, e
     log: () => undefined,
     caller: { id: "k1", name: "test", kind: "lead", project: "p1" },
     notify: async () => undefined,
-    machineLabel: "legion",
+    machineLabel: "laptop",
     port: 8797,
   });
   const answered = reply as { status: number; body: unknown } | null;
@@ -130,7 +130,7 @@ test("an orch answer (an HTTP error body to cobra-orch) holds no secret value, e
 
 test("an orchMcp tool result: the agent's answer redacted again by shape, in results and errors", async () => {
   const token = `github_pat_${"Ab1".repeat(10)}`;
-  const fetcher = (async () => new Response(JSON.stringify({ projects: [], workers: [], machine: `legion ${token}` }), { status: 200 })) as typeof fetch;
+  const fetcher = (async () => new Response(JSON.stringify({ projects: [], workers: [], machine: `laptop ${token}` }), { status: 200 })) as typeof fetch;
   const computers = () => [{ name: "here", url: "http://127.0.0.1:1" }];
   const ok = await handle({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "status", arguments: {} } }, computers, fetcher);
   assert.ok(!JSON.stringify(ok).includes(token), JSON.stringify(ok));

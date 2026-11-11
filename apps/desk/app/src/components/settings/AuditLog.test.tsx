@@ -44,7 +44,7 @@ function Page() {
 }
 
 async function draw() {
-  config.setMachines([config.testMachine("mini")]);
+  config.setMachines([config.testMachine("office")]);
   host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
@@ -60,12 +60,12 @@ describe("Settings → Audit log", () => {
     expect(titles).toEqual(["Cobra sent an email to 2 addresses at example.com", 'You refused "Pay the bill?"']);
     expect(el.textContent).toContain("paws · ap_1");
     expect([...el.querySelectorAll(".status")].map((s) => s.textContent)).toEqual(["email", "refused"]);
-    expect(calls.audit).toEqual([{ machine: "mini", opts: { all: false } }]);
+    expect(calls.audit).toEqual([{ machine: "office", opts: { all: false } }]);
     // Nothing on a row changes the log: no buttons in the board.
     expect(el.querySelectorAll(".board button").length).toBe(0);
     await act(async () => { [...el.querySelectorAll("button")].find((b) => b.textContent === "Show older")!.click(); });
     await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
-    expect(calls.audit.at(-1)).toEqual({ machine: "mini", opts: { before: "b".repeat(16), all: false } });
+    expect(calls.audit.at(-1)).toEqual({ machine: "office", opts: { before: "b".repeat(16), all: false } });
     expect(el.querySelectorAll(".btitle").length).toBe(3);
     expect(el.textContent).not.toContain("Show older");
   });
@@ -74,6 +74,6 @@ describe("Settings → Audit log", () => {
     const el = await draw();
     await act(async () => { [...el.querySelectorAll("button")].find((b) => b.textContent === "Tool decisions")!.click(); });
     await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
-    expect(calls.audit.at(-1)).toEqual({ machine: "mini", opts: { all: true } });
+    expect(calls.audit.at(-1)).toEqual({ machine: "office", opts: { all: true } });
   });
 });

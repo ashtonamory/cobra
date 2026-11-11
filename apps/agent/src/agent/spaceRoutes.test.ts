@@ -14,7 +14,7 @@ const { handleOrch, ORCH_ROUTES, FOREMAN_ONLY } = await import("./orch.ts");
 const { EMPTY_ORG } = await import("../../../../packages/contracts/src/org.ts");
 
 type Caller = { id: string; kind: string; name: string; project?: string };
-const LEAD: Caller = { id: "lead_legion_____", kind: "lead", name: "Lead on legion" };
+const LEAD: Caller = { id: "lead_laptop_____", kind: "lead", name: "Lead on laptop" };
 const FOREMAN: Caller = { id: "foreman_site_____", kind: "lead", name: "Foreman for site", project: "site" };
 const PHONE: Caller = { id: "phone_1", kind: "desk", name: "Sam's phone" };
 
@@ -46,7 +46,7 @@ function harness() {
       log: () => undefined,
       caller,
       notify: async () => undefined,
-      machineLabel: "legion",
+      machineLabel: "laptop",
       port: 8797,
       space,
     });
@@ -76,7 +76,7 @@ test("the Lead's request becomes one pending card, and a bad request is refused 
   assert.match(JSON.stringify(ok.body), /Open Maya's Soccer\?/);
   assert.equal(saved().length, 1);
   assert.equal((saved()[0] as { kind: string; state: string; requestedBy: string }).kind, "space");
-  assert.equal((saved()[0] as { requestedBy: string }).requestedBy, "lead_legion_____");
+  assert.equal((saved()[0] as { requestedBy: string }).requestedBy, "lead_laptop_____");
   const bad = await call(LEAD, { name: "X", kind: "club", profile: PROFILE });
   assert.equal(bad.status, 400);
   assert.match(JSON.stringify(bad.body), /kind must be client, own, team or family/);

@@ -20,10 +20,8 @@ const run = promisify(execFile);
  *
  * gh is resolved to an absolute path once and then always invoked by it, rather
  * than trusting the service's PATH. It can live in different places from one
- * computer to the next — a mise shim on the Legion and the Mini, /usr/bin/gh
- * on a plain Linux install — and the same reasoning as gotcha 10, which put a
- * __NODE__ placeholder in the unit files, applies: a systemd user unit's PATH
- * is not a login shell's.
+ * computer to the next (a mise shim, /usr/bin/gh on a plain Linux install,
+ * Homebrew on a Mac), and a systemd user unit's PATH is not a login shell's.
  */
 
 /** Only ever "owner/name". Checked because it reaches a command line as an argument. */

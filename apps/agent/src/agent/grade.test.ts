@@ -83,7 +83,7 @@ test("worst wins: Unpushed over Parked over Off-standard over Cluttered", () => 
 });
 
 test("a wip branch you are on is Working, not Parked; Unpushed and Parked offer Park and Resume", () => {
-  assert.equal(gradeFor(git({ branch: "wip/legion/2026-09-21", parked: "wip/legion/2026-09-21" }), "none", null, NOW), "Working");
+  assert.equal(gradeFor(git({ branch: "wip/laptop/2026-09-21", parked: "wip/laptop/2026-09-21" }), "none", null, NOW), "Working");
   assert.equal(offerFor("Unpushed"), "park");
   assert.equal(offerFor("Parked"), "resume");
 });

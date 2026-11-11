@@ -28,8 +28,8 @@ describe("folders", () => {
   });
 
   it("says an older agent needs updating", () => {
-    expect(folders.failureLine(404, "not found", "legion")).toContain("update it");
-    expect(folders.failureLine(0, "timed out", "mini")).toBe("mini did not answer: timed out");
-    expect(folders.failureLine(400, "~/x is not a folder on this computer", "mini")).toBe("~/x is not a folder on this computer");
+    expect(folders.failureLine(404, "not found", "laptop")).toContain("update it");
+    expect(folders.failureLine(0, "timed out", "office")).toBe("office did not answer: timed out");
+    expect(folders.failureLine(400, "~/x is not a folder on this computer", "office")).toBe("~/x is not a folder on this computer");
   });
 });

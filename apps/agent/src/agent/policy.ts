@@ -283,7 +283,7 @@ export function hardStop(command: string, except?: HardStop): HardStop | null {
 /**
  * Code written on the command line (inlineCode.ts): `python3 -c`, `node -e`,
  * `ruby -e`, `perl -e`, `bash -c`. Each is judged as a heredoc body that the
- * same program reads (OV-SEC-VPS-001 F12): a Worker's
+ * same program reads: a Worker's
  * `python3 -c "…urlopen(…)"` is network, as `python3 - <<'EOF'` with the same
  * code is. A program the command does not hold (`python3 -c "$CODE"`), or
  * shell it cannot read whole around an interpreter, is code the policy is not
@@ -792,7 +792,7 @@ export function gitWriteRoots(scope: Pick<WorkerScope, "gitCommon" | "gitPrivate
 
 /**
  * Inside the write roots, what a Worker must never write: the remote-tracking
- * refs and packed-refs (OV-SEC-VPS-001 F5). A Worker that wrote
+ * refs and packed-refs. A Worker that wrote
  * refs/remotes/origin/HEAD and a branch of its own there had the local check
  * read its check command from the Worker's own commit. No Worker git command
  * writes them: fetch, pull and push need the network it does not have.

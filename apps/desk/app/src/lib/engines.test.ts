@@ -22,8 +22,8 @@ describe("EnginesWords", () => {
   it("words match the phone", () => {
     expect(engines.codexLine({ codex: false })).toContain("not signed in");
     expect(engines.codexLine({ codex: true, contained: false })).toContain("Workers stay on Claude");
-    expect(engines.changedWords("Foremen", "codex", "legion")).toBe(
-      "Foremen on legion start on Codex from their next conversation");
+    expect(engines.changedWords("Foremen", "codex", "laptop")).toBe(
+      "Foremen on laptop start on Codex from their next conversation");
   });
 });
 

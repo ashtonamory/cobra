@@ -17,7 +17,7 @@
 //   POST /orch/brand/propose {colors, fonts, logo?, source?}  202 {approval}: one approval of kind
 //                                                           `brand`; Allow saves exactly it
 //   POST /orch/designs/show {files, caption}                200 {entry}: a `designs` entry in
-//                                                           Cobra's thread, on the hub only
+//                                                           Cobra's thread
 import { execFile } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { appendFileSync, copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
@@ -528,7 +528,7 @@ export type DesignerDeps = {
   notify: (approval: StoredApproval) => Promise<void>;
   /** The website folder of the site this Designer's company keeps here, or why there is none. */
   website: (project: Project) => Promise<{ dir: string } | { none: string }>;
-  /** Cobra's thread here, or null when this computer is not the hub (then why). */
+  /** Cobra's thread here, or null when it cannot be read (then why). */
   thread: () => { append: (entries: readonly NewEntry[]) => unknown; current: () => string | null } | { notHub: string };
   log: (line: string) => void;
   now: () => number;

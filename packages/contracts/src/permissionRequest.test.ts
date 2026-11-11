@@ -20,7 +20,7 @@ const request = {
 const project = {
   id: "cobra_2",
   name: "Cobra · feat/x",
-  machine: "legion",
+  machine: "laptop",
   path: "/home/u/Projects/cobra.worktrees/feat-x",
   session: "cobra_2",
   activity: "agent-idle",
@@ -41,7 +41,7 @@ test("a project, a screen and a Worker parse with and without the request", () =
   assert.deepEqual(Screen.parse({ ...screen, request }).request, request);
   const worker = {
     id: "cobra_2",
-    machine: "legion",
+    machine: "laptop",
     parent: "cobra",
     parentName: "Cobra",
     branch: "feat/x",

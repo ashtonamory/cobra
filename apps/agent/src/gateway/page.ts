@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
  *
  * Served from the gateway rather than inlined into the app so the WebSocket is
  * same-origin, xterm.js never comes from a CDN, and the terminal keeps working
- * without internet as long as the tailnet is up.
+ * without internet.
  */
 export const TERMINAL_PAGE = `<!doctype html>
 <html>
@@ -91,8 +91,8 @@ export const TERMINAL_PAGE = `<!doctype html>
   /**
    * Reconnect.
    *
-   * The phone's Tailscale tunnel restarts every few minutes on its own, which
-   * drops this socket. tmux means nothing is actually lost — the session keeps
+   * A socket can drop (the computer slept, the page was put aside). tmux
+   * means nothing is actually lost — the session keeps
    * running on the far side — so the only thing standing between a blip and a
    * lost coding session was that this page used to give up and ask to be
    * reopened. The gateway keeps us supplied with a ticket to reattach with.

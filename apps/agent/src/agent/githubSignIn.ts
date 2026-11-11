@@ -5,7 +5,7 @@ import { CONFIG_DIR } from "./paths.ts";
 /**
  * Sign in with GitHub for the github preset: GitHub's device flow, run by this computer's agent.
  *
- * Connect asks GitHub for a device code and gives the phone or the desk only
+ * Connect asks GitHub for a device code and gives the desk only
  * the short user code and the page to type it on. The agent keeps the device
  * code and polls GitHub until the person approves, refuses, or the code runs
  * out. The token GitHub then hands over goes to `save` (the token file, 0600)

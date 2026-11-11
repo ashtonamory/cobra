@@ -268,8 +268,8 @@ mod tests {
 
     #[test]
     fn the_configured_name_wins_over_the_hostname() {
-        assert_eq!(name_in_health(&json!({"host": "omarchy", "name": "legion"}), "omarchy").as_deref(), Some("legion"));
-        assert_eq!(name_in_health(&json!({"host": "legion"}), "omarchy").as_deref(), Some("legion"));
+        assert_eq!(name_in_health(&json!({"host": "omarchy", "name": "laptop"}), "omarchy").as_deref(), Some("laptop"));
+        assert_eq!(name_in_health(&json!({"host": "laptop"}), "omarchy").as_deref(), Some("laptop"));
         assert_eq!(name_in_health(&json!({"host": "omarchy"}), "omarchy"), None);
         assert_eq!(name_in_health(&json!({"host": "Omarchy"}), "omarchy"), None);
         assert_eq!(name_in_health(&json!({"ok": true}), "omarchy"), None);
@@ -279,8 +279,8 @@ mod tests {
 
     #[test]
     fn this_desktop_is_named_for_its_agent() {
-        assert_eq!(own_name(Some("legion")), "legion");
-        assert_eq!(own_name(Some(" legion ")), "legion");
+        assert_eq!(own_name(Some("laptop")), "laptop");
+        assert_eq!(own_name(Some(" laptop ")), "laptop");
         assert_eq!(own_name(Some("")), here());
         assert_eq!(own_name(Some("a b")), here());
         assert_eq!(own_name(None), here());
@@ -298,10 +298,10 @@ mod tests {
             let mode = std::fs::metadata(store.computers_path()).unwrap().permissions().mode() & 0o777;
             assert_eq!(mode, 0o600);
         }
-        assert!(store.set_label("legion").unwrap());
-        assert!(!store.set_label("legion").unwrap());
+        assert!(store.set_label("laptop").unwrap());
+        assert!(!store.set_label("laptop").unwrap());
         let m = store.agent().unwrap();
-        assert_eq!((m.machine.as_str(), m.label.as_str(), m.title.as_str(), m.key.as_str()), ("omarchy", "legion", "Legion", "k"));
+        assert_eq!((m.machine.as_str(), m.label.as_str(), m.title.as_str(), m.key.as_str()), ("omarchy", "laptop", "Laptop", "k"));
         assert_eq!(store.load().len(), 1);
         store.replace_key("k", "k2").unwrap();
         assert!(store.replace_key("k", "k3").is_err());

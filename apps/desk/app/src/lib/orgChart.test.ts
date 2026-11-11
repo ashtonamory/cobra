@@ -5,11 +5,11 @@ import { chartOf, defaultOpen, seatRole, spaceLine, statusWords } from "./orgCha
 import { askCobraWith, currentDraft, takeDraft } from "./cobraDraft.ts";
 
 const seat = (key: string, name: string, over: Partial<Seat> = {}): Seat => ({
-  key, machine: "legion", project: key.split("/")[1]!, name, projectName: name, repo: {}, label: "Code", company: null, retired: false, state: "idle", needing: null, foreman: null, ...over,
+  key, machine: "laptop", project: key.split("/")[1]!, name, projectName: name, repo: {}, label: "Code", company: null, retired: false, state: "idle", needing: null, foreman: null, ...over,
 });
 const town = (seats: Seat[]): Town => ({ data: {} as never, seats: new Map(seats.map((s) => [s.key, s])), proposal: null });
 const org = (): Org => {
-  let o = applyOrg(EMPTY_ORG, { op: "company", name: "Maya's Soccer", kind: "team", home: "legion" }).org;
+  let o = applyOrg(EMPTY_ORG, { op: "company", name: "Maya's Soccer", kind: "team", home: "laptop" }).org;
   o = applyOrg(o, { op: "company", name: "Happy Tails" }).org;
   return applyOrg(o, { op: "sensitive", company: "maya-s-soccer", on: true }).org;
 };

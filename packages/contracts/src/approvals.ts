@@ -10,7 +10,7 @@ import { McpEntry, McpPin } from "./mcp.ts";
 /**
  * Approvals: something an orchestrator asked for that only you may allow
  * (agent approvals.ts), such as a merge of Workers' PRs. The agent pushes each one with Allow and Deny,
- * Today lists the ones waiting, and only a phone or desktop key may answer.
+ * Today lists the ones waiting, and only the desk key may answer.
  *
  * Strings where a list of values would be tempting (kind, state): an enum
  * here could never grow while an older app is in the field.

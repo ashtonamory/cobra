@@ -1,6 +1,6 @@
 /**
  * An image sent with a message into a Claude Code or Codex session (the + in a conversation's
- * composer), as the phone's attachRules.ts has it. A port of the desk's attach.py. Pure.
+ * composer), as the phone's attachRules.ts has it. Pure.
  *
  * The image goes to the computer first (the agent's `POST /session/attach`, which keeps it in the
  * session's own folder), and the message then says where it is: "<text> [Image: <path>]".

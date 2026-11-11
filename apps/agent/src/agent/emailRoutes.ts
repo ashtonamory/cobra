@@ -675,7 +675,7 @@ export function queueBatchJobs(b: Batch, template: EmailTemplate, rows: readonly
 }
 
 /**
- * A batch card's copy for the phone and desk: drawn from its draft's words
+ * A batch card's copy for the desk: drawn from its draft's words
  * now, refused when the draft no longer hashes to the card's (it will not go).
  */
 function batchCopy(b: Batch, index: number, folders: EmailFolders, theme: ReturnType<typeof currentTheme>, deps: Pick<EmailRouteDeps, "drafts">): Reply {
@@ -694,7 +694,7 @@ function batchCopy(b: Batch, index: number, folders: EmailFolders, theme: Return
 
 /**
  * The person's untick or edit of a batch copy before Allow (POST /email/batch
- * {approval, copy, send?, subject?, body?}, a phone's or desk's key): new
+ * {approval, copy, send?, subject?, body?}, the desk's key): new
  * words are written to the draft as the person, checked to draw, and their
  * hash put on the card, whose words are drawn again.
  */

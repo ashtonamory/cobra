@@ -11,7 +11,7 @@ import { Readable } from "node:stream";
  * Checking a name and then calling `fetch(url)` resolves it twice: a name
  * with a short TTL, or two A records, passes as public and then connects to
  * 127.0.0.1 or the cloud's metadata service at 169.254.169.254
- * (OV-SEC-VPS-001 F8). Here the name is resolved once, every address is
+ *. Here the name is resolved once, every address is
  * checked, and the connection is pinned to those addresses: the socket's own
  * lookup answers only with them, so nothing resolves the name again. A
  * redirect is a new name, checked the same way, at most REDIRECTS hops.

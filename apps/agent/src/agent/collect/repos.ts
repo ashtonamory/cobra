@@ -151,9 +151,8 @@ export async function collectRepos(
     await walk(root, MAX_DEPTH, found, true);
   }
 
-  // This machine's paths, not the fleet's. The registry is deployed whole, so
-  // the Legion's ~/Projects/plant-shop used to claim the identical path here
-  // and a real checkout on this disk was never offered for adoption at all.
+  // Only this computer's registered paths claim a folder, so a real
+  // checkout on this disk is always offered for adoption.
   const claimed = new Set(
     registered
       .filter((project) => project.machine === machine)

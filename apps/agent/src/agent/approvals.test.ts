@@ -24,7 +24,7 @@ const random = (size: number) => new Uint8Array(size).fill(1);
 const pr = { number: 24, title: "docs: tests", repo: "octocat/book-club", head: "abc123", url: "u", worker: "book-club_2" };
 
 test("an approval is pending until answered once; a second answer is refused", () => {
-  const made = makeApproval({ kind: "merge", title: "Merge PR #24?", body: "#24", requestedBy: "lead_legion", prs: [pr] }, NOW, "omarchy", random);
+  const made = makeApproval({ kind: "merge", title: "Merge PR #24?", body: "#24", requestedBy: "lead_laptop", prs: [pr] }, NOW, "omarchy", random);
   assert.equal(made.state, "pending");
   assert.equal(made.expiresAt, "2026-10-09T18:00:00.000Z");
   const { list, approval } = answer([made], made.id, true, NOW + 1000);
@@ -36,7 +36,7 @@ test("an approval is pending until answered once; a second answer is refused", (
 });
 
 test("a question nobody answered lapses and cannot be allowed after", () => {
-  const made = makeApproval({ kind: "mcp-verify", title: "t", body: "b", requestedBy: "lead_x" }, NOW, "mini", random);
+  const made = makeApproval({ kind: "mcp-verify", title: "t", body: "b", requestedBy: "lead_x" }, NOW, "office", random);
   const later = NOW + 31 * 60_000;
   assert.equal(settle([made], later)[0]?.state, "expired");
   assert.throws(() => answer([made], made.id, true, later), /already expired/);
@@ -90,13 +90,13 @@ test("an allowed merge merges each PR at the head you saw; one failing does not 
 
 test("an action approval keeps the Foreman's exact content and waits a day", () => {
   const action = { channel: "email", project: "payroll", projectName: "Payroll", summary: "2 pay stubs", email: { to: ["ana@example.com"], subject: "Your pay stub", text: "Attached." } };
-  const made = makeApproval({ kind: "action", title: "Send: 2 pay stubs", body: "To: ana@example.com", requestedBy: "foreman_payroll", action }, NOW, "legion", random);
+  const made = makeApproval({ kind: "action", title: "Send: 2 pay stubs", body: "To: ana@example.com", requestedBy: "foreman_payroll", action }, NOW, "laptop", random);
   assert.equal(made.expiresAt, "2026-10-10T12:00:00.000Z");
   assert.deepEqual(made.action, action);
   assert.deepEqual(publicView(made).action, action);
   // An action's card holds its whole email (8000); every other kind keeps its 2000.
-  assert.equal(makeApproval({ kind: "action", title: "t", body: "x".repeat(9000), requestedBy: "f", action }, NOW, "legion", random).body.length, 8000);
-  assert.equal(makeApproval({ kind: "merge", title: "t", body: "x".repeat(9000), requestedBy: "f" }, NOW, "legion", random).body.length, 2000);
+  assert.equal(makeApproval({ kind: "action", title: "t", body: "x".repeat(9000), requestedBy: "f", action }, NOW, "laptop", random).body.length, 8000);
+  assert.equal(makeApproval({ kind: "merge", title: "t", body: "x".repeat(9000), requestedBy: "f" }, NOW, "laptop", random).body.length, 2000);
   const { approval } = answer([made], made.id, false, NOW + 1000);
   assert.equal(approval.state, "denied");
   // A file action keeps the folder it named, key, label and path, and each file's hash, for Allow to check against.
@@ -107,7 +107,7 @@ test("an action approval keeps the Foreman's exact content and waits a day", () 
     summary: "2 pay stubs to Drive",
     files: { to: "drive", label: "Drive", path: "/home/me/Drive/Payroll", items: [{ path: "out/stub-ana.pdf", name: "stub-ana.pdf", bytes: 9, sha256: "ab".repeat(32) }], text: "October's stubs." },
   };
-  const copied = makeApproval({ kind: "action", title: "Copy: 2 pay stubs to Drive", body: "To: Drive (/home/me/Drive/Payroll)", requestedBy: "foreman_payroll", action: copy }, NOW, "legion", random);
+  const copied = makeApproval({ kind: "action", title: "Copy: 2 pay stubs to Drive", body: "To: Drive (/home/me/Drive/Payroll)", requestedBy: "foreman_payroll", action: copy }, NOW, "laptop", random);
   assert.deepEqual(publicView(copied).action, copy);
   assert.equal(copied.expiresAt, "2026-10-10T12:00:00.000Z");
 });

@@ -4,8 +4,10 @@
 #            The personal terms come from the COBRA_PRIVATE_TERMS secret, so
 #            they are never in the repository. A fork's PR has no secrets and
 #            runs the generic check only.
-# workspace  typecheck and tests of the agent and the packages.
+# workspace  typecheck and tests of the agent and the packages, then the
+#            site template's own tests.
 # desk       typecheck and tests of the desktop app's web side.
+# desk-rust  tests of the desktop app's Rust side.
 
 name: CI
 
@@ -46,6 +48,9 @@ jobs:
       # site-template is its own npm package (not in the workspace); the agent's site tests run its build.mjs --check.
       - run: npm ci --prefix site-template --omit=dev --ignore-scripts --no-audit --no-fund
       - run: pnpm check
+      # The template's own tests need its whole install, not only what the agent's tests use.
+      - run: npm ci --prefix site-template --ignore-scripts --no-audit --no-fund
+      - run: npm test --prefix site-template
 
   desk:
     runs-on: ubuntu-latest
@@ -68,3 +73,19 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npx tsc --noEmit
       - run: npx vitest run
+
+  desk-rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/desk/app/src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Linux build libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+      # Tauri reads the built web side at compile time; the Rust tests need only that the folder is there.
+      - run: mkdir -p ../dist && echo '<!doctype html><title>Cobra</title>' > ../dist/index.html
+      - run: cargo test --locked

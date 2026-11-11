@@ -118,7 +118,7 @@ function harness(opts: Opts = {}) {
     check: async () => ({ ok: true, problems: [], pages: [], shots: [] }),
     approvals: { load: () => approvals, save: (list) => (approvals = list) },
     notify: async () => {},
-    github: { connected: async () => null, create: async () => null, push: async () => ({ code: 0, stdout: "", stderr: "" }), git: async () => ({ code: 0, stdout: "", stderr: "" }), computer: "legion" },
+    github: { connected: async () => null, create: async () => null, push: async () => ({ code: 0, stdout: "", stderr: "" }), git: async () => ({ code: 0, stdout: "", stderr: "" }), computer: "laptop" },
     outside: {
       sisters: async () => [site],
       github,

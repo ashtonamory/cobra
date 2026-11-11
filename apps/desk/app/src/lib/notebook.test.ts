@@ -27,18 +27,18 @@ const sec = (key: string, computer: string, company: typeof lumen | null, ...lin
   key, title: key, company, computer, lines: lines.map((text) => ({ text, bullet: true, depth: 0 })),
 });
 
-const legion: NotebookDayPart = {
-  computer: "legion", day: "2026-11-07", hoursKept: true,
-  daily: { summary: ["A steady day."], sections: [], threads: [{ text: "Allow the card.", done: false, company: lumen, computer: "legion" }] },
+const laptop: NotebookDayPart = {
+  computer: "laptop", day: "2026-11-07", hoursKept: true,
+  daily: { summary: ["A steady day."], sections: [], threads: [{ text: "Allow the card.", done: false, company: lumen, computer: "laptop" }] },
   hours: [
-    { hour: "10", sections: [sec("fleet", "legion", null, "Gmail quiet"), sec("local/lumen-marketing", "legion", lumen, "Sent four")] },
-    { hour: "02", sections: [sec("local/lumen-marketing", "legion", lumen, "Late night")] },
+    { hour: "10", sections: [sec("fleet", "laptop", null, "Gmail quiet"), sec("local/lumen-marketing", "laptop", lumen, "Sent four")] },
+    { hour: "02", sections: [sec("local/lumen-marketing", "laptop", lumen, "Late night")] },
   ],
 };
-const mini: NotebookDayPart = {
-  computer: "mini", day: "2026-11-07", hoursKept: true,
-  daily: { summary: ["Mini built a page."], sections: [], threads: [{ text: "allow the card", done: false, company: lumen, computer: "mini" }, { text: "Answer colours", done: false, company: acme, computer: "mini" }] },
-  hours: [{ hour: "10", sections: [sec("example/harbour", "mini", acme, "Pricing page built")] }, { hour: "06", sections: [sec("example/harbour", "mini", acme, "Early")] }],
+const office: NotebookDayPart = {
+  computer: "office", day: "2026-11-07", hoursKept: true,
+  daily: { summary: ["Office built a page."], sections: [], threads: [{ text: "allow the card", done: false, company: lumen, computer: "office" }, { text: "Answer colours", done: false, company: acme, computer: "office" }] },
+  hours: [{ hour: "10", sections: [sec("example/harbour", "office", acme, "Pricing page built")] }, { hour: "06", sections: [sec("example/harbour", "office", acme, "Early")] }],
 };
 const pageNames = (book: ReturnType<typeof mergeDay>) => book.pages.map((p) => (p.kind === "hour" ? p.hour : "day"));
 
@@ -53,24 +53,24 @@ describe("the port of contracts notebook.ts", () => {
   });
 
   it("merges computers in memory-day order: the day, then hours from 4 AM, companies by name, the Fleet last, threads once", () => {
-    const book = mergeDay([legion, mini]);
+    const book = mergeDay([laptop, office]);
     expect(pageNames(book)).toEqual(["day", "06", "10", "02"]);
     const ten = book.pages[2]!;
     expect(ten.kind === "hour" && ten.sections.map((s) => `${s.title}@${s.computer}`)).toEqual([
-      "example/harbour@mini",
-      "local/lumen-marketing@legion",
-      "fleet@legion",
+      "example/harbour@office",
+      "local/lumen-marketing@laptop",
+      "fleet@laptop",
     ]);
     const first = book.pages[0]!;
-    expect(first.kind === "day" && first.summary).toEqual(["A steady day.", "Mini built a page."]);
+    expect(first.kind === "day" && first.summary).toEqual(["A steady day.", "Office built a page."]);
     expect(first.kind === "day" && first.threads.map((t) => t.text)).toEqual(["Allow the card.", "Answer colours"]);
     expect(first.kind === "day" && first.contents.map((c) => [c.title, c.pages])).toEqual([["Acme.dev", [2, 3]], ["Lumen", [3, 4]]]);
     // The order the parts come back in does not matter.
-    expect(pageNames(mergeDay([mini, legion]))).toEqual(["day", "06", "10", "02"]);
+    expect(pageNames(mergeDay([office, laptop]))).toEqual(["day", "06", "10", "02"]);
   });
 
   it("a company filter keeps only its sections and threads, and drops empty hours", () => {
-    const book = mergeDay([legion, mini], "acme-dev");
+    const book = mergeDay([laptop, office], "acme-dev");
     expect(pageNames(book)).toEqual(["day", "06", "10"]);
     const first = book.pages[0]!;
     expect(first.kind === "day" && first.threads.map((t) => t.text)).toEqual(["Answer colours"]);
@@ -78,9 +78,9 @@ describe("the port of contracts notebook.ts", () => {
 
   it("a page longer than the paper runs on overleaf, keeping a row for the note and never stranding a heading", () => {
     const long: NotebookDayPart = {
-      ...legion,
+      ...laptop,
       daily: null,
-      hours: [{ hour: "10", sections: [sec("k", "legion", lumen, ...Array.from({ length: 12 }, (_, i) => `Line ${i}`)), sec("j", "legion", acme, "After")] }],
+      hours: [{ hour: "10", sections: [sec("k", "laptop", lumen, ...Array.from({ length: 12 }, (_, i) => `Line ${i}`)), sec("j", "laptop", acme, "After")] }],
     };
     const sheets = paginate(mergeDay([long]).pages, 300, 8, roughMeasure(15));
     const hourSheets = sheets.filter((s) => s.page.kind === "hour");
@@ -101,7 +101,7 @@ describe("the port of contracts notebook.ts", () => {
 
   it("wraps no line wider than the paper", () => {
     const measure = roughMeasure(15);
-    const wordy: NotebookDayPart = { ...legion, hours: [{ hour: "10", sections: [sec("k", "legion", lumen, "word ".repeat(80).trim())] }] };
+    const wordy: NotebookDayPart = { ...laptop, hours: [{ hour: "10", sections: [sec("k", "laptop", lumen, "word ".repeat(80).trim())] }] };
     for (const sheet of paginate(mergeDay([wordy]).pages, 240, 30, measure)) {
       for (const row of sheet.rows) if (row.kind === "text") expect(measure(row.text)).toBeLessThanOrEqual(240 - 16);
     }
@@ -112,16 +112,16 @@ describe("the port of contracts notebook.ts", () => {
     expect(h("local/lumen-marketing", lumen)).toBe("Lumen · Marketing");
     expect(h("local/lumen-lumen-prospecting", lumen)).toBe("Lumen · Prospecting");
     expect(h("example/acme.dev", acme)).toBe("Acme.dev");
-    expect(h("fleet", null)).toBe("Fleet");
+    expect(h("fleet", null)).toBe("This computer");
     // The headings a page draws are the same words.
-    const rows = paginate(mergeDay([legion]).pages, 300, 30, roughMeasure(15)).flatMap((s) => s.rows);
-    expect(rows.filter((r) => r.kind === "heading").map((r) => r.kind === "heading" && r.text)).toEqual(["Open threads", "Contents", "Lumen · Marketing", "Fleet", "Lumen · Marketing"]);
+    const rows = paginate(mergeDay([laptop]).pages, 300, 30, roughMeasure(15)).flatMap((s) => s.rows);
+    expect(rows.filter((r) => r.kind === "heading").map((r) => r.kind === "heading" && r.text)).toEqual(["Open threads", "Contents", "Lumen · Marketing", "This computer", "Lumen · Marketing"]);
   });
 
   it("the shelf adds a day's hours across computers and marks what is past keeping", () => {
     const shelf = mergeShelf([
-      { computer: "legion", today: "2026-11-07", keepHourlyDays: 7, days: [{ day: "2026-11-07", hours: 6, daily: false }, { day: "2026-10-20", hours: 0, daily: true }], weeks: ["2026-W44"], months: ["2026-10"], companies: [lumen], latest: null },
-      { computer: "mini", today: "2026-11-07", keepHourlyDays: 7, days: [{ day: "2026-11-07", hours: 2, daily: false }], weeks: ["2026-W43", "2026-W44"], months: [], companies: [acme], latest: null },
+      { computer: "laptop", today: "2026-11-07", keepHourlyDays: 7, days: [{ day: "2026-11-07", hours: 6, daily: false }, { day: "2026-10-20", hours: 0, daily: true }], weeks: ["2026-W44"], months: ["2026-10"], companies: [lumen], latest: null },
+      { computer: "office", today: "2026-11-07", keepHourlyDays: 7, days: [{ day: "2026-11-07", hours: 2, daily: false }], weeks: ["2026-W43", "2026-W44"], months: [], companies: [acme], latest: null },
     ]);
     expect(shelf.days).toEqual([
       { day: "2026-10-20", hours: 0, daily: true, kept: false },
@@ -131,10 +131,10 @@ describe("the port of contracts notebook.ts", () => {
   });
 
   it("search hits merge newest first; ticks match however the thread is spelled", () => {
-    const hit = (id: string, line: string) => ({ place: { kind: "day" as const, id }, computer: "legion", company: null, line });
+    const hit = (id: string, line: string) => ({ place: { kind: "day" as const, id }, computer: "laptop", company: null, line });
     const merged = mergeHits([
-      { computer: "legion", hits: [hit("2026-11-01", "older")], more: false },
-      { computer: "mini", hits: [hit("2026-11-06", "newer")], more: true },
+      { computer: "laptop", hits: [hit("2026-11-01", "older")], more: false },
+      { computer: "office", hits: [hit("2026-11-06", "newer")], more: true },
     ]);
     expect(merged.hits.map((h) => h.line)).toEqual(["newer", "older"]);
     expect(merged.more).toBe(true);
@@ -145,7 +145,7 @@ describe("the port of contracts notebook.ts", () => {
 describe("the desk's Notebook page", () => {
   it("renumbers the Contents when a page runs on overleaf", () => {
     const longDay: NotebookDayPart = {
-      ...legion,
+      ...laptop,
       daily: { summary: Array.from({ length: 10 }, (_, i) => `Summary ${i}`), sections: [], threads: [] },
     };
     const pages = mergeDay([longDay]).pages;
@@ -205,13 +205,13 @@ describe("the desk's Notebook page", () => {
   });
 
   it("names a sheet's place in its book, run-ons apart", () => {
-    const sheets = paginate(mergeDay([legion]).pages, 300, 30, roughMeasure(15));
+    const sheets = paginate(mergeDay([laptop]).pages, 300, 30, roughMeasure(15));
     expect(sheets.map(sheetAnchor)).toEqual(["day", "10", "02"]);
     expect(sheetAnchor({ page: sheets[1]!.page, part: 2 })).toBe("10#2");
   });
 
   it("turns a company brain into a page whose headings read as written", () => {
-    const page = brainPage({ company: lumen, computer: "legion", day: "2026-11-06", sections: [{ title: "Lessons", lines: [{ text: "Ask first", bullet: true, depth: 0 }] }] });
+    const page = brainPage({ company: lumen, computer: "laptop", day: "2026-11-06", sections: [{ title: "Lessons", lines: [{ text: "Ask first", bullet: true, depth: 0 }] }] });
     const rows = paginate([page], 300, 30, roughMeasure(15))[0]!.rows;
     expect(rows[0]).toMatchObject({ kind: "heading", text: "Lessons" });
   });

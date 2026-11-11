@@ -32,7 +32,7 @@ function deps(result: Partial<import("./checks.ts").CheckoutResult> | Error) {
       asked.push({ path, scope, name });
       await gate;
       if (result instanceof Error) throw result;
-      return { state: "success", description: "pnpm check passed on legion in 14s", ms: 14_000, tail: "", log: null, sha: "b".repeat(40), repo: "o/r", label: "pnpm check", posted: true, ...result };
+      return { state: "success", description: "pnpm check passed on laptop in 14s", ms: 14_000, tail: "", log: null, sha: "b".repeat(40), repo: "o/r", label: "pnpm check", posted: true, ...result };
     },
     readPhase: async (id) => phases.get(id) ?? null,
     writePhase: async (id, phase) => void phases.set(id, phase),
@@ -54,7 +54,7 @@ test("a Worker's check: pending at once, then its result in the phase file and o
   assert.equal(wc.startWorkerCheck(d, extra("w1"), {}).started, false, "one at a time per Worker");
   release();
   const check = await run.done;
-  assert.deepEqual(check, { state: "success", description: "pnpm check passed on legion in 14s", sha: "b".repeat(40), at: "2026-10-11T12:05:00.000Z" });
+  assert.deepEqual(check, { state: "success", description: "pnpm check passed on laptop in 14s", sha: "b".repeat(40), at: "2026-10-11T12:05:00.000Z" });
   assert.deepEqual(phases.get("w1")?.check, check);
   assert.deepEqual(asked, [{ path: "/p/cobra.worktrees/w1", scope: { writable: ["/g/objects"] }, name: "w1" }]);
   assert.deepEqual(told, [["cobra", "Check for Worker w1 passed. worker_read w1"]]);
@@ -62,7 +62,7 @@ test("a Worker's check: pending at once, then its result in the phase file and o
 });
 
 test("a failed check keeps its last lines; a check that throws is an error, told the same way", async () => {
-  const failed = deps({ state: "failure", description: "pnpm check failed on legion: fail 2 after 40s", tail: "✖ one\n✖ two" });
+  const failed = deps({ state: "failure", description: "pnpm check failed on laptop: fail 2 after 40s", tail: "✖ one\n✖ two" });
   failed.release();
   assert.equal((await wc.startWorkerCheck(failed.d, extra("w1", "lead"), {}).done)?.tail, "✖ one\n✖ two");
   assert.deepEqual(failed.told, [["lead", "Check for Worker w1 failed. worker_read w1"]]);

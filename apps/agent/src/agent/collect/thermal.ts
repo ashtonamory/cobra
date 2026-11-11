@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import type { ThermalStats } from "@cobra/contracts";
 
 /**
- * Temperature is best-effort. The Legion exposes plenty of zones; the Macs may
+ * Temperature is best-effort. Some computers expose plenty of zones; a Mac may
  * expose few or none, and a machine with no sensors is not an error.
  */
 export async function collectThermal(): Promise<ThermalStats[]> {

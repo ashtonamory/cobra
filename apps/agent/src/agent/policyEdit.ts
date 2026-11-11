@@ -8,10 +8,10 @@ import { readPrivateFile, writePrivateFile } from "./private.ts";
 
 /**
  * Changing the owner's policy: what a
- * change does in words, whether it grants more (which needs your Face ID on
- * the phone or your Allow on the desk), the file written, and the change log.
+ * change does in words, whether it grants more (which needs your second
+ * press in the desk), the file written, and the change log.
  *
- * The policy is fleet-wide: the phone and the desk send the same file to every
+ * The policy is fleet-wide: the desk send the same file to every
  * computer, each with the next revision. A computer takes a revision newer
  * than its own and refuses an older one, so one that was off is "behind"
  * until an app reaches it.
@@ -121,7 +121,7 @@ export function describeChange(before: PolicyFile, after: PolicyFile): ChangeLin
       found.push(...ruleLines(before.rules ?? [], after.rules ?? []));
     }
     for (const line of found) {
-      // "legion: Locked → Balanced" once, not again for every project on legion that follows it.
+      // "laptop: Locked → Balanced" once, not again for every project on laptop that follows it.
       const key = line.text.slice(line.text.indexOf(": "));
       if (place.where.computer && place.where.project && seen.has(key)) continue;
       seen.add(key);

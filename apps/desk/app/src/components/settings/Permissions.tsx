@@ -176,7 +176,7 @@ export class PermissionsController extends Controller {
     this.applyConfirm.busy = false;
     const n = targets.length - failed.length;
     this.app.toast(failed.length ? `In force on ${n} of ${targets.length}: ` + failed.join("; ")
-      : n === 1 ? `In force on ${config.label(targets[0].machine)}` : `In force on ${n} computers`);
+      : n === 1 ? `In force on ${config.label(targets[0].machine)}` : "In force");
     this.draft = null;
     this.review = null;
     this.reload();
@@ -190,7 +190,7 @@ export function PermissionsSection({ p }: { p: PermissionsController }) {
     return (
       <Card>
         <div className="dim">
-          {Object.keys(p.reads).length < config.MACHINES.length ? "Reading your computers…" : "No computer answered with a policy."}
+          {Object.keys(p.reads).length < config.MACHINES.length ? "Reading this computer…" : "No computer answered with a policy."}
         </div>
       </Card>
     );
@@ -236,7 +236,7 @@ export function PermissionsSection({ p }: { p: PermissionsController }) {
       <ApiCredits p={p} policy={policy} />
 
       <Group title="House rules"
-        note={`In your own words, for every computer. The judge reads them as yours before it allows anything; Workers never see them. At most ${permissions.RULES_MAX}.`}>
+        note={`In your own words. The judge reads them as yours before it allows anything; Workers never see them. At most ${permissions.RULES_MAX}.`}>
         {((policy.rules || []) as string[]).map((rule, index) => (
           <div className="row" key={`${index}-${rule}`} style={{ gap: 12 }}>
             <span className="grow selectable">{rule}</span>
@@ -284,7 +284,7 @@ export function PermissionsSection({ p }: { p: PermissionsController }) {
               {read && name && (
                 <div className="row chips">
                   {[null, ...permissions.PRESET_ORDER].map((choice) => (
-                    <Chip key={choice ?? "fleet"} label={choice ? permissions.presetTitle(choice, status) : "Fleet"}
+                    <Chip key={choice ?? "fleet"} label={choice ? permissions.presetTitle(choice, status) : "Same as above"}
                       active={own === choice}
                       onClick={() => p.edit(permissions.setComputerPreset(p.base(), name, choice))} />
                   ))}
@@ -348,7 +348,7 @@ export function PermissionsSection({ p }: { p: PermissionsController }) {
         note={`${permissions.judgeLine(status)}. It decides only what a preset hands to it, and never sees a file's contents.`} />
 
       <Group title="Lead and Foremen"
-        note="For every computer. A project's own Workers and merge on green are under PROJECTS; every project's Workers together stay within the computer's number. The Lead never writes code or starts Workers itself.">
+        note="A project's own Workers and merge on green are under PROJECTS; every project's Workers together stay within the computer's number. The Lead never writes code or starts Workers itself.">
         <Stepper p={p} title="Workers at once in a project" policy={policy} role="foreman" field="maxWorkers" low={0} high={caps.workersPerProject} />
         <Stepper p={p} title="Workers at once on a computer" policy={policy} role="foreman" field="maxWorkersPerComputer" low={0}
           high={caps.workersPerComputer ?? permissions.HARD_CAPS_FALLBACK.workersPerComputer} />
@@ -398,7 +398,7 @@ export function ChangeBlock({ p }: { p: PermissionsController }) {
   const review = p.review;
   const c = p.applyConfirm;
   const online = Object.values(p.reads).filter((v) => v).length;
-  const caption = c.busy ? "Applying…" : c.armed ? "Press again to allow more" : online === 1 ? "Apply" : `Apply to ${online} computers`;
+  const caption = c.busy ? "Applying…" : c.armed ? "Press again to allow more" : online === 1 ? "Apply" : "Apply";
   return (
     <div className="card change-card">
       <div className="caps">This change</div>
@@ -441,7 +441,7 @@ function ApiCredits({ p, policy }: { p: PermissionsController; policy: Dict }) {
         <span>Use API credits when the subscription is full</span>
       </label>
       <div className="row" style={{ gap: 12 }}>
-        <span className="mono grow">Monthly cap in dollars, every computer together</span>
+        <span className="mono grow">Monthly cap in dollars</span>
         <NumberField value={lane.monthlyCapUsd} min={0} max={100_000} step={5} digits={2} onChange={(v) => {
           const now = permissions.apiLane(p.base());
           if (Math.round(v * 100) / 100 !== now.monthlyCapUsd) p.edit(permissions.setApiLane(p.base(), now.enabled, v));
@@ -449,7 +449,7 @@ function ApiCredits({ p, policy }: { p: PermissionsController; policy: Dict }) {
       </div>
       {lane.enabled && lane.monthlyCapUsd > 0 && (
         <div className="dim">
-          {permissions.money(spent)} of {permissions.money(lane.monthlyCapUsd)} this month · the phone is told at 50%, 80% and the cap
+          {permissions.money(spent)} of {permissions.money(lane.monthlyCapUsd)} this month · you are told at 50%, 80% and the cap
         </div>
       )}
       <label className="radio-row" title={permissions.TEST_BLURB}>

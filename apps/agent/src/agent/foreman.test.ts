@@ -92,7 +92,7 @@ test("a Foreman is for a project, not for one of its sessions or the Lead", asyn
   await assert.rejects(foreman.startForeman({ ...project, lead: true }), /not for one of its sessions/);
 });
 
-test("with COBRA_CONTAIN=require and no jail, neither the Lead nor a Foreman starts (OV-SEC-VPS-001 F13)", async (t) => {
+test("with COBRA_CONTAIN=require and no jail, neither the Lead nor a Foreman starts", async (t) => {
   const contain = await import("./contain.ts");
   const was = process.env.COBRA_CONTAIN;
   t.after(() => {
@@ -112,7 +112,7 @@ test("with COBRA_CONTAIN=require and no jail, neither the Lead nor a Foreman sta
 
 type OrchCaller = { id: string; kind: string; name: string; project?: string };
 const FOREMAN_CALLER: OrchCaller = { id: "foreman_alpha____", kind: "lead", name: "Foreman for alpha", project: "alpha" };
-const LEAD_CALLER: OrchCaller = { id: "lead_legion_____", kind: "lead", name: "Lead on legion" };
+const LEAD_CALLER: OrchCaller = { id: "lead_laptop_____", kind: "lead", name: "Lead on laptop" };
 
 /** /orch/* through handleOrch, with two projects in a registry and nothing behind them. */
 async function routes() {
@@ -133,7 +133,7 @@ async function routes() {
       log: () => undefined,
       caller,
       notify: async (approval) => void notified.push(approval.title),
-      machineLabel: "legion",
+      machineLabel: "laptop",
       port: 8797,
     });
     return reply;
@@ -529,14 +529,14 @@ test("trade_define's route: the Lead only; a good definition becomes a card for 
 });
 
 test("a Foreman reads its company here without asking: sister projects, their worktrees and its Space folder; never their .env or out/ (2026-10-29)", () => {
-  const org = { revision: 1, companies: [{ id: "northwind", name: "Northwind", color: "#000" }], seats: { "legion/prospecting": { company: "northwind" }, "legion/crm": { company: "northwind" }, "legion/finance": { company: "northwind" } } };
+  const org = { revision: 1, companies: [{ id: "northwind", name: "Northwind", color: "#000" }], seats: { "laptop/prospecting": { company: "northwind" }, "laptop/crm": { company: "northwind" }, "laptop/finance": { company: "northwind" } } };
   const projects = [
     { id: "prospecting", path: "/home/u/Spaces/northwind/prospecting" },
     { id: "crm", path: "/home/u/Spaces/northwind/crm" },
     { id: "finance", path: "/home/u/Spaces/northwind/finance" },
     { id: "stable", path: "/home/u/Projects/stable" },
   ];
-  const company = foreman.foremanCompany(projects[0]!, projects, org, "legion", (id) => `/home/u/Spaces/${id}`);
+  const company = foreman.foremanCompany(projects[0]!, projects, org, "laptop", (id) => `/home/u/Spaces/${id}`);
   assert.deepEqual(company.sisters.map((sister) => sister.path), ["/home/u/Spaces/northwind/crm", "/home/u/Spaces/northwind/finance"]);
   assert.equal(company.space, "/home/u/Spaces/northwind");
   const rules = foreman.foremanPermissions(projects[0]!, "/home/u", company);
@@ -549,17 +549,17 @@ test("a Foreman reads its company here without asking: sister projects, their wo
   }
   for (const deny of lead.leadDenyRules("/home/u")) assert.ok(rules.deny.includes(deny), deny);
   // A company that is not a Space: its sisters, and no Space folder; no company: as before.
-  const plain = foreman.foremanCompany({ id: "stable", path: "/home/u/Projects/stable" }, projects, { ...org, seats: { ...org.seats, "legion/stable": { company: "northwind" } } }, "legion", (id) => `/home/u/Spaces/${id}`);
+  const plain = foreman.foremanCompany({ id: "stable", path: "/home/u/Projects/stable" }, projects, { ...org, seats: { ...org.seats, "laptop/stable": { company: "northwind" } } }, "laptop", (id) => `/home/u/Spaces/${id}`);
   assert.equal(plain.space, undefined);
   assert.equal(plain.sisters.length, 3);
-  assert.deepEqual(foreman.foremanCompany(projects[3]!, projects, org, "legion", (id) => `/home/u/Spaces/${id}`), { sisters: [] });
+  assert.deepEqual(foreman.foremanCompany(projects[3]!, projects, org, "laptop", (id) => `/home/u/Spaces/${id}`), { sisters: [] });
   assert.deepEqual(foreman.foremanPermissions(projects[3]!, "/home/u", { sisters: [] }).allow, ["Read(~/Projects/stable.worktrees/**)"]);
 });
 
 test("a Foreman's read roots: its folder, its project and worktrees, its company's sister projects here, and the templates", () => {
-  const org = { revision: 1, companies: [{ id: "paws", name: "Paws", color: "#000" }], seats: { "legion/billing": { company: "paws" }, "legion/payroll": { company: "paws" }, "mini/books": { company: "paws" } } };
+  const org = { revision: 1, companies: [{ id: "paws", name: "Paws", color: "#000" }], seats: { "laptop/billing": { company: "paws" }, "laptop/payroll": { company: "paws" }, "office/books": { company: "paws" } } };
   const projects = [{ id: "billing", path: "/h/P/billing" }, { id: "payroll", path: "/h/P/payroll" }, { id: "stable", path: "/h/P/stable" }];
-  assert.deepEqual(foreman.foremanReadFolders(projects[0]!, "/s/fm", projects, org, "legion", ["/t"]), [
+  assert.deepEqual(foreman.foremanReadFolders(projects[0]!, "/s/fm", projects, org, "laptop", ["/t"]), [
     "/s/fm",
     "/h/P/billing",
     "/h/P/billing.worktrees",
@@ -567,8 +567,8 @@ test("a Foreman's read roots: its folder, its project and worktrees, its company
     "/h/P/payroll.worktrees",
     "/t",
   ]);
-  assert.deepEqual(foreman.foremanReadFolders(projects[2]!, "/s/fm", projects, org, "legion", []), ["/s/fm", "/h/P/stable", "/h/P/stable.worktrees"], "no company: no sisters");
-  assert.deepEqual(foreman.foremanReadFolders(projects[0]!, "/s/fm", projects, null, "legion", []), ["/s/fm", "/h/P/billing", "/h/P/billing.worktrees"]);
+  assert.deepEqual(foreman.foremanReadFolders(projects[2]!, "/s/fm", projects, org, "laptop", []), ["/s/fm", "/h/P/stable", "/h/P/stable.worktrees"], "no company: no sisters");
+  assert.deepEqual(foreman.foremanReadFolders(projects[0]!, "/s/fm", projects, null, "laptop", []), ["/s/fm", "/h/P/billing", "/h/P/billing.worktrees"]);
 });
 
 test("a Designer is told its trade, its folders and its Tessel; the person's photos reach its Tessel from Cobra's and its own attachments", () => {

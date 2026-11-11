@@ -143,7 +143,7 @@ test("anything already registered is not offered again", async () => {
 });
 
 test("a path another machine registered is still offered here, and suffixed", async () => {
-  // The registry is deployed whole, so the Legion's ~/Projects/plant-shop used
+  // The registry is deployed whole, so the Laptop's ~/Projects/plant-shop used
   // to claim the identical path on the MacBook and a real checkout sitting on
   // this disk was never offered for adoption at all.
   const root = await tree();

@@ -44,7 +44,7 @@ test("which subscription a model spends, and when it is held", () => {
 });
 
 const item = (id: string, project: string, model?: string): QueueItem => ({
-  ...makeItem({ project, task: `task ${id}`, owner: "lead", requestedBy: "lead_legion", ...(model ? { model } : {}) }, "cap", NOW, () => new Uint8Array(9)),
+  ...makeItem({ project, task: `task ${id}`, owner: "lead", requestedBy: "lead_laptop", ...(model ? { model } : {}) }, "cap", NOW, () => new Uint8Array(9)),
   id,
 });
 

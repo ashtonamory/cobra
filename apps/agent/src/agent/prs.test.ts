@@ -7,13 +7,13 @@ import { cachedPrs, resetGitSyncState } from "./gitsync.ts";
 import { prList } from "./prs.ts";
 
 const NOW = Date.parse("2026-10-09T12:00:00Z");
-const HERE = { ghFound: true, syncOn: true, machine: "legion" };
+const HERE = { ghFound: true, syncOn: true, machine: "laptop" };
 
 function project(id: string, remote: string | null, extra: Partial<ProjectState> = {}): ProjectState {
   return {
     id,
     name: id,
-    machine: "legion",
+    machine: "laptop",
     path: `/home/a/Projects/${id}`,
     session: id,
     activity: "none",
@@ -59,7 +59,7 @@ test("every repository's cached PRs, with when gh last read them, in the contrac
     NOW,
   );
   assert.doesNotThrow(() => PrList.parse(list));
-  assert.equal(list.machine, "legion");
+  assert.equal(list.machine, "laptop");
   assert.equal(list.prError, null);
   assert.equal(list.at, "2026-10-09T12:00:00.000Z");
   assert.deepEqual(
@@ -99,7 +99,7 @@ test("two checkouts of one repository on this computer: the fresher read speaks 
     ["/home/a/Projects/cp", { at: "2026-10-09T11:00:00.000Z", prs: [pr(1), pr(2)] }],
     ["/home/a/Projects/cp-2", { at: "2026-10-09T11:58:00.000Z", prs: [pr(2)] }],
   ]);
-  const list = prList([project("cp", "a/control-plane"), project("cp-2", "a/control-plane")], (path) => cache.get(path) ?? null, HERE, NOW);
+  const list = prList([project("cp", "a/plant-nursery"), project("cp-2", "a/plant-nursery")], (path) => cache.get(path) ?? null, HERE, NOW);
   assert.equal(list.repos.length, 1);
   assert.equal(list.repos[0]?.project, "cp-2");
   assert.deepEqual(list.repos[0]?.prs?.map((p) => p.number), [2]);

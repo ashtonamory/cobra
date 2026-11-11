@@ -77,7 +77,7 @@ test("tokenMatches survives a length mismatch without throwing", () => {
 
 test("a Lead key reaches /orch/* and nothing else; the desk reaches /orch/* with read and act", () => {
   // Minted now: a Lead key expires 30 days after it is made (keys.ts ORCH_KEY_LIFETIME_MS).
-  const { caller: lead, key } = mintLead("legion", Date.now(), (size) => new Uint8Array(size).fill(7));
+  const { caller: lead, key } = mintLead("laptop", Date.now(), (size) => new Uint8Array(size).fill(7));
   assert.equal(lead.kind, "lead");
   assert.deepEqual(lead.scopes, ["orch"]);
   // It survives the round trip through keys.json.
@@ -93,7 +93,7 @@ test("a Lead key reaches /orch/* and nothing else; the desk reaches /orch/* with
 });
 
 test("/prs is read like /git/repo: the desk's key, never a Lead's", () => {
-  const { caller: lead, key } = mintLead("legion", Date.now(), (size) => new Uint8Array(size).fill(5));
+  const { caller: lead, key } = mintLead("laptop", Date.now(), (size) => new Uint8Array(size).fill(5));
   const store = keys([desk, lead]);
   for (const route of ["/prs", "/git/repo"]) {
     assert.equal(authorize(`Bearer ${DESK_KEY}`, route, "GET", store).ok, true, route);
@@ -119,10 +119,10 @@ test("a key of a kind that is gone admits nobody, on any route", () => {
 });
 
 test("a key made for another computer no longer loads: it stops working, and never becomes a local key", () => {
-  const { caller } = mintLead("legion", 1, (size) => new Uint8Array(size).fill(9));
+  const { caller } = mintLead("laptop", 1, (size) => new Uint8Array(size).fill(9));
   assert.deepEqual(parseCallers(JSON.stringify([caller])), [caller]);
   // As keys.json kept a Lead or a desk on another computer, from before Cobra ran on one only.
-  assert.deepEqual(parseCallers(JSON.stringify([{ ...caller, id: "lead_from_legion", remote: true }])), []);
+  assert.deepEqual(parseCallers(JSON.stringify([{ ...caller, id: "lead_from_laptop", remote: true }])), []);
   assert.deepEqual(parseCallers(JSON.stringify([{ ...mintDesk("Desk", 1).caller, remote: true }, caller])), [caller]);
 });
 
@@ -148,8 +148,8 @@ test("a desk key acts, but opens no terminal: no key holds that scope", () => {
   assert.deepEqual(authorize(`Bearer ${key}`, "/ticket", "POST", keys([widened!]), 1), { ok: false, status: 403 });
 });
 
-test("an expired Lead or Foreman key is told to start it again (OV-SEC-VPS-001 F23b)", () => {
-  const { caller: lead, key } = mintLead("legion", 0, (size) => new Uint8Array(size).fill(3));
+test("an expired Lead or Foreman key is told to start it again", () => {
+  const { caller: lead, key } = mintLead("laptop", 0, (size) => new Uint8Array(size).fill(3));
   const refused = authorize(`Bearer ${key}`, "/orch/status", "GET", keys([lead]), lead.expiresAt!);
   assert.equal(!refused.ok && refused.status, 401);
   assert.match((!refused.ok && refused.error) || "", /Lead's key .* expired.*start/);

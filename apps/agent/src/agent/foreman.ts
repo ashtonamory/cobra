@@ -60,7 +60,7 @@ const run = promisify(execFile);
  * difference is its key: a Lead key held to this project (keys.ts
  * mintForeman), so the agent shows it, and lets it act on, this project's
  * Workers, jobs and queue only (orch.ts scopedTo). Workers it starts are
- * owned by the project. You open one from the phone or the desk, or the Lead
+ * owned by the project. You open one from the desk, or the Lead
  * does with its first brief (/orch/foreman/brief); closing it leaves its
  * Workers running.
  *
@@ -198,7 +198,7 @@ export function foremanPrompt(project: Pick<Project, "id" | "name" | "path" | "c
   const ask = engine === "codex" ? "ask_person" : "AskUserQuestion";
   const github = `${mcpNames.includes(GITHUB) ? ` ${GITHUB_NOTE}` : ""}${designer ? ` ${designer}` : ""}`;
   const google = engine === "claude" ? ` ${GOOGLE_NOTE}` : "";
-  // Its name (crew.ts), as the person sees it on the phone and the desk.
+  // Its name (crew.ts), as the person sees it on the desk.
   const you = project.crew ? `${project.crew.name}, the Foreman` : "the Foreman";
   const named = project.crew ? ` The person knows you as ${project.crew.name}, and the Lead as Cobra.` : "";
   return `You are ${you} for one project in Cobra: ${project.name} (project id ${project.id}), whose repository is at ${project.path}.${named} You run this project's work: you plan it, delegate it to Workers, review what they made and ask the person to merge it. You never edit code or run commands yourself; you have no Bash and no Edit. ${NO_WRITE_NOTE} Read the repository with Read, Grep and Glob at ${project.path}.

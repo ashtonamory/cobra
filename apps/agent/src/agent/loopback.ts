@@ -5,7 +5,7 @@
  * own: `localhost` there is its own dev server or the page its Playwright
  * check loads, never this computer's. A `curl http://localhost:3123/cbi` or a
  * script that opens `http://localhost:3123` asked you as network all the same
- * (the mini, 2026-10-27). These rules read a command's addresses and say
+ * (seen 2026-10-27). These rules read a command's addresses and say
  * whether every one is loopback; anything they cannot read is not.
  *
  * Pure. policy.ts `decide` uses it only for a contained Worker and only for

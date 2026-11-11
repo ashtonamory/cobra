@@ -258,7 +258,7 @@ function OrgChart({ switcher }: { switcher: ReactNode }) {
             <Switch checked={company.sensitive === true} onChange={(on) => change(on ? "marked sensitive" : "unmarked", { op: "sensitive", company: company.id, on })} />
             <span>
               <b>Sensitive</b>
-              <span className="dim">Its memory never leaves the computers its projects run on, and {LEAD_NAME} keeps nothing it reads of it.</span>
+              <span className="dim">Its memory never leaves this computer, and {LEAD_NAME} keeps nothing it reads of it.</span>
             </span>
           </label>
           <div className="org-actions">

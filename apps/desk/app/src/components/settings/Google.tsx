@@ -153,7 +153,7 @@ function Machine({ c, m }: { c: GoogleController; m: config.Machine }) {
                 detail={row.note ? <>{row.line}<br />{row.note}</> : row.line}
                 keepActions
                 actions={row.on ? null : (
-                  <Button kind="flat" small title="Opens your account page in the browser, where you turn it on"
+                  <Button kind="flat" small title="Opens a page in the browser, where you turn it on"
                     onClick={() => void c.connect(m.machine, row.name)}>Turn on</Button>
                 )} />
             ))}
@@ -163,7 +163,7 @@ function Machine({ c, m }: { c: GoogleController; m: config.Machine }) {
       )}
       <div className="row wrap">
         {view.fix === "connect" && (
-          <Button kind="primary" title="Opens your account page in the browser, where you sign in to Google"
+          <Button kind="primary" title="Opens a page in the browser, where you sign in to Google"
             onClick={() => void c.connect(m.machine)}>Connect Google</Button>
         )}
         {view.fix === "connectors" && (
@@ -171,8 +171,8 @@ function Machine({ c, m }: { c: GoogleController; m: config.Machine }) {
             onClick={() => openUri(google.CONNECTORS_PAGE)}>Claude connectors</Button>
         )}
         {view.fix === "none" && (
-          <Button kind="flat" title="Change or disconnect Google on your account page, in the browser"
-            onClick={() => void c.connect(m.machine)}>Account page</Button>
+          <Button kind="flat" title="Change or disconnect Google, in the browser"
+            onClick={() => void c.connect(m.machine)}>Manage</Button>
         )}
         {view.fix === "retry" ? (
           <Button kind="primary" disabled={busy} onClick={() => c.read(m.machine)}>Try again</Button>

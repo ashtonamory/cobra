@@ -24,7 +24,7 @@ test("sign-in, account and payment pages, local names, IPs and other schemes are
     "http://192.168.1.20/admin",
     "http://[::1]/",
     "http://printer.local/status",
-    "https://legion.tail1234.ts.net/",
+    "https://laptop.tail1234.ts.net/",
     "https://example.com:8443/",
     "ftp://files.example.com/x",
     "https://user:pw@example.com/",

@@ -125,7 +125,7 @@ export function entryView(entry: Dict): EntryView {
   };
 }
 
-/** The confirm Undo asks first (the desk has no Face ID). */
+/** The confirm Undo asks first (a second look before it is taken back). */
 export function undoConfirm(entry: Dict, projectName: string): { title: string; body: string; yes: string } {
   const v = entryView(entry);
   return {

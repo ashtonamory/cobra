@@ -117,7 +117,7 @@ export type FetchPage = (url: string) => Promise<Page | { error: string }>;
  * The fetch: every hop's address checked by the code rules and by what its
  * name resolves to, and the connection pinned to those addresses
  * (publicFetch.ts), so a name that answers public once and private the next
- * time never reaches the private one (OV-SEC-VPS-001 F8).
+ * time never reaches the private one.
  */
 export const pageFetcher = (deps: PublicDeps): FetchPage => async (start) => {
   let url = start;

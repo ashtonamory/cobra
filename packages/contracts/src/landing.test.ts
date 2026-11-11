@@ -7,7 +7,7 @@ import { Approval, GitState, OrchProject, OrchWorker } from "./index.ts";
 
 const approval = {
   id: "ap_1",
-  machine: "legion",
+  machine: "laptop",
   kind: "merge",
   title: "Merge PR #7?",
   body: "#7 fix (r)",
@@ -29,7 +29,7 @@ test("Approval parses with and without lands; a land's result line has no number
 
 test("OrchWorker carries local, OrchProject and GitState carry landing, all optional", () => {
   const worker = {
-    id: "notes_2", machine: "legion", parent: "notes", parentName: "Notes", branch: "feat/x", path: "/p", session: "notes_2",
+    id: "notes_2", machine: "laptop", parent: "notes", parentName: "Notes", branch: "feat/x", path: "/p", session: "notes_2",
     owner: "lead", task: "t", model: "claude", createdAt: "x", phase: "finished", activity: null, needsInput: false, dialog: null, tail: [],
   };
   assert.equal(OrchWorker.parse(worker).local, undefined);

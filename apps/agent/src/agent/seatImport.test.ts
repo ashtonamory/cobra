@@ -142,7 +142,7 @@ test("one outreach Worker saves a list with its Space tools and drafts each emai
 
   const told: StoredApproval[] = [];
   const approvals = { load: () => loadApprovals(), save: (list: StoredApproval[]) => saveApprovals(list) };
-  const handle: import("./workerSpace.ts").OrchHandle = (route, url, req, res, io) => handleOrch(route, url, req, res, { ...io, configPath: CONFIG, log: () => undefined, machineLabel: "legion", port: 1 });
+  const handle: import("./workerSpace.ts").OrchHandle = (route, url, req, res, io) => handleOrch(route, url, req, res, { ...io, configPath: CONFIG, log: () => undefined, machineLabel: "laptop", port: 1 });
   const run = async (tool: string, args: Record<string, unknown>) => {
     const content = await space.runSpaceTool({ worker: "northwind-marketing_1", project: marketing.id, tool, args, tainted: false, lead: true }, handle, async (approval) => void told.push(approval), approvals);
     return content.map((part) => ("text" in part ? part.text : "")).join("\n");

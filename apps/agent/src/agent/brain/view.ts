@@ -6,7 +6,7 @@ import { route, type BudgetState } from "./route.ts";
 import { parseBrain, ruleWarnings, type BrainFile, type RuleProject } from "./rules.ts";
 
 /**
- * Settings → Brain: what the phone and the desk show of a computer's router (the
+ * Settings → Brain: what the desk show of a computer's router (the
  * benchmark table it ships with, which of those models this computer's
  * accounts offer, their windows, and the pick for each kind and size of
  * task), and the check on a new brain.json they send. Pure: index.ts reads

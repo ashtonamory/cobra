@@ -17,12 +17,12 @@ const worker = model.rowForProject({ id: "w1", name: "w1", session: "w1", path: 
 
 describe("Home", () => {
   it("talks to a Lead that answers, then one that waits on you, then the latest", () => {
-    const mini = lead("mini", { lastActivityAt: "2026-10-24T14:50:00Z" });
-    const legion = lead("omarchy");
-    expect(home.homeLead([worker, legion, mini], new Set())).toBe(mini);
-    expect(home.homeLead([legion, mini], new Set(["mini"]))).toBe(legion);
+    const office = lead("office", { lastActivityAt: "2026-10-24T14:50:00Z" });
+    const laptop = lead("omarchy");
+    expect(home.homeLead([worker, laptop, office], new Set())).toBe(office);
+    expect(home.homeLead([laptop, office], new Set(["office"]))).toBe(laptop);
     const asking = lead("omarchy", { needsInput: true });
-    expect(home.homeLead([mini, asking], new Set())).toBe(asking);
+    expect(home.homeLead([office, asking], new Set())).toBe(asking);
     expect(home.homeLead([worker], new Set())).toBeNull();
   });
 
@@ -41,7 +41,7 @@ describe("Home", () => {
     const l = lead("omarchy");
     expect(home.leadStatus(null, 0, new Set(), false)).toBe("Link a computer to talk to Cobra");
     expect(home.leadStatus(null, 2, new Set(), false)).toBe("Not running");
-    expect(home.leadStatus(l, 2, new Set(["legion"]), false)).toBe("legion is not answering");
+    expect(home.leadStatus(l, 2, new Set(["laptop"]), false)).toBe("laptop is not answering");
     expect(home.leadStatus(lead("omarchy", { needsInput: true }), 2, new Set(), false)).toBe("Asks you something");
     expect(home.leadStatus(l, 2, new Set(), true)).toBe("Working");
     expect(home.leadStatus(l, 2, new Set(), false)).toBe("Here");
@@ -51,7 +51,7 @@ describe("Home", () => {
     const now = new Date(2026, 9, 24, 9).getTime();
     const brief = { day: "2026-10-24", text: "Two PRs landed.", at: "2026-10-24T08:00:00", by: "model" };
     const reads: Array<[string, Dict]> = [
-      ["mini", { sends: false, latest: null }],
+      ["office", { sends: false, latest: null }],
       ["omarchy", { sends: true, latest: brief }],
     ];
     expect(home.todaysBrief(reads, now)).toEqual({ machine: "omarchy", brief });

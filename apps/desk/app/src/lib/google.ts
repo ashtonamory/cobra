@@ -29,7 +29,7 @@ export const BLURB =
 export const CONNECTORS_PAGE = "https://claude.ai/settings/connectors";
 
 export type Tone = "ink" | "signal" | "muted";
-/** What the computer's block offers: Connect Google (opens the account page), nothing, only Refresh, or Claude's connectors page. */
+/** What the block offers: Connect Google, nothing, only Refresh, or Claude's connectors page. */
 export type Fix = "none" | "connect" | "retry" | "connectors";
 
 export interface GoogleView {
@@ -58,21 +58,21 @@ export function googleView(status: Json, computer: string): GoogleView {
     case "google_not_connected":
       return {
         word: "not connected", tone: "signal", fix: "connect", allows: [],
-        detail: `Connect Google on your ${APP_NAME} account page; every computer linked to the account then uses it.`,
+        detail: "Connect Gmail, Google Calendar or Google Drive at claude.ai → Settings → Connectors, then press Refresh.",
       };
     case "google_reconnect":
       return {
         word: "connect again", tone: "signal", fix: "connect", allows: [],
-        detail: "Google no longer accepts the sign-in it was given. Connect Google again on your account page.",
+        detail: "Google no longer accepts the sign-in it was given. Connect it again at claude.ai → Settings → Connectors.",
       };
     case "google_unavailable":
       return {
         word: "not reachable", tone: "muted", fix: "retry", allows: scopeLines(s.scopes),
-        detail: `The Google token broker did not hand ${computer} a sign-in just now. Try again shortly.`,
+        detail: `${computer} could not reach Google just now. Try again shortly.`,
       };
     case null:
       // Not connected, and no reason given: an agent that has not asked yet.
-      return { word: "not connected", tone: "signal", fix: "connect", allows: [], detail: `Connect Google on your ${APP_NAME} account page.` };
+      return { word: "not connected", tone: "signal", fix: "connect", allows: [], detail: "Connect Gmail, Google Calendar or Google Drive at claude.ai → Settings → Connectors." };
     default:
       return { word: "needs attention", tone: "signal", fix: "retry", allows: [], detail: `${computer} said: ${problem.replace(/_/g, " ")}.` };
   }
@@ -159,7 +159,7 @@ const READ_SHORT = new Set(Object.values(READ_SCOPES));
 export const CALENDAR_LINE = "Read your calendar so My day and Projects can plan around it.";
 export const MAIL_LINE = "Read your mail so Lead Outreach sees replies and My day can sort what came in.";
 export const MAIL_TESTING_LINE = "Google still has this in testing, so it works only for invited testers.";
-export const READS_NOTE = "To turn one off, disconnect Google on your account page and connect again.";
+export const READS_NOTE = "To turn one off, disconnect it at claude.ai → Settings → Connectors.";
 
 export interface ReadRow {
   name: ReadName;
@@ -197,7 +197,7 @@ export function readOn(status: Json, name: ReadName): boolean {
   return readRows(status).some((row) => row.name === name && row.on);
 }
 
-/** The toast when Connect Google (no read) or a read's Turn on opens the account page. */
+/** The toast when Connect Google (no read) or a read's Turn on opens a page in the browser. */
 export function watchToast(read: ReadName | null): string {
   if (read === null) return "Connect Google on the page that opened; this computer is read again when you have";
   return `Turn on ${read === "calendar" ? "Calendar" : "Mail"} on the page that opened; this computer is read again when you have`;

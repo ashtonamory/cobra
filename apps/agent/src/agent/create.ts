@@ -172,12 +172,9 @@ export async function createProject(
   const base = suggestId(request.idHint ?? directory);
   const id = resolveId(base, deps.machine, deps.registered);
 
-  // Both collision checks are against *this machine's* projects only. The
-  // registry is deployed whole to all three, so the Legion's plant-shop used
-  // to occupy the name and the path here as well, and a second checkout was
-  // refused for clashing with a card this machine does not even serve
-  // (collect/projects.ts filters by machine). A clash that matters is one you
-  // could see on the same list.
+  // Both collision checks are against this computer's projects only
+  // (collect/projects.ts filters by machine): a clash that matters is one
+  // you could see on the same list.
   const mine = deps.registered.filter((project) => project.machine === deps.machine);
 
   const clash = mine.find((project) => project.id === id);
@@ -365,8 +362,8 @@ export function liveCreateDeps(
     async startSession(session, cwd) {
       // "claude" is a fixed argument and never interpolated, exactly as in
       // dispatch: the only thing tmux is ever handed is that literal string.
-      // No prompt is typed — the phone lands on the chat screen and you dictate
-      // the first one, so there is nothing here to get swallowed (gotcha 19).
+      // No prompt is typed: the person writes the first one in the chat, so
+      // there is nothing here for a trust dialog to swallow (trust.ts).
       await tmuxRun(["new-session", "-d", "-s", session, "-c", cwd, ...tmuxEnvArgs(sessionEnv(session, false) ?? undefined), "claude"]);
     },
     save(project) {

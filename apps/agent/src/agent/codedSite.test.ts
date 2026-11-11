@@ -49,7 +49,7 @@ test("buildArgs: the environment is cleared and only what is named is set; the n
   const on = buildArgs("/work/build-1", ["npm", "ci"], view, {}, true, "/run/systemd/resolve");
   assert.equal(on[on.indexOf("--unshare-all") + 1], "--share-net");
   assert.ok(on.join(" ").includes("--ro-bind /run/systemd/resolve /run/systemd/resolve"));
-  // OV-SEC-VPS-001 F19: the network is shared, the hardening stays.
+  // the network is shared, the hardening stays.
   for (const args of [off, on]) assert.ok(args.join(" ").includes("--unshare-user --disable-userns --cap-drop ALL --new-session"));
 });
 

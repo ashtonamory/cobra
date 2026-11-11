@@ -73,7 +73,7 @@ function computer(options: { swallowFirstEnter?: boolean; briefedPath?: string }
     return {
       worker: {
         id: "cobra_3",
-        machine: "legion",
+        machine: "laptop",
         parent: "cobra",
         parentName: "cobra",
         branch: "feat/badge",
@@ -493,7 +493,7 @@ test("(b) foreman_wait returns the finish with the report; the held notice is th
   await c.tick(2);
   assert.equal(c.finishes.queued().length, 1);
 
-  const audience = audienceOf({ id: "lead_legion", kind: "lead" });
+  const audience = audienceOf({ id: "lead_laptop", kind: "lead" });
   const fresh = c.finishes.claimForemen(["cobra"], audience);
   assert.equal(fresh.length, 1);
   assert.equal(fresh[0]?.foreman, true);

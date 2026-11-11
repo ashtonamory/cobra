@@ -98,8 +98,8 @@ const day = (daysAgo: number) => new Date((NOW - daysAgo * 86400) * 1000).toISOS
 const ahead = (seconds: number) => new Date((NOW + seconds) * 1000).toISOString();
 
 const MACHINES: config.Machine[] = [
-  config.testMachine("legion", { label: "Legion", title: "Legion", hue: "blue" }),
-  config.testMachine("mini", { label: "Mini", title: "Mini", hue: "cyan" }),
+  config.testMachine("laptop", { label: "Laptop", title: "Laptop", hue: "blue" }),
+  config.testMachine("office", { label: "Office", title: "Office", hue: "cyan" }),
 ];
 
 const REQUEST = {
@@ -113,11 +113,11 @@ const gitOf = (extra: Dict = {}): Dict => ({
 });
 
 const project = (id: string, extra: Dict = {}): Dict => ({
-  id, name: id, machine: "legion", path: `/home/me/Projects/${id}`, session: id, activity: "none", lastActivityAt: iso(600),
+  id, name: id, machine: "laptop", path: `/home/me/Projects/${id}`, session: id, activity: "none", lastActivityAt: iso(600),
   command: null, attached: false, source: "tracked", ...extra,
 });
 
-const LEGION_PROJECTS: Dict[] = [
+const LAPTOP_PROJECTS: Dict[] = [
   // Needs you: a permission dialog with its request.
   project("cobra", {
     name: "Cobra", activity: "agent-working", needsInput: true, dialog: "permission", request: REQUEST, waitingSince: iso(60),
@@ -174,21 +174,21 @@ const LEGION_PROJECTS: Dict[] = [
   }),
 ];
 
-const MINI_PROJECTS: Dict[] = [
+const OFFICE_PROJECTS: Dict[] = [
   // A second Lead, under the same session name as the first.
-  project("cobra_lead", { name: "Cobra", machine: "mini", lead: true, session: "cobra_lead", path: "/srv", activity: "agent-idle",
+  project("cobra_lead", { name: "Cobra", machine: "office", lead: true, session: "cobra_lead", path: "/srv", activity: "agent-idle",
     lastActivityAt: iso(400), command: "claude" }),
-  // The same Worker id and Foreman as on legion, as a second agent would make them.
-  project("w-123", { name: "infra · feat/login-form", machine: "mini", parent: "infra", branch: "feat/login-form", session: "infra_w123",
+  // The same Worker id and Foreman as on laptop, as a second agent would make them.
+  project("w-123", { name: "infra · feat/login-form", machine: "office", parent: "infra", branch: "feat/login-form", session: "infra_w123",
     activity: "agent-working", worker: { owner: "cobra_lead", task: "Same id", model: "opus" }, lastActivityAt: iso(50), command: "claude" }),
-  project("infra-fm", { name: "infra · Foreman", machine: "mini", parent: "infra", foreman: true, crew: { name: "Rosa", look: 2, hat: 1 },
+  project("infra-fm", { name: "infra · Foreman", machine: "office", parent: "infra", foreman: true, crew: { name: "Rosa", look: 2, hat: 1 },
     session: "infra_fm", activity: "agent-working", lastActivityAt: iso(70), command: "claude" }),
   project("cobra", {
-    name: "Cobra", machine: "mini", path: "/srv/cobra", activity: "none", lastActivityAt: iso(86400 * 2),
+    name: "Cobra", machine: "office", path: "/srv/cobra", activity: "none", lastActivityAt: iso(86400 * 2),
     git: gitOf({ remote: "https://github.com/example/cobra.git" }),
   }),
   project("infra", {
-    name: "infra", machine: "mini", path: "/srv/infra", activity: "agent-idle", command: "claude",
+    name: "infra", machine: "office", path: "/srv/infra", activity: "agent-idle", command: "claude",
     git: gitOf({ remote: "https://github.com/example/infra.git", grade: "Parked", parked: "wip/2026-10-01" }),
   }),
 ];
@@ -201,12 +201,12 @@ const tmux = (names: string[], extra: Dict[] = []): Dict => ({
   ],
 });
 
-const LEGION_TMUX = tmux(["cobra", "lookfocus", "corner-bakery", "scripts", "cobra_docs", "lookfocus_w123", "lookfocus_fm", "cobra_lead"], [
+const LAPTOP_TMUX = tmux(["cobra", "lookfocus", "corner-bakery", "scripts", "cobra_docs", "lookfocus_w123", "lookfocus_fm", "cobra_lead"], [
   // A loose session, live, and the desk's own grouped view (hidden).
   { name: "scratch", windows: 2, attached: true, createdAt: iso(3600), lastActivityAt: iso(10), path: "/tmp", command: "htop" },
   { name: "cobra@desk", windows: 1, attached: true, createdAt: iso(3600), lastActivityAt: iso(10), path: "/home/me", command: "tmux" },
 ]);
-const MINI_TMUX = tmux(["infra", "cobra_lead", "infra_w123", "infra_fm"], [
+const OFFICE_TMUX = tmux(["infra", "cobra_lead", "infra_w123", "infra_fm"], [
   { name: "old-shell", windows: 1, attached: false, createdAt: iso(86400), lastActivityAt: iso(7200), path: "/srv", command: "bash" },
 ]);
 
@@ -222,21 +222,21 @@ const LONG_TEXT = "Hi Ann,\n\nHere are this week's pay stubs for the team.\n\nTh
 // A Foreman's actions (contracts ApprovalAction): an email, files for your Drive, a note.
 const ACTIONS: Dict[] = [
   {
-    id: "ap-email", machine: "legion", kind: "action", title: "Send: Pay stubs for the week", body: "To: ann@example.com", createdAt: iso(100),
+    id: "ap-email", machine: "laptop", kind: "action", title: "Send: Pay stubs for the week", body: "To: ann@example.com", createdAt: iso(100),
     expiresAt: ahead(3600), state: "pending",
     action: { channel: "email", project: "paws", projectName: "paws-paths-payroll", summary: "Pay stubs for the week",
       email: { to: ["ann@example.com"], cc: ["books@example.com"], subject: "Pay stubs, week 42", text: LONG_TEXT,
         attachments: [ATTACHMENT("out/stubs-week-42.pdf", 182_000), ATTACHMENT("out/summary.csv", 900)] } },
   },
   {
-    id: "ap-file", machine: "legion", kind: "action", title: "Copy: The week's report", body: "To: your Google Drive", createdAt: iso(90),
+    id: "ap-file", machine: "laptop", kind: "action", title: "Copy: The week's report", body: "To: your Google Drive", createdAt: iso(90),
     expiresAt: ahead(3600), state: "pending",
     action: { channel: "file", project: "paws", projectName: "paws-paths-payroll", summary: "The week's report",
       files: { to: "drive", label: "your Google Drive", path: "Cobra/paws-paths-payroll", items: [ATTACHMENT("out/report.pdf", 2_400_000)],
         text: "For your records." } },
   },
   {
-    id: "ap-note", machine: "legion", kind: "action", title: "Note: Two timesheets are missing", body: "Ben and Cy", createdAt: iso(80),
+    id: "ap-note", machine: "laptop", kind: "action", title: "Note: Two timesheets are missing", body: "Ben and Cy", createdAt: iso(80),
     expiresAt: ahead(3600), state: "pending",
     action: { channel: "note", project: "paws", projectName: "paws-paths-payroll", summary: "Two timesheets are missing",
       note: { text: "Ben and Cy have not sent their timesheets for week 42.", attachments: [ATTACHMENT("out/missing.md", 300)] } },
@@ -247,7 +247,7 @@ const ACTIONS: Dict[] = [
 const MONTH_END_BRIEF = "Write the month's payroll summary.\nPut it in the sheet's Summary tab.\nPropose the email for my Allow.\n\n" +
   "If a pay run is still open, say so first and stop there.";
 const ROUTINE_APPROVAL: Dict = {
-  id: "ap-routine", machine: "legion", kind: "routine", title: "Run “Month-end summary” on the last day of each month at 17:00?", body: "On the last day of each month at 17:00",
+  id: "ap-routine", machine: "laptop", kind: "routine", title: "Run “Month-end summary” on the last day of each month at 17:00?", body: "On the last day of each month at 17:00",
   createdAt: iso(70), expiresAt: ahead(3600), state: "pending",
   routine: { project: "paws", projectName: "paws-paths-payroll", name: "Month-end summary", rule: { every: "month", day: "last", at: "17:00" },
     when: "On the last day of each month at 17:00", brief: MONTH_END_BRIEF, firstRun: ahead(86400 * 9) },
@@ -275,12 +275,12 @@ const ROUTINES: Dict = {
 const TRUST_SUBJECT: Dict = { key: "k".repeat(64), project: "paws", projectName: "paws-paths-payroll", channel: "email", what: "pay-stub",
   to: ["ana@example.com", "ben@example.com"], templates: ["pay-stub"] };
 const TRUST_APPROVAL: Dict = {
-  id: "ap-trust", machine: "legion", kind: "trust", title: "Let paws-paths-payroll send pay-stub to these 2 addresses without asking?",
+  id: "ap-trust", machine: "laptop", kind: "trust", title: "Let paws-paths-payroll send pay-stub to these 2 addresses without asking?",
   body: "You allowed this 3 times in a row with nothing changed:", createdAt: iso(50), expiresAt: ahead(86400 * 3), state: "pending",
   trust: { ...TRUST_SUBJECT, runs: 3, examples: ["Send: 2 pay stubs, Oct 1 to 15", "Send: 2 pay stubs, Oct 16 to 31", "Send: 2 pay stubs, Nov 1 to 15"] },
 };
 const RECEIPT: Dict = {
-  id: "ap-receipt", machine: "legion", kind: "action", title: "Send: 2 pay stubs, Nov 16 to 30", body: "", createdAt: iso(40), expiresAt: ahead(86400),
+  id: "ap-receipt", machine: "laptop", kind: "action", title: "Send: 2 pay stubs, Nov 16 to 30", body: "", createdAt: iso(40), expiresAt: ahead(86400),
   state: "done", answeredAt: iso(40), results: [{ ok: true, message: "sent to 2 addresses from penny@example.com" }],
   action: { channel: "email", project: "paws", projectName: "paws-paths-payroll", summary: "2 pay stubs, Nov 16 to 30" },
   trusted: { key: "k".repeat(64), grantedAt: iso(86400 * 2) },
@@ -307,30 +307,30 @@ const MIRROR: Dict = {
   project: "paws", spreadsheetId: "1AbCdEf", url: "https://docs.google.com/spreadsheets/d/1AbCdEf/edit", createdBy: "penny@example.com",
   lastSync: iso(300), lastError: "Google needs to be connected again", pending: true,
 };
-const GOOGLE = (machine: string): Dict => machine === "legion"
+const GOOGLE = (machine: string): Dict => machine === "laptop"
   ? { cloudLinked: true, connected: true, email: "penny@example.com", problem: null, checkedAt: Date.now() - 120_000, accountUrl: "https://accounts.example.com/account",
     scopes: ["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/gmail.send",
       "https://www.googleapis.com/auth/calendar.readonly"] }
   : { cloudLinked: true, connected: false, email: null, scopes: [], problem: "google_not_connected", checkedAt: null, accountUrl: "https://accounts.example.com/account" };
 
-// The owner's Cloudflare (contracts cloudflare.ts): Legion connected with two accounts, Mini not.
+// The owner's Cloudflare (contracts cloudflare.ts): Laptop connected with two accounts, Office not.
 const CF_BASE = { scopes: ["workers-scripts.admin", "d1.write", "account-settings.read", "offline_access"], problem: null,
   clientId: "ee7d1dfa12f17b55f8e792c0a454de5d", redirect: "https://cobra.example.com/connect/cloudflare" };
 const CF_ACCOUNTS = [{ id: "cf1", name: "Pine Yoga" }, { id: "cf2", name: "Paws Studio" }];
-const CLOUDFLARE = (machine: string): Dict => machine === "legion"
+const CLOUDFLARE = (machine: string): Dict => machine === "laptop"
   ? { ...CF_BASE, state: "connected", account: CF_ACCOUNTS[0], accounts: CF_ACCOUNTS, connectedAt: iso(3600) }
   : { ...CF_BASE, scopes: [], state: "not-connected", account: null, accounts: [], connectedAt: null };
 
 const APPROVALS: Dict = {
-  machine: "legion",
+  machine: "laptop",
   approvals: [
     {
-      id: "ap-merge", machine: "legion", kind: "merge", title: "Merge 2 pull requests in lookfocus",
+      id: "ap-merge", machine: "laptop", kind: "merge", title: "Merge 2 pull requests in lookfocus",
       body: "The Lead wants to merge:\n#11 Login form\n#12 Fix header", createdAt: iso(300), expiresAt: ahead(3600), state: "pending",
       prs: [{ number: 11, title: "Login form", repo: "me/lookfocus", head: "abc11", url: "https://github.com/me/lookfocus/pull/11", worker: "w-123" }],
     },
     {
-      id: "ap-plan", machine: "legion", kind: "plan", title: "Rosa's plan for lookfocus", body: "Three tasks", createdAt: iso(200),
+      id: "ap-plan", machine: "laptop", kind: "plan", title: "Rosa's plan for lookfocus", body: "Three tasks", createdAt: iso(200),
       expiresAt: ahead(3600), state: "pending",
       plan: {
         project: "lookfocus", projectName: "lookfocus", summary: "Ship the login page this week.",
@@ -344,7 +344,7 @@ const APPROVALS: Dict = {
         ],
       },
     },
-    { id: "ap-old", machine: "legion", kind: "merge", title: "Old", body: "", createdAt: iso(9000), expiresAt: iso(10), state: "denied" },
+    { id: "ap-old", machine: "laptop", kind: "merge", title: "Old", body: "", createdAt: iso(9000), expiresAt: iso(10), state: "denied" },
     ...ACTIONS,
     ROUTINE_APPROVAL,
     TRUST_APPROVAL,
@@ -352,7 +352,7 @@ const APPROVALS: Dict = {
 };
 
 const ALERTS: Dict = {
-  host: "legion", checkedAt: iso(30),
+  host: "laptop", checkedAt: iso(30),
   alerts: [
     { id: "expose:tcp:0.0.0.0:5173", level: "warn", title: "Listening on the LAN", body: "node (vite) on 0.0.0.0:5173 is reachable from your network" },
     { id: "disk-root", level: "critical", title: "Disk almost full", body: "/ is 96% full" },
@@ -404,16 +404,16 @@ const HISTORY = (host: string): Dict => ({
 });
 
 const ORCH: Dict = {
-  machine: "legion", caps: { computer: 6, project: 3 }, live: 2,
+  machine: "laptop", caps: { computer: 6, project: 3 }, live: 2,
   projects: [{
     id: "lookfocus", name: "lookfocus", path: "/home/me/Projects/lookfocus", landing: "pr", maxWorkers: 3,
     foreman: { project: "lookfocus", name: "Rosa", session: "lookfocus_fm", running: true, activity: "agent-idle", needsInput: false, dialog: null, tail: [] },
   }],
   workers: [
-    { id: "w-123", machine: "legion", parent: "lookfocus", parentName: "lookfocus", branch: "feat/login-form", title: "Login form",
+    { id: "w-123", machine: "laptop", parent: "lookfocus", parentName: "lookfocus", branch: "feat/login-form", title: "Login form",
       path: "/home/me/wt/w-123", session: "lookfocus_w123", owner: "cobra_lead", task: "Build the login form", model: "sonnet",
       createdAt: iso(900), phase: "working", activity: "agent-working", needsInput: false, dialog: null, tail: ["Writing LoginForm.tsx"] },
-    { id: "w-456", machine: "legion", parent: "corner-bakery", parentName: "corner-bakery", branch: "fix/tile-cache", path: "/home/me/wt/w-456",
+    { id: "w-456", machine: "laptop", parent: "corner-bakery", parentName: "corner-bakery", branch: "fix/tile-cache", path: "/home/me/wt/w-456",
       session: "corner-bakery_w456", owner: "cobra_lead", task: "Fix the tile cache", model: "codex", createdAt: iso(1800), phase: "review",
       activity: "agent-working", needsInput: false, dialog: null, tail: [], pr: { number: 7, url: "https://github.com/me/corner-bakery/pull/7" } },
   ],
@@ -449,7 +449,7 @@ const ORCH_HISTORY: Dict = {
 };
 
 const PRS: Dict = {
-  machine: "legion", prError: null, at: iso(30),
+  machine: "laptop", prError: null, at: iso(30),
   repos: [
     { project: "lookfocus", projectName: "lookfocus", remote: "https://github.com/example/lookfocus.git", readAt: iso(30),
       prs: [PR(11), PR(12, { checks: "red" }), PR(13, { checks: "pending" }), PR(14, { mergeable: "CONFLICTING" }), PR(15, { isDraft: true })] },
@@ -460,7 +460,7 @@ const PRS: Dict = {
 };
 
 const MINI_PRS: Dict = {
-  machine: "mini", prError: "gh is not logged in", at: iso(30),
+  machine: "office", prError: "gh is not logged in", at: iso(30),
   repos: [{ project: "cobra", projectName: "Cobra", remote: "https://github.com/example/cobra.git", readAt: iso(600), prs: [] }],
 };
 
@@ -499,7 +499,7 @@ const QUESTION_TRANSCRIPT: Dict = {
 
 // Her thread on the hub: an earlier conversation (faded), the line over the current one, and a digest.
 const THREAD: Dict = {
-  machine: "legion", current: "now", more: false,
+  machine: "laptop", current: "now", more: false,
   entries: [
     { id: 1, at: iso(9000), kind: "session", conversation: "old", text: "", reason: "start" },
     { id: 2, at: iso(8990), kind: "you", conversation: "old", text: "What landed last week?" },
@@ -537,8 +537,8 @@ function transcriptFor(session: string): Dict {
 }
 
 const REPO: Dict = {
-  machine: "legion", at: iso(10),
-  project: { id: "lookfocus", name: "lookfocus", machine: "legion", path: "/home/me/Projects/lookfocus", session: "lookfocus" },
+  machine: "laptop", at: iso(10),
+  project: { id: "lookfocus", name: "lookfocus", machine: "laptop", path: "/home/me/Projects/lookfocus", session: "lookfocus" },
   git: gitOf({ remote: "https://github.com/example/lookfocus.git", openPrs: 2 }),
   branches: [
     { name: "main", local: true, remote: true, current: true, committedAt: iso(100), ageDays: 0, aheadOfMain: 0, behindMain: 0, merged: false, stale: false, gone: false, parked: false },
@@ -563,7 +563,7 @@ const TIDY = (machine: string): Dict => ({
 });
 
 const CAPS: Dict = {
-  machine: "legion", gh: "/usr/bin/gh", githubAuth: true, githubUser: "me", roots: ["/home/me/Projects", "/home/me"],
+  machine: "laptop", gh: "/usr/bin/gh", githubAuth: true, githubUser: "me", roots: ["/home/me/Projects", "/home/me"],
   localModels: ["qwen3:4b", "qwen-tuned:fast96k"],
   localModelInfo: [{ name: "qwen-tuned:fast96k", verdict: "ready", contextTokens: 98304, decodeTps: 41 },
     { name: "crawler", verdict: "slow", contextTokens: 32768, decodeTps: 6 }, { name: "qwen3:4b", verdict: "unchecked", contextTokens: null, decodeTps: null }],
@@ -571,7 +571,7 @@ const CAPS: Dict = {
 };
 
 const LOCAL_REPOS: Dict = {
-  machine: "legion", roots: ["/home/me/Projects"],
+  machine: "laptop", roots: ["/home/me/Projects"],
   discovered: [
     { path: "/home/me/Projects/oldthing", id: "oldthing", name: "oldthing", session: "oldthing", git: gitOf({ remote: "https://github.com/example/oldthing.git" }), sessionTaken: false },
     { path: "/home/me/Projects/cobra2", id: "cobra2", name: "cobra2", session: "cobra", git: null, sessionTaken: true },
@@ -579,7 +579,7 @@ const LOCAL_REPOS: Dict = {
 };
 
 const GITHUB_REPOS: Dict = {
-  machine: "legion",
+  machine: "laptop",
   repos: [
     { nameWithOwner: "me/site", name: "site", description: "My website", isPrivate: false, pushedAt: iso(86400), primaryLanguage: "TypeScript", wouldClash: false },
     { nameWithOwner: "me/cobra", name: "cobra", description: null, isPrivate: true, pushedAt: iso(60), primaryLanguage: null, wouldClash: true },
@@ -595,10 +595,10 @@ const ACCOUNTS: Dict = {
   computer: { claude: { email: "work@example.com", active: false }, codex: { email: "me@example.com", saved: false } },
 };
 
-const ENGINES: Dict = { machine: "legion", engines: { lead: "claude", foreman: "claude", session: "claude", worker: "codex" }, codex: true, contained: false };
+const ENGINES: Dict = { machine: "laptop", engines: { lead: "claude", foreman: "claude", session: "claude", worker: "codex" }, codex: true, contained: false };
 
 const BRAIN: Dict = {
-  machine: "legion",
+  machine: "laptop",
   brain: { revision: 2, rules: [{ when: { kind: "ui" }, prefer: ["opus"], note: "UI wants Opus" }, { when: { project: "corner-bakery", path: "maps/**" }, never: ["local:*"] }, { when: {}, review: "force" }],
     priors: { codex: { tests: 0.9 } } },
   refused: null, kinds: ["tests", "ui", "api"], models: ["opus", "sonnet", "codex", "local:qwen3:4b"],
@@ -620,7 +620,7 @@ const POLICY = (computer: string, revision: number): Dict => ({
     lead: { webTools: true },
     foreman: { maxWorkers: 3, maxWorkersPerComputer: 4, workerModels: ["sonnet", "codex"], mergeOnGreen: false },
     job: { models: ["sonnet"], concurrent: 2 }, local: { slots: 1 },
-    computers: { mini: { preset: "locked" } }, projects: { "me/lookfocus": { network: { allow: ["docs.expo.dev"] } } },
+    computers: { office: { preset: "locked" } }, projects: { "me/lookfocus": { network: { allow: ["docs.expo.dev"] } } },
     apiLane: { enabled: true, monthlyCapUsd: 50 },
   },
   resolved: { preset: "balanced", network: ["pypi.org"], judge: { model: "claude-haiku-5-5", fallback: null }, fallbacks: { opus: ["sonnet"] }, notes: ["The fleet's preset."] },
@@ -641,13 +641,13 @@ const POLICY = (computer: string, revision: number): Dict => ({
 });
 
 const API_LANE: Dict = {
-  machine: "legion", enabled: true, capUsd: 50, key: true, workspace: true, keptToken: false, gateway: true, open: true, why: "",
+  machine: "laptop", enabled: true, capUsd: 50, key: true, workspace: true, keptToken: false, gateway: true, open: true, why: "",
   month: day(0).slice(0, 7), resetsAt: ahead(86400 * 12), here: { dollars: 4.2, requests: 120, byRole: { worker: 3.1, judge: 1.1 } },
   fleetUsd: 6.5, lastError: null,
 };
 
 const REFUSED: Dict = {
-  machine: "legion",
+  machine: "laptop",
   refused: [{ at: NOW * 1000 - 600_000, worker: "w-123", tool: "Bash", rule: "network", subject: "curl https://evil.com", reason: "not on the allow-list", judge: "haiku" }],
 };
 
@@ -661,7 +661,7 @@ const DECIDED: Dict = {
 
 const CHECK = { verdict: "ready", contextTokens: 98304, decodeTps: 41.5, prefillTps: 2052.8, checkedAt: NOW * 1000 - 7200_000, ms: 7778 };
 const LOCAL: Dict = {
-  computer: "legion",
+  computer: "laptop",
   ollama: { url: "http://127.0.0.1:11434", remote: false, refused: null, running: true, version: "0.33.3" },
   models: [
     { name: "qwen-tuned:fast96k", tools: true, size: 5_681_599_551, check: CHECK, checking: false },
@@ -675,7 +675,7 @@ const LOCAL: Dict = {
 
 const MCP_PIN = { path: "/usr/bin/github-mcp-server", sha256: "ab".repeat(32), version: "v1.4.0", release: "v1.4.0", verifiedAt: iso(86400) };
 const MCP: Dict = {
-  machine: "legion", gh: { installed: true, authed: true, user: "me" },
+  machine: "laptop", gh: { installed: true, authed: true, user: "me" },
   github: { binary: "/usr/bin/github-mcp-server", pin: MCP_PIN, token: { present: true, login: "me" } },
   entries: [{ name: "github", preset: "github", transport: "stdio", roles: ["lead", "foreman"], readOnly: true, enabled: true, available: true, pin: MCP_PIN }],
   integrations: [
@@ -686,12 +686,12 @@ const MCP: Dict = {
   ],
 };
 
-// The morning brief: the Legion runs the Lead, so it sends today's.
+// The morning brief: the Laptop runs the Lead, so it sends today's.
 const MORNING = { sends: true, settings: { enabled: true, at: "08:00" },
   latest: { day: localDay(Date.now()), text: "Two PRs landed overnight. Nothing waits on you.", at: iso(3600), by: "model" } };
 
-// My Organization: the Legion keeps the org; paws works for Happy Tails.
-const ORG = { revision: 2, companies: [{ id: "happy-tails", name: "Happy Tails", color: "#c0763a" }], seats: { "legion/paws": { company: "happy-tails" }, "legion/crm": { company: "happy-tails" } } };
+// My Organization: the Laptop keeps the org; paws works for Happy Tails.
+const ORG = { revision: 2, companies: [{ id: "happy-tails", name: "Happy Tails", color: "#c0763a" }], seats: { "laptop/paws": { company: "happy-tails" }, "laptop/crm": { company: "happy-tails" } } };
 
 // Settings → Projects: ~ and ~/Projects built in, and what was added.
 // A trade's dashboards (the agent's views.ts): People's, on a few people.
@@ -736,42 +736,42 @@ const folderView = (machine: string, added: string[]) => ({ machine, home: "/hom
 function apiAnswer(machine: string, method: string, path: string, body: Dict | null): unknown {
   const [route, query = ""] = path.split("?");
   const params = new URLSearchParams(query);
-  const legion = machine === "legion";
+  const laptop = machine === "laptop";
   if (method === "GET") {
     // A Space's Foremen mode (SpaceScreen.tsx's Crew line).
     if (/^\/spaces\/[^/]+\/foremen$/.test(route!)) return { foremen: "on-call" };
-    // All money (pages/AllMoney.tsx, Home's Money card): one business on legion, the household on mini.
+    // All money (pages/AllMoney.tsx, Home's Money card): one business on laptop, the household on office.
     if (route === "/money/all") return {
-      machine, month: params.get("month"), currency: params.get("to") ?? (legion ? "USD" : "XCD"),
-      spaces: legion
+      machine, month: params.get("month"), currency: params.get("to") ?? (laptop ? "USD" : "XCD"),
+      spaces: laptop
         ? [{ space: "happy-tails", name: "Happy Tails", kind: "own", project: "paws-money", home: "USD", setUp: true, in: 108000, out: 27000, kept: 81000, owed: 13500, netWorth: 270000, waiting: 2, months: [{ month: "2026-10", kept: 30000 }, { month: "2026-11", kept: 81000 }] },
            { space: "skn", name: "SKN Villa", kind: "own", project: "skn-money", home: "USD", setUp: false, in: 0, out: 0, kept: 0, owed: 0, netWorth: 0, waiting: 0, months: [] }]
         : [{ space: "personal", name: "Personal", kind: "family", project: "personal-money", home: "XCD", setUp: true, in: 300000, out: 100000, kept: 200000, owed: 0, netWorth: 700000, waiting: 0, months: [] }],
     };
     switch (route) {
-      case "/projects": return { machine, projects: legion ? LEGION_PROJECTS : MINI_PROJECTS };
-      case "/tmux": return legion ? LEGION_TMUX : MINI_TMUX;
-      case "/approvals": return legion ? APPROVALS : { machine, approvals: [APPROVALS.approvals[0]] };
+      case "/projects": return { machine, projects: laptop ? LAPTOP_PROJECTS : OFFICE_PROJECTS };
+      case "/tmux": return laptop ? LAPTOP_TMUX : OFFICE_TMUX;
+      case "/approvals": return laptop ? APPROVALS : { machine, approvals: [APPROVALS.approvals[0]] };
       case "/views": return params.get("project") === "crm" ? CRM_VIEWS : { project: params.get("project"), trade: "", views: [], mutations: {}, currency: "USD" };
       case "/boards": return { project: params.get("project"), space: null, currency: "USD", boards: [] };
       case "/view": return crmView(String(params.get("view")), params.get("id"), params.get("q") ?? "");
-      case "/org": return legion ? { org: ORG, home: true } : { org: { revision: 0, companies: [], seats: {} }, home: false };
+      case "/org": return laptop ? { org: ORG, home: true } : { org: { revision: 0, companies: [], seats: {} }, home: false };
       case "/notices":
-        return { boot: "boot-1", seq: 2, notices: legion ? [
+        return { boot: "boot-1", seq: 2, notices: laptop ? [
           { seq: 1, kind: "needs-input", projectId: "cobra", title: "Cobra asks", body: "Run npm test?" },
           { seq: 2, kind: "finished", projectId: "corner-bakery", title: "corner-bakery finished", body: "All done." }] : [] };
-      case "/orch/status": return legion ? ORCH : { ...ORCH, machine, workers: [{ ...ORCH.workers[0], machine, parent: "infra", parentName: "infra" }],
+      case "/orch/status": return laptop ? ORCH : { ...ORCH, machine, workers: [{ ...ORCH.workers[0], machine, parent: "infra", parentName: "infra" }],
         projects: [], queue: [ORCH.queue[0]], budget: [{ ...ORCH.budget[0], account: "other@example.com" }] };
-      case "/orch/history": return legion ? ORCH_HISTORY : { ...ORCH_HISTORY, done: [ORCH_HISTORY.done[0]] };
-      case "/prs": return legion ? PRS : MINI_PRS;
-      case "/alerts": return legion ? ALERTS : { host: machine, alerts: [ALERTS.alerts[1]] };
-      case "/system": return legion ? SYSTEM(machine) : SYSTEM(machine, { power: { ac: true, battery: null, lid: null, lidAwake: { available: false, on: false } } });
+      case "/orch/history": return laptop ? ORCH_HISTORY : { ...ORCH_HISTORY, done: [ORCH_HISTORY.done[0]] };
+      case "/prs": return laptop ? PRS : MINI_PRS;
+      case "/alerts": return laptop ? ALERTS : { host: machine, alerts: [ALERTS.alerts[1]] };
+      case "/system": return laptop ? SYSTEM(machine) : SYSTEM(machine, { power: { ac: true, battery: null, lid: null, lidAwake: { available: false, on: false } } });
       case "/usage": return USAGE(machine);
       case "/history": return HISTORY(machine);
       case "/transcript": return transcriptFor(String(params.get("session")));
-      // Cobra's thread: the hub (legion) keeps one; any other computer answers 404 not-hub.
+      // Cobra's thread: the hub (laptop) keeps one; any other computer answers 404 not-hub.
       case "/thread":
-        if (!legion) throw { status: 404, message: "not-hub" };
+        if (!laptop) throw { status: 404, message: "not-hub" };
         return THREAD;
       case "/git/repo": return { ...REPO, project: { ...REPO.project, id: params.get("project") } };
       case "/git/tidy": return TIDY(machine);
@@ -782,29 +782,29 @@ function apiAnswer(machine: string, method: string, path: string, body: Dict | n
       case "/accounts": return ACCOUNTS;
       case "/accounts/codex/status": return { login: { id: params.get("id"), state: "waiting" } };
       case "/settings/engines": return { ...ENGINES, machine };
-      case "/settings/folders": return folderView(machine, legion ? ["/home/me/code/work"] : []);
-      case "/brain": return { ...BRAIN, machine, brain: legion ? BRAIN.brain : { revision: 0, rules: [], priors: {} } };
-      case "/policy": return POLICY(machine, legion ? 3 : 2);
+      case "/settings/folders": return folderView(machine, laptop ? ["/home/me/code/work"] : []);
+      case "/brain": return { ...BRAIN, machine, brain: laptop ? BRAIN.brain : { revision: 0, rules: [], priors: {} } };
+      case "/policy": return POLICY(machine, laptop ? 3 : 2);
       case "/api-lane": return { ...API_LANE, machine };
-      case "/policy/refused": return legion ? REFUSED : { machine, refused: [] };
-      case "/audit/log": return { machine, entries: legion ? [{ id: "a".repeat(16), at: Date.now(), kind: "merge", actor: "agent", outcome: "ok", subject: { target: "me/r#7" }, text: "Cobra merged me/r#7" }] : [], more: false };
-      case "/decided": return legion ? DECIDED : { decided: [] };
-      case "/morning": return legion ? MORNING : { ...MORNING, sends: false, latest: null };
+      case "/policy/refused": return laptop ? REFUSED : { machine, refused: [] };
+      case "/audit/log": return { machine, entries: laptop ? [{ id: "a".repeat(16), at: Date.now(), kind: "merge", actor: "agent", outcome: "ok", subject: { target: "me/r#7" }, text: "Cobra merged me/r#7" }] : [], more: false };
+      case "/decided": return laptop ? DECIDED : { decided: [] };
+      case "/morning": return laptop ? MORNING : { ...MORNING, sends: false, latest: null };
       case "/local": return { ...LOCAL, computer: machine };
       case "/integrations/google": return GOOGLE(machine);
       case "/integrations/cloudflare": return CLOUDFLARE(machine);
       case "/email/mailboxes": return {
-        boxes: legion ? [{ id: "b1", provider: "icloud", address: "studio@icloud.com", user: "studio@icloud.com", addedAt: "2026-11-02T15:00:00Z", spaces: ["paws"] }] : [],
+        boxes: laptop ? [{ id: "b1", provider: "icloud", address: "studio@icloud.com", user: "studio@icloud.com", addedAt: "2026-11-02T15:00:00Z", spaces: ["paws"] }] : [],
         providers: [{ id: "icloud", name: "iCloud Mail", help: "Make an app-specific password." }, { id: "zoho", name: "Zoho Mail", help: "Make an app password." }],
         regions: ["com", "eu"],
-        spaces: legion ? [{ id: "paws", name: "Happy Tails", box: "b1" }] : [],
+        spaces: laptop ? [{ id: "paws", name: "Happy Tails", box: "b1" }] : [],
       };
-      case "/routines": return legion ? ROUTINES : { routines: [] };
-      case "/trust": return legion && (params.get("project") ?? "paws") === "paws" ? TRUST : { grants: [], always: [], receipts: [] };
+      case "/routines": return laptop ? ROUTINES : { routines: [] };
+      case "/trust": return laptop && (params.get("project") ?? "paws") === "paws" ? TRUST : { grants: [], always: [], receipts: [] };
       case "/db/journal": return params.get("project") === "paws" ? JOURNAL : { project: params.get("project"), entries: [] };
       case "/db/mirror": return params.get("project") === "paws" ? MIRROR
         : { project: params.get("project"), spreadsheetId: null, url: null, createdBy: null, lastSync: null, lastError: null, pending: false };
-      case "/mcp": return legion ? { ...MCP, machine } : { ...MCP, machine, github: { binary: null, pin: null }, entries: [],
+      case "/mcp": return laptop ? { ...MCP, machine } : { ...MCP, machine, github: { binary: null, pin: null }, entries: [],
         integrations: [{ id: "github", title: "GitHub", state: "disconnected", account: null, enabled: false, methods: ["device", "token"],
           tokenUrl: "https://github.com/settings/tokens" }] };
     }
@@ -815,14 +815,14 @@ function apiAnswer(machine: string, method: string, path: string, body: Dict | n
       case "/view/write": return { journal: 9, summary: `Ran ${String(body?.mutation)}.`, changes: [] };
       case "/view/reveal": return { value: "555-010-4477" };
       case "/integrations/cloudflare/start": return { url: "https://dash.cloudflare.com/oauth2/auth?client_id=c&state=s1" };
-      case "/integrations/cloudflare/finish": return { ...CLOUDFLARE("legion"), accounts: [CF_ACCOUNTS[0]] };
-      case "/integrations/cloudflare/account": return { ...CLOUDFLARE("legion"), account: CF_ACCOUNTS.find((a) => a.id === body?.id) ?? null };
-      case "/integrations/cloudflare/disconnect": return CLOUDFLARE("mini");
+      case "/integrations/cloudflare/finish": return { ...CLOUDFLARE("laptop"), accounts: [CF_ACCOUNTS[0]] };
+      case "/integrations/cloudflare/account": return { ...CLOUDFLARE("laptop"), account: CF_ACCOUNTS.find((a) => a.id === body?.id) ?? null };
+      case "/integrations/cloudflare/disconnect": return CLOUDFLARE("office");
       case "/git": {
         const did = ({ park: "parked", sync: "synced", resume: "resumed", "delete-branch": "deleted", "merge-pr": "merged", "close-pr": "closed" } as Dict)[String(body?.action)];
         return { ok: true, project: body?.project, action: body?.action, did, branch: body?.action === "park" ? "wip/2026-10-19" : body?.branch, git: null };
       }
-      case "/session/new": return { ok: true, project: { ...LEGION_PROJECTS[5] }, dispatched: true };
+      case "/session/new": return { ok: true, project: { ...LAPTOP_PROJECTS[5] }, dispatched: true };
       case "/project/create":
         return { ok: true, project: { id: "site", name: "site", machine, path: "/home/me/Projects/site", session: "site" }, did: "clone",
           started: true, trusted: true, remoteUrl: "https://github.com/example/site.git", warnings: ["gh could not set the default branch"] };
@@ -889,11 +889,11 @@ tauri.route = (cmd, args) => {
     case "toggle_pin": return true;
     case "settings": return {};
     case "host_state":
-      return { os: "linux", hostname: "legion",
+      return { os: "linux", hostname: "laptop",
         agentInstalled: true, agentPath: "/home/me/.local/bin/cobra-agent", agentPort: 8787, tmuxSocket: "cobra",
         agentService: true, agentAnswering: true };
-    case "link_agent": return "Linked legion.";
-    case "desk_name": return "legion desktop";
+    case "link_agent": return "Linked laptop.";
+    case "desk_name": return "laptop desktop";
     case "unlink_agent": return "Unlinked the agent.";
     default: return null; // set_setting, open_terminal, set_tray, popup_layout, show_main, …
   }
@@ -1096,7 +1096,7 @@ describe("smoke: the fleet", () => {
     expect(fleet.rows.length).toBeGreaterThan(10);
     expect(fleet.needsYou().map((r) => r.id)).toEqual(["cobra"]);
     expect(fleet.pendingApprovals()).toBe(8);
-    expect(fleet.alerts.legion.length).toBe(2);
+    expect(fleet.alerts.laptop.length).toBe(2);
     expect(fleet.rows.some((r) => r.name === "scratch")).toBe(true);
     expect(fleet.rows.some((r) => r.name === "cobra@desk")).toBe(false);
     expect([...tauri.unknown]).toEqual([]);
@@ -1136,7 +1136,7 @@ describe("smoke: pages", () => {
     // Designs a Designer showed: its words, then each PNG fetched from the hub; one opens large to save.
     expect(text(log)).toContain("Two takes on the fall sale.");
     expect(log.querySelectorAll(".designs-grid.two img").length).toBe(2);
-    expect(tauri.invoked.some((x) => x.cmd === "design_image" && (x.args as Dict).machine === "legion")).toBe(true);
+    expect(tauri.invoked.some((x) => x.cmd === "design_image" && (x.args as Dict).machine === "laptop")).toBe(true);
     await click(log.querySelector<HTMLButtonElement>(".design-tile")!);
     await click([...el.querySelectorAll<HTMLButtonElement>(".design-large button")].find((b) => b.textContent === "Save to Pictures")!);
     expect(tauri.invoked.some((x) => x.cmd === "design_save" && (x.args as Dict).name === "sale-1.png")).toBe(true);
@@ -1185,7 +1185,7 @@ describe("smoke: pages", () => {
   });
 
   it("Agents, with a conversation open", async () => {
-    const el = await mount(withApp(<AgentsPage open={{ machine: "legion", session: "cobra", n: 1 }} />));
+    const el = await mount(withApp(<AgentsPage open={{ machine: "laptop", session: "cobra", n: 1 }} />));
     await flush(10);
     const t = text(el);
     for (const s of ["LEAD", "FOREMEN", "WORKERS", "SESSIONS", "Rosa", "Login form", "Write the tile cache tests", "QUEUED",
@@ -1280,7 +1280,7 @@ describe("smoke: pages", () => {
     await escape();
     // Kill session…
     await click(button(await menu("corner-bakery"), "Kill session…"));
-    expect(text(document.body)).toContain("Kill corner-bakery on Legion?");
+    expect(text(document.body)).toContain("Kill corner-bakery on Laptop?");
     await click(button(document.body, "Cancel"));
     // Run a template…
     await click(button(await menu("lookfocus"), "Run a template…"));
@@ -1321,7 +1321,7 @@ describe("smoke: pages", () => {
   });
 
   it("Project page", async () => {
-    const el = await mount(withApp(<ProjectPage machine="legion" project="lookfocus" onClose={() => {}} />));
+    const el = await mount(withApp(<ProjectPage machine="laptop" project="lookfocus" onClose={() => {}} />));
     await flush(5);
     const t = text(el);
     for (const s of ["lookfocus", "SESSION", "CLAUDE WORKING", "SESSIONS · ", "Rosa", "REPOSITORY", "PULL REQUESTS · 3", "BRANCHES · ",
@@ -1336,26 +1336,26 @@ describe("smoke: pages", () => {
     expect(text(document.body)).toContain("New session in lookfocus");
     await escape();
     await click(button(el, "Kill…"));
-    expect(text(document.body)).toContain("Kill lookfocus on Legion?");
+    expect(text(document.body)).toContain("Kill lookfocus on Laptop?");
     await escape();
   });
 
   it("Project page: two checkouts, a needs-you one, a missing one", async () => {
-    const el = await mount(withApp(<ProjectPage machine="legion" project="cobra" onClose={() => {}} />));
+    const el = await mount(withApp(<ProjectPage machine="laptop" project="cobra" onClose={() => {}} />));
     await flush(5);
     expect(text(el)).toContain("WAITING ON YOU");
     expect(text(el)).toContain("2 checkouts");
-    await click(button(el, /^Mini · /));
+    await click(button(el, /^Office · /));
     await flush(5);
     expect(text(el)).toContain("NO SESSION");
-    const scripts = await mount(withApp(<ProjectPage machine="legion" project="scripts" onClose={() => {}} />));
+    const scripts = await mount(withApp(<ProjectPage machine="laptop" project="scripts" onClose={() => {}} />));
     expect(text(scripts)).toContain("Not a git repository.");
-    const gone = await mount(withApp(<ProjectPage machine="legion" project="nope" onClose={() => {}} />));
+    const gone = await mount(withApp(<ProjectPage machine="laptop" project="nope" onClose={() => {}} />));
     expect(text(gone)).toContain("not listed right now");
   });
 
   it("Project page: a trade's dashboard with its tiles, tabs, search, board, a person's page, Show and a form", async () => {
-    const el = await mount(withApp(<ProjectPage machine="legion" project="crm" onClose={() => {}} />));
+    const el = await mount(withApp(<ProjectPage machine="laptop" project="crm" onClose={() => {}} />));
     await flush(10);
     expect(text(el)).toContain("Dashboard");
     expect(text(el)).toContain("To follow up");
@@ -1452,7 +1452,7 @@ describe("smoke: pages", () => {
     expect(document.querySelector(".dialog")).not.toBeNull();
     await click(button(document.body, "Cancel"));
     // A project whose trade ships none has no dashboard.
-    const plain = await mount(withApp(<ProjectPage machine="legion" project="paws" onClose={() => {}} />));
+    const plain = await mount(withApp(<ProjectPage machine="laptop" project="paws" onClose={() => {}} />));
     await flush(8);
     expect(text(plain)).not.toContain("Dashboard");
   });
@@ -1476,7 +1476,7 @@ describe("smoke: pages", () => {
   });
 
   it("Project page: routines with Run now, Pause or Resume, and Remove behind a confirm", async () => {
-    const el = await mount(withApp(<ProjectPage machine="legion" project="paws" onClose={() => {}} />));
+    const el = await mount(withApp(<ProjectPage machine="laptop" project="paws" onClose={() => {}} />));
     await flush(5);
     const t = text(el);
     // A paused routine says PAUSED even after a failed run; its last run's line says what went wrong.
@@ -1505,12 +1505,12 @@ describe("smoke: pages", () => {
     await flush(5);
     expect((api("/routines/remove")[0].args as Dict).body).toEqual({ id: "rt-payroll" });
     // A project whose Foreman runs, with no routine, gets the hint.
-    const infra = await mount(withApp(<ProjectPage machine="mini" project="infra" onClose={() => {}} />));
+    const infra = await mount(withApp(<ProjectPage machine="office" project="infra" onClose={() => {}} />));
     await flush(5);
     expect(text(infra)).toContain("ROUTINES");
     expect(text(infra)).toContain(routines.HINT);
     // One with no Foreman and none: nothing.
-    const quiet = await mount(withApp(<ProjectPage machine="mini" project="cobra" onClose={() => {}} />));
+    const quiet = await mount(withApp(<ProjectPage machine="office" project="cobra" onClose={() => {}} />));
     await flush(5);
     expect(text(quiet)).not.toContain("ROUTINES");
   });
@@ -1559,7 +1559,7 @@ describe("smoke: pages", () => {
   });
 
   it("Project page: trust with Revoke on a second press, Clear, and what landed", async () => {
-    const el = await mount(withApp(<ProjectPage machine="legion" project="paws" onClose={() => {}} />));
+    const el = await mount(withApp(<ProjectPage machine="laptop" project="paws" onClose={() => {}} />));
     await flush(5);
     const t = text(el);
     for (const s of ["TRUST", "Send pay-stub", "TRUSTED", "To ana@example.com, ben@example.com · from pay-stub", "1 run since",
@@ -1577,13 +1577,13 @@ describe("smoke: pages", () => {
     await flush(5);
     expect((api("/trust/clear")[0].args as Dict).body).toEqual({ key: "a".repeat(64) });
     // A project with nothing trusted: no section.
-    const quiet = await mount(withApp(<ProjectPage machine="mini" project="infra" onClose={() => {}} />));
+    const quiet = await mount(withApp(<ProjectPage machine="office" project="infra" onClose={() => {}} />));
     await flush(5);
     expect(text(quiet)).not.toContain("TRUST");
   });
 
   it("Project page: records, Open sheet and Undo behind a confirm", async () => {
-    const el = await mount(withApp(<ProjectPage machine="legion" project="paws" onClose={() => {}} />));
+    const el = await mount(withApp(<ProjectPage machine="laptop" project="paws" onClose={() => {}} />));
     await flush(5);
     const t = text(el);
     for (const s of ["RECORDS", "The sheet is in the Drive of penny@example.com.", "Last pushed", "A push is on its way.",
@@ -1605,7 +1605,7 @@ describe("smoke: pages", () => {
     expect((sent.args as Dict).body).toEqual({ project: "paws", journal: 6 });
     expect(toasts).toContain("Undone · Hours for week 42");
     // A project with no trade asks for no records.
-    const plain = await mount(withApp(<ProjectPage machine="legion" project="lookfocus" onClose={() => {}} />));
+    const plain = await mount(withApp(<ProjectPage machine="laptop" project="lookfocus" onClose={() => {}} />));
     expect(text(plain)).not.toContain("RECORDS");
   });
 
@@ -1641,12 +1641,12 @@ describe("smoke: pages", () => {
     expect(text(dash[0]!.querySelector(".space-dash-value")!)).toBe("2");
     expect(text(dash[0]!)).toContain("1 to follow up");
     await click(dash[0]!);
-    expect(nav.at(-1)).toBe("project legion/crm");
+    expect(nav.at(-1)).toBe("project laptop/crm");
     // To do: the rows its trades flag (the late first).
     expect([...screen.querySelectorAll(".dash-row-title")].map((n) => text(n))).toEqual(["Ava Reed", "Bo Fox"]);
     expect(text(screen.querySelector(".dash-row")!)).toContain("Oct 20");
     await click(screen.querySelector<HTMLElement>(".dash-row-main")!);
-    expect(nav.at(-1)).toBe("project legion/crm");
+    expect(nav.at(-1)).toBe("project laptop/crm");
     // Activity: today's history in the Space, with See all on Today.
     expect(text(screen.querySelector(".space-acts")!)).toContain("Morning follow-ups ran");
     expect(text(screen.querySelector(".space-acts")!)).toContain("· People");
@@ -1716,7 +1716,7 @@ describe("smoke: pages", () => {
 
   it("a Foreman that needs you: Allow and Deny on its card, Answer for anything else", async () => {
     const seatOf = (extra: Dict) => ({
-      key: "legion/cobra", name: "Rosa", needing: model.rowForProject({ ...LEGION_PROJECTS[0], ...extra }, "legion"),
+      key: "laptop/cobra", name: "Rosa", needing: model.rowForProject({ ...LAPTOP_PROJECTS[0], ...extra }, "laptop"),
     }) as unknown as Seat;
     const el = await mount(withApp(<NeedsCard seat={seatOf({})} role="CRM" context="Rosa · CRM · Morning follow-ups, 9 AM" />));
     expect(text(el)).toContain("Rosa · CRM · Morning follow-ups, 9 AM");
@@ -1730,7 +1730,7 @@ describe("smoke: pages", () => {
     const question = await mount(withApp(<NeedsCard seat={seatOf({ dialog: "question" })} role="CRM" />));
     expect(text(question)).not.toContain("Allow");
     await click(button(question, "Answer"));
-    expect(nav.at(-1)).toBe("chat legion/cobra");
+    expect(nav.at(-1)).toBe("chat laptop/cobra");
   });
 
   it("Settings → This app: the passcode is made, changed, locked and removed", async () => {
@@ -1796,12 +1796,12 @@ describe("smoke: pages", () => {
       "Brain", "Permissions", "Local models", "qwen-tuned:fast96k", "Integrations", "GitHub", "Google", "Audit log", "Cobra merged me/r#7"]) {
       expect(t, s).toContain(s);
     }
-    // Integrations → Google: Legion connected, Mini not, with Connect Google.
+    // Integrations → Google: Laptop connected, Office not, with Connect Google.
     const ints = [...el.querySelectorAll(".settings-nav li")].find((li) => text(li).includes("Integrations"))!;
     await click(ints);
     const shownNow = () => [...el.querySelectorAll<HTMLElement>(".settings-scroll")].find((x) => !x.hidden)!;
     for (const g of ["Google", "connected as penny@example.com", "What it allows", "It cannot see your other files.",
-      "Send email from your Gmail, only the messages you allow.", "Checked 2 minutes ago.", "Account page", "GitHub",
+      "Send email from your Gmail, only the messages you allow.", "Checked 2 minutes ago.", "Manage", "GitHub",
       "What Cobra can read", "Calendar", "Read your calendar so My day and Projects can plan around it.", "Mail",
       "works only for invited testers", "Turn on"]) {
       expect(text(shownNow()), g).toContain(g);
@@ -1811,18 +1811,18 @@ describe("smoke: pages", () => {
     await click(button(shownNow(), "Turn on"));
     expect(toasts.some((x) => x.startsWith("Turn on Mail on the page that opened"))).toBe(true);
     expect(text(shownNow())).toContain("Waiting for Mail to be turned on");
-    // Cloudflare on Legion: connected to Pine Yoga, Paws Studio a Use away; Disconnect asks first.
+    // Cloudflare on Laptop: connected to Pine Yoga, Paws Studio a Use away; Disconnect asks first.
     for (const g of ["Cloudflare", "connected to Pine Yoga", "Accounts this sign-in reaches", "Paws Studio", "in use"]) {
       expect(text(shownNow()), g).toContain(g);
     }
     await click(button(shownNow(), "Use"));
     await flush(3);
-    expect(toasts).toContain("Websites from Legion go in Paws Studio");
+    expect(toasts).toContain("Websites from Laptop go in Paws Studio");
     expect(tauri.invoked.some((x) => x.cmd === "api" && (x.args as Dict).path === "/integrations/cloudflare/account" && (x.args as Dict).body?.id === "cf2")).toBe(true);
     await click(button(shownNow(), "Disconnect"));
-    expect(text(el)).toContain("Disconnect Cloudflare from Legion?");
+    expect(text(el)).toContain("Disconnect Cloudflare from Laptop?");
     await click(buttons(el, "Cancel").at(-1)!);
-    expect(text(el)).not.toContain("Disconnect Cloudflare from Legion?");
+    expect(text(el)).not.toContain("Disconnect Cloudflare from Laptop?");
     // Projects: the folders looked in, Add a folder, Remove an added one.
     const projects = [...el.querySelectorAll(".settings-nav li")].find((li) => text(li).includes("Projects"))!;
     await click(projects);
@@ -1834,11 +1834,11 @@ describe("smoke: pages", () => {
     await change(box, "~/code");
     await click(button(shownNow(), "Add"));
     await flush(3);
-    expect(toasts).toContain("Legion: Looking in ~/code too");
+    expect(toasts).toContain("Laptop: Looking in ~/code too");
     expect(tauri.invoked.some((x) => x.cmd === "api" && (x.args as Dict).path === "/settings/folders" && (x.args as Dict).body?.add === "~/code")).toBe(true);
     await click(button(shownNow(), "Remove"));
     await flush(3);
-    expect(toasts).toContain("Legion: No longer looking in ~/code/work");
+    expect(toasts).toContain("Laptop: No longer looking in ~/code/work");
     // Add a Claude account; unlink the agent (cancel first).
     const engines = [...el.querySelectorAll(".settings-nav li")].find((li) => text(li).includes("Engines & accounts"))!;
     await click(engines);
@@ -1858,9 +1858,9 @@ describe("smoke: pages", () => {
 
   it("Settings → Integrations: Connect Google and Cloudflare on an agent with neither", async () => {
     const saved = tauri.route!;
-    // The agent answers as one with no Google and no Cloudflare yet (the fixtures' Mini).
+    // The agent answers as one with no Google and no Cloudflare yet (the fixtures' Office).
     tauri.route = (cmd, args) => (cmd === "api" && String(args.path).startsWith("/integrations/") && !String(args.path).includes("/finish")
-      ? saved(cmd, { ...args, machine: "mini" }) : saved(cmd, args));
+      ? saved(cmd, { ...args, machine: "office" }) : saved(cmd, args));
     try {
       const el = await mount(withApp(<SettingsPage />));
       await flush(10);
@@ -1871,7 +1871,7 @@ describe("smoke: pages", () => {
       await click(button(shownNow(), "Connect Google"));
       expect(toasts.some((x) => x.startsWith("Connect Google on the page that opened"))).toBe(true);
       expect(text(shownNow())).toContain("Waiting for Google to be connected");
-      // Cloudflare on Mini: the note first, then the sign-in page, then the code box; a bad code never leaves the desk.
+      // Cloudflare on Office: the note first, then the sign-in page, then the code box; a bad code never leaves the desk.
       await click(button(shownNow(), "Connect Cloudflare"));
       expect(text(shownNow())).toContain("only ever changes the ones it made for your Spaces");
       await click(button(shownNow(), "Open Cloudflare"));
@@ -1886,7 +1886,7 @@ describe("smoke: pages", () => {
       await change(codeBox, "s1.the-code");
       await click(button(shownNow(), "Finish"));
       await flush(3);
-      expect(toasts).toContain("Legion is connected to Cloudflare");
+      expect(toasts).toContain("Laptop is connected to Cloudflare");
       expect(tauri.invoked.some((x) => x.cmd === "api" && (x.args as Dict).path === "/integrations/cloudflare/finish" && (x.args as Dict).body?.connectCode === "s1.the-code")).toBe(true);
       expect(text(shownNow())).toContain("connected to Pine Yoga");
     } finally {
@@ -1901,7 +1901,7 @@ describe("smoke: pages", () => {
     expect(text(el)).toContain("Link the agent");
     await click(button(el, "Link the agent"));
     await flush(3);
-    expect(toasts).toContain("Linked legion.");
+    expect(toasts).toContain("Linked laptop.");
   });
 });
 
@@ -1918,7 +1918,7 @@ describe("smoke: surfaces", () => {
     const input = el.querySelector<HTMLInputElement>(".picker-entry")!;
     await key(input, "ArrowDown");
     await key(input, "Tab");
-    await change(input, "mini");
+    await change(input, "office");
     expect(text(el)).toContain("infra");
     await key(input, "Enter");
     await emit("picker-opened", null);
@@ -1952,12 +1952,12 @@ describe("smoke: surfaces", () => {
   it("Popup, fed popup-add", async () => {
     const el = await mount(<PopupSurface />);
     await emit("fleet-snapshot", fleet.snapshot());
-    const project = LEGION_PROJECTS[0];
+    const project = LAPTOP_PROJECTS[0];
     const cards: PopupCard[] = [
-      { key: "legion:cobra", kind: "needs", machine: "legion", project, at: NOW - 900 },
-      { key: "approval:legion:ap-merge", kind: "approval", machine: "legion", approval: APPROVALS.approvals[0], at: NOW - 30 },
-      { key: "legion:cobra-docs", kind: "needs", machine: "legion", project: { ...LEGION_PROJECTS[5], needsInput: true, dialog: "question" }, at: NOW - 10 },
-      { key: "legion:banana", kind: "needs", machine: "legion", project: { ...LEGION_PROJECTS[2], needsInput: true, dialog: "trust" }, at: NOW },
+      { key: "laptop:cobra", kind: "needs", machine: "laptop", project, at: NOW - 900 },
+      { key: "approval:laptop:ap-merge", kind: "approval", machine: "laptop", approval: APPROVALS.approvals[0], at: NOW - 30 },
+      { key: "laptop:cobra-docs", kind: "needs", machine: "laptop", project: { ...LAPTOP_PROJECTS[5], needsInput: true, dialog: "question" }, at: NOW - 10 },
+      { key: "laptop:banana", kind: "needs", machine: "laptop", project: { ...LAPTOP_PROJECTS[2], needsInput: true, dialog: "trust" }, at: NOW },
     ];
     for (const c of cards) await emit("popup-add", c);
     // One card in Cobra's voice lists all four, the newest in full.
@@ -1967,7 +1967,7 @@ describe("smoke: surfaces", () => {
     expect(el.querySelectorAll(".popup-cobra").length).toBe(1);
     expect(t).not.toContain("more");
     // A Foreman's email joins the same card: its fields and files, Allow and Deny unchanged.
-    await emit("popup-add", { key: "approval:legion:ap-email", kind: "approval", machine: "legion", approval: ACTIONS[0], at: NOW });
+    await emit("popup-add", { key: "approval:laptop:ap-email", kind: "approval", machine: "laptop", approval: ACTIONS[0], at: NOW });
     t = text(el);
     for (const s of ["These 5 need you.", "EMAIL", "Send: Pay stubs for the week", "ann@example.com", "Pay stubs, week 42", "stubs-week-42.pdf"]) {
       expect(t, s).toContain(s);
@@ -1977,12 +1977,12 @@ describe("smoke: surfaces", () => {
     // ✕ on an item takes it off the card; it still waits.
     await click(buttons(el.querySelector(".popup-scroll")!, "✕")[0]);
     expect(text(el)).toContain("These 4 need you.");
-    await emit("popup-remove", "legion:banana");
+    await emit("popup-remove", "laptop:banana");
     await click(button(el, "Allow"));
     // ✕ on the card hides what it lists; the next new item brings the card back with only itself.
     await click(button(el.querySelector(".popup-cobra-head")!, "✕"));
     expect(el.querySelector(".popup-cobra")).toBeNull();
-    await emit("popup-add", { key: "legion:late", kind: "needs", machine: "legion", project: { ...LEGION_PROJECTS[0], id: "late" }, at: NOW });
+    await emit("popup-add", { key: "laptop:late", kind: "needs", machine: "laptop", project: { ...LAPTOP_PROJECTS[0], id: "late" }, at: NOW });
     expect(text(el)).toContain("This needs you.");
     // The cards Main itself sent, as they were sent.
     for (const e of tauri.emitted.filter((x) => x.event === "popup-add")) await emit("popup-add", e.payload);
@@ -2012,7 +2012,7 @@ describe("smoke: surfaces", () => {
     expect(el.querySelector(".header .title")!.textContent).toBe("Home");
     await emit("navigate", "home");
     expect(el.querySelector(".header .title")!.textContent).toBe("Home");
-    await emit("to-main", { kind: "open-chat", machine: "legion", session: "cobra" });
+    await emit("to-main", { kind: "open-chat", machine: "laptop", session: "cobra" });
     await flush(5);
     // My Organization, on its list, with the conversation open.
     expect(el.querySelector(".header .title")!.textContent).toBe("My Organization");
@@ -2070,7 +2070,7 @@ describe("smoke: every control", () => {
   });
 
   it("Agents", async () => {
-    const el = await mount(withApp(<AgentsPage open={{ machine: "legion", session: "cobra_docs", n: 99 }} />));
+    const el = await mount(withApp(<AgentsPage open={{ machine: "laptop", session: "cobra_docs", n: 99 }} />));
     await flush(10);
     expect(await fuzz(el)).toBeGreaterThan(10);
   });
@@ -2082,7 +2082,7 @@ describe("smoke: every control", () => {
 
   it("Project page", async () => {
     for (const p of ["lookfocus", "cobra", "corner-bakery", "notes", "scripts", "cobra-docs", "lookfocus-fm", "w-456"]) {
-      const el = await mount(withApp(<ProjectPage machine="legion" project={p} onClose={() => {}} />));
+      const el = await mount(withApp(<ProjectPage machine="laptop" project={p} onClose={() => {}} />));
       await flush(5);
       expect(await fuzz(el), p).toBeGreaterThan(2);
     }
@@ -2092,9 +2092,9 @@ describe("smoke: every control", () => {
     const el = await mount(withApp(<AllMoneyPage />));
     await until(() => text(el).includes("Kept across"), "All money");
     for (const word of ["Kept across 1 business", "Owed to you", "Your net worth", "Happy Tails", "Ask Cobra to set up", "Kept by business", "Personal", "Open Finance"]) expect(text(el)).toContain(word);
-    // Legion answered in US$ and was asked again in EC$.
+    // Laptop answered in US$ and was asked again in EC$.
     const asked = tauri.invoked.filter((x) => x.cmd === "api" && String((x.args as Dict).path).startsWith("/money/all")).map((x) => `${(x.args as Dict).machine} ${(x.args as Dict).path}`);
-    expect(asked.some((a) => a.startsWith("legion") && a.includes("to=XCD"))).toBe(true);
+    expect(asked.some((a) => a.startsWith("laptop") && a.includes("to=XCD"))).toBe(true);
     expect(await fuzz(el, /^Ask Cobra to set up$/)).toBeGreaterThan(0);
   });
 
@@ -2119,11 +2119,11 @@ describe("smoke: every control", () => {
   it("Popup", async () => {
     const el = await mount(<PopupSurface />);
     const cards: PopupCard[] = [
-      { key: "a", kind: "needs", machine: "legion", project: LEGION_PROJECTS[0], at: NOW - 900 },
-      { key: "b", kind: "approval", machine: "legion", approval: APPROVALS.approvals[0], at: NOW - 30 },
-      { key: "d", kind: "needs", machine: "mini", project: { ...MINI_PROJECTS[1], needsInput: true, dialog: "model" }, at: NOW - 10 },
+      { key: "a", kind: "needs", machine: "laptop", project: LAPTOP_PROJECTS[0], at: NOW - 900 },
+      { key: "b", kind: "approval", machine: "laptop", approval: APPROVALS.approvals[0], at: NOW - 30 },
+      { key: "d", kind: "needs", machine: "office", project: { ...OFFICE_PROJECTS[1], needsInput: true, dialog: "model" }, at: NOW - 10 },
       { key: "e", kind: "needs", machine: "gone", project: {}, at: NOW },
-      { key: "f", kind: "approval", machine: "legion", approval: {}, at: NOW },
+      { key: "f", kind: "approval", machine: "laptop", approval: {}, at: NOW },
     ];
     for (const c of cards) await emit("popup-add", c);
     await fuzz(el);
@@ -2156,7 +2156,7 @@ describe("smoke: other shapes", () => {
       await until(() => text(main).includes("Done today"), "Home");
       const pick = main.querySelector<HTMLSelectElement>(".header select")!;
       for (const v of ["agents", "projects", "money", "settings", "ops"]) await change(pick, v);
-      const agents = await mount(withApp(<AgentsPage open={{ machine: "legion", session: "cobra", n: 1000 }} />));
+      const agents = await mount(withApp(<AgentsPage open={{ machine: "laptop", session: "cobra", n: 1000 }} />));
       await flush(5);
       expect(text(agents)).toContain("Fix the login bug");
       await click(agents.querySelector<HTMLElement>("button[title=Sessions]")!);
@@ -2198,7 +2198,7 @@ describe("smoke: other shapes", () => {
   it("an agent away, and an old agent", async () => {
     const saved = tauri.route!;
     tauri.route = (cmd, args) => {
-      if (cmd === "api" && args.machine === "mini") throw { status: 0, message: "connection refused" };
+      if (cmd === "api" && args.machine === "office") throw { status: 0, message: "connection refused" };
       if (cmd === "api" && /^\/(orch|prs|approvals|notices|usage|history|posture|policy|brain|accounts|settings|local|mcp|api-lane)/.test(String(args.path))) {
         throw { status: 404, message: "not found" };
       }
@@ -2206,7 +2206,7 @@ describe("smoke: other shapes", () => {
     };
     try {
       fleet = await loadFleet();
-      expect(fleet.unreachable).toEqual(["Mini"]);
+      expect(fleet.unreachable).toEqual(["Office"]);
       for (const page of [<HomePage />, <ProjectsPage newProjectAsk={0} />, <SettingsPage />,
         <AgentsPage open={null} />]) {
         const el = await mount(withApp(page));
@@ -2231,7 +2231,7 @@ describe("smoke: other shapes", () => {
     try {
       fleet = await loadFleet();
       for (const page of [<HomePage />, <ProjectsPage newProjectAsk={0} />, <SettingsPage />,
-        <AgentsPage open={{ machine: "legion", session: "x", n: 2000 }} />, <ProjectPage machine="legion" project="y" onClose={() => {}} />]) {
+        <AgentsPage open={{ machine: "laptop", session: "x", n: 2000 }} />, <ProjectPage machine="laptop" project="y" onClose={() => {}} />]) {
         const el = await mount(withApp(page));
         await flush(5);
         expect(text(el).length).toBeGreaterThan(5);
@@ -2251,9 +2251,9 @@ describe("smoke: every dialog the chat's dock can show", () => {
 
   it("trust, model, a question, a submit, working, not running, unreachable", async () => {
     const cases: Array<[string, string, string]> = [
-      ["legion", "lookfocus", "trust this folder"], ["legion", "corner-bakery", "can't drive"],
-      ["legion", "cobra_lead", "Which project first?"], ["legion", "lookfocus_fm", "Submit answers"],
-      ["legion", "lookfocus_w123", "working"], ["mini", "infra", "not running"], ["legion", "scratch", ""],
+      ["laptop", "lookfocus", "trust this folder"], ["laptop", "corner-bakery", "can't drive"],
+      ["laptop", "cobra_lead", "Which project first?"], ["laptop", "lookfocus_fm", "Submit answers"],
+      ["laptop", "lookfocus_w123", "working"], ["office", "infra", "not running"], ["laptop", "scratch", ""],
     ];
     let n = 5000;
     for (const [machine, session, said] of cases) {
@@ -2326,7 +2326,7 @@ describe("smoke: the crew hidden", () => {
     for (const w of ["Hire a Foreman", "Cobra hires without asking", "Crew", "Foreman", ...CREW]) expect(text(screen), w).not.toContain(w);
     expect(screen.querySelectorAll("svg.sprite, .space-foreman-head svg").length).toBe(0);
     await click(screen.querySelectorAll<HTMLElement>(".space-dash")[0]!);
-    expect(nav.at(-1)).toBe("project legion/crm");
+    expect(nav.at(-1)).toBe("project laptop/crm");
     // All routines names no Foreman, and Ask Cobra sets the box's Space chip.
     await click(button(screen, "All routines ▸"));
     await flush(3);
@@ -2389,8 +2389,8 @@ describe("smoke: the crew hidden", () => {
   it("the popup names Cobra or the Space, never a Foreman", async () => {
     const el = await mount(<PopupSurface />);
     await emit("fleet-snapshot", fleet.snapshot());
-    const crmFm = LEGION_PROJECTS.find((p) => p.id === "crm-fm")!;
-    await emit("popup-add", { key: "legion:crm-fm", kind: "needs", machine: "legion", who: "Happy Tails · People",
+    const crmFm = LAPTOP_PROJECTS.find((p) => p.id === "crm-fm")!;
+    await emit("popup-add", { key: "laptop:crm-fm", kind: "needs", machine: "laptop", who: "Happy Tails · People",
       project: { ...crmFm, needsInput: true, dialog: "question" }, at: NOW } satisfies PopupCard);
     expect(text(el)).toContain("Happy Tails · People");
     for (const name of CREW) expect(text(el), name).not.toContain(name);

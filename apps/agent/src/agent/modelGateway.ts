@@ -174,7 +174,7 @@ const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:@-]{0,127}$/;
 /**
  * What a session may ask of Anthropic through Cobra: the Messages API, its
  * token count, the model list, and Claude Code's start-up check. Nothing
- * else gets the real credential (OV-SEC-VPS-001 F12): any process in a
+ * else gets the real credential: any process in a
  * Worker's jail reaches the bridge with the placeholder it holds, and an
  * open path made the agent an oracle for every endpoint the token can call.
  * Claude Code 2.1.319, run against a logging server both as `claude -p` and

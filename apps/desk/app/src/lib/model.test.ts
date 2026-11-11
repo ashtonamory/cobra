@@ -52,9 +52,9 @@ describe("Rows", () => {
   });
 
   it("test_filter_matches_name_or_machine", () => {
-    const rows = model.buildRows(polls({ omarchy: [project("plant-shop")], "mini": [project("chrishi")] }), NOW);
+    const rows = model.buildRows(polls({ omarchy: [project("plant-shop")], "office": [project("chrishi")] }), NOW);
     expect(model.filterRows(rows, "pla").map((r) => r.id)).toEqual(["plant-shop"]);
-    expect(model.filterRows(rows, "mini").map((r) => r.id)).toEqual(["chrishi"]);
+    expect(model.filterRows(rows, "office").map((r) => r.id)).toEqual(["chrishi"]);
     expect(model.filterRows(rows, "  ").length).toBe(2);
   });
 });
@@ -341,7 +341,7 @@ describe("Chat", () => {
 describe("Board", () => {
   // The board's words and times, the phone's (apps/mobile/src/repos.test.ts).
   const word = (activity = "none", extra: Dict = {}) =>
-    model.boardStatus(model.rowForProject(project("p", activity, extra), "legion", NOW));
+    model.boardStatus(model.rowForProject(project("p", activity, extra), "laptop", NOW));
 
   it("test_what_waits_then_what_runs_then_the_grade", () => {
     expect(word("agent-idle", { needsInput: true })).toEqual(["WAITING", "signal"]);

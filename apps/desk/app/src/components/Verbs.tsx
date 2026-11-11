@@ -88,7 +88,7 @@ export function useVerbs(): Verbs {
   const allowScoped = (r: model.Row, choice: ScopeChoice) => {
     if (!choice.writes) return void a.allowScoped(r, choice);
     setDialog(
-      <Confirm title={`${choice.label}?`} body={`${confirmWords(choice)}.\nThe host goes on ${choice.writes === "fleet" ? "the fleet's" : "this project's"} allowlist on every computer, as Settings → Permissions would write it.`}
+      <Confirm title={`${choice.label}?`} body={`${confirmWords(choice)}.\nThe host goes on ${choice.writes === "fleet" ? "every project's" : "this project's"} allowlist, as Settings → Permissions would write it.`}
         yes="Allow" onYes={() => void a.allowScoped(r, choice)} onClose={close} />,
     );
   };

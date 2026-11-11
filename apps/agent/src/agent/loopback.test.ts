@@ -40,9 +40,9 @@ test("shellWords: quotes removed, operators apart, an open quote unreadable", ()
   assert.equal(shellWords(`echo "open`), null);
 });
 
-test("httpCommands: the mini's dev-server check reads as loopback; options that send it elsewhere never do", () => {
-  const mini = `(npx next dev -p 3123 > /tmp/cbi-dev.log 2>&1 &) ; sleep 15; curl -s -o /dev/null -w "%{http_code}\\n" --max-time 170 http://localhost:3123/cbi; grep -n "playwright\\|chromium" scripts/shots.mjs | head -5`;
-  assert.deepEqual(httpCommands(mini), { ok: true, loopback: 1 });
+test("httpCommands: the office's dev-server check reads as loopback; options that send it elsewhere never do", () => {
+  const office = `(npx next dev -p 3123 > /tmp/cbi-dev.log 2>&1 &) ; sleep 15; curl -s -o /dev/null -w "%{http_code}\\n" --max-time 170 http://localhost:3123/cbi; grep -n "playwright\\|chromium" scripts/shots.mjs | head -5`;
+  assert.deepEqual(httpCommands(office), { ok: true, loopback: 1 });
   assert.deepEqual(httpCommands("curl -fsSL localhost:3000/api/health && wget -qO- http://127.0.0.1:5173/"), { ok: true, loopback: 2 });
   assert.deepEqual(httpCommands("curl -sSo /tmp/x.html http://localhost:3000/"), { ok: true, loopback: 1 });
   for (const command of [

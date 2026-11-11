@@ -107,7 +107,7 @@ export class LocalModelsController extends Controller {
     const base = this.permissions.current();
     const read = this.permissions.readFor(m.machine);
     if (base === null || read === null) {
-      this.app.toast("Permissions are still being read from your computers: try again in a moment");
+      this.app.toast("Permissions are still being read: try again in a moment");
       this.draw();
       return null;
     }
