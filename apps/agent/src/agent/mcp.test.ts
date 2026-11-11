@@ -415,7 +415,7 @@ test("githubHandoff: only an orchestrator's key, only with github on for its rol
   const deps = { registryPath: w.registry, patPath: w.pat };
   assert.deepEqual(await mcp.githubHandoff({ kind: "lead" }, deps), { status: 200, body: { token: TOKEN } });
   assert.deepEqual(await mcp.githubHandoff({ kind: "lead", project: "cobra" }, deps), { status: 200, body: { token: TOKEN } });
-  for (const caller of [{ kind: "desk" }, { kind: "phone" }, { kind: "lead", project: "cobra", worker: "w1" }]) {
+  for (const caller of [{ kind: "desk" }, { kind: "desk" }, { kind: "lead", project: "cobra", worker: "w1" }]) {
     const reply = await mcp.githubHandoff(caller, deps);
     assert.equal(reply.status, 403, JSON.stringify(caller));
     assert.doesNotMatch(JSON.stringify(reply), new RegExp(TOKEN));

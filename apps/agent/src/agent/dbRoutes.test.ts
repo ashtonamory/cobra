@@ -277,7 +277,7 @@ const FOREMAN_PAYROLL: OrchCaller = { id: "foreman_payroll__", kind: "lead", nam
 const FOREMAN_SITE: OrchCaller = { id: "foreman_site_____", kind: "lead", name: "Foreman for site", project: "site" };
 const FOREMAN_GONE: OrchCaller = { id: "foreman_gone_____", kind: "lead", name: "Foreman for gone", project: "gone" };
 const LEAD_CALLER: OrchCaller = { id: "lead_legion_____", kind: "lead", name: "Lead on legion" };
-const PHONE: OrchCaller = { id: "phone_1", kind: "phone", name: "Sam's phone" };
+const PHONE: OrchCaller = { id: "phone_1", kind: "desk", name: "Sam's phone" };
 
 /** /orch/db/* through handleOrch, the way index.ts routes it, over a registry with a payroll and a site project. */
 async function routes() {

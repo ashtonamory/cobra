@@ -63,7 +63,7 @@ function setup() {
     throw new Error(`${mutation} was not refused`);
   };
   const view = async (id: string, extra = "") => {
-    const reply = await handlePerson("/view", "GET", new URL(`http://agent.invalid/view?project=paws-people&view=${id}${extra}`), "", { kind: "phone" }, deps);
+    const reply = await handlePerson("/view", "GET", new URL(`http://agent.invalid/view?project=paws-people&view=${id}${extra}`), "", { kind: "desk" }, deps);
     assert.equal(reply.status, 200, `${id}: ${JSON.stringify(reply.body)}`);
     return reply.body as ViewResult;
   };

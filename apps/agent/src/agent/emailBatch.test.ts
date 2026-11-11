@@ -31,7 +31,7 @@ type Db = ReturnType<typeof openProjectDb>;
 
 const BRAND = { colors: { brand: "#0b1f3a", accent: "#f5b301", ink: "#0b1220", paper: "#f6f4ee" }, fonts: { heading: "Inter", body: "Inter" } };
 const NOW = new Date("2026-11-02T15:00:00Z");
-const PERSON = new Set(["phone", "desk"]);
+const PERSON = new Set(["desk"]);
 
 function world() {
   const dir = mkdtempSync(join(tmpdir(), "cobra-batch-space-"));
@@ -67,8 +67,8 @@ function world() {
     },
   };
   const propose = async (body: Record<string, unknown>) => handleEmailOrch("/orch/email/batch", new URL("http://x/orch/email/batch"), JSON.stringify(body), { id: "foreman:p1", kind: "lead", project: "p1" }, deps);
-  const preview = (approval: string, copy: number) => handleEmailPerson("/email/preview", "GET", new URL(`http://x/email/preview?approval=${approval}&copy=${copy}`), { kind: "phone" }, deps, PERSON);
-  const edit = (body: Record<string, unknown>, kind = "phone") => handleBatchEdit("POST", JSON.stringify(body), { kind }, deps, PERSON);
+  const preview = (approval: string, copy: number) => handleEmailPerson("/email/preview", "GET", new URL(`http://x/email/preview?approval=${approval}&copy=${copy}`), { kind: "desk" }, deps, PERSON);
+  const edit = (body: Record<string, unknown>, kind = "desk") => handleBatchEdit("POST", JSON.stringify(body), { kind }, deps, PERSON);
   const sent: MailMessage[] = [];
   let n = 0;
   const sendAll = async () => {

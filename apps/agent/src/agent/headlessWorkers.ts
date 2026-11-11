@@ -200,7 +200,7 @@ export function answerPermission(id: string, action: "approve" | "deny" | "answe
   }
   if (action === "approve") {
     if (question) throw new SessionError("the dialog is a question, not a permission prompt", 409);
-    const refusal = allowRefusal(input.dialogKey, kept.key, now);
+    const refusal = allowRefusal(input.dialogKey, kept.key);
     if (refusal) throw new SessionError(refusal, 409);
     waiting.delete(id);
     kept.respond({ behavior: "allow", updatedInput: kept.call.input });

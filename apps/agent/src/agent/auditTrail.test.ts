@@ -303,7 +303,7 @@ test("money recorded in a Space's store is logged once with who, the mutation an
 
 // --- keys and the vault ----------------------------------------------------------------------
 
-test("a key made, rotated, given a signing key and removed is one record each, never the key or its hash", () => {
+test("a key made, rotated and removed is one record each, never the key or its hash", () => {
   const store = createKeyStore(join(mkdtempSync(join(tmpdir(), "cobra-keys-")), "keys.json"));
   const { caller, key } = mintDesk("The desk", NOW);
   const minted = appended(() => store.upsert(caller, "cli"));
@@ -311,9 +311,6 @@ test("a key made, rotated, given a signing key and removed is one record each, n
   const next = "a-new-key-for-the-desk-0123456789";
   const rotated = appended(() => store.rotate(caller.id, key, hashKey(next), NOW));
   assert.deepEqual(rotated.records.map((r) => [r.kind, r.actor]), [["key.rotated", caller.id]]);
-  const phone = { id: "iphone_aaaaaaaaaaaaaaaa", name: "iPhone", kind: "phone" as const, keyHash: hashKey("phone-key"), scopes: ["read" as const], linkedAt: 1 };
-  store.upsert(phone);
-  assert.deepEqual(appended(() => store.setSignKey(phone.id, "pk")).records.map((r) => r.kind), ["key.signing"]);
   const removed = appended(() => store.remove(caller.id, "cli"));
   assert.deepEqual(removed.records.map((r) => [r.kind, r.actor]), [["key.revoked", "cli"]]);
   const all = minted.raw + rotated.raw + removed.raw;
@@ -389,7 +386,7 @@ test("GET /audit/log answers this computer's desk only, read only", () => {
   const path = fresh();
   audit("merge", { actor: "agent", subject: { target: "me/r#7" } }, { path, now: 1 });
   const query = new URLSearchParams("limit=5");
-  for (const kind of ["phone", "lead", "api", "peer", "widget"] as const) assert.equal(auditRoute({ kind }, "GET", query, path).status, 403, kind);
+  assert.equal(auditRoute({ kind: "lead" }, "GET", query, path).status, 403);
   assert.equal(auditRoute({ kind: "desk" }, "POST", query, path).status, 405);
   assert.equal(auditRoute({ kind: "desk" }, "GET", new URLSearchParams("before=../../etc"), path).status, 400);
   const reply = auditRoute({ kind: "desk" }, "GET", query, path);

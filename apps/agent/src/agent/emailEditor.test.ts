@@ -19,7 +19,7 @@ type EmailRouteDeps = import("./emailRoutes.ts").EmailRouteDeps;
 type Project = import("@cobra/contracts").Project;
 
 const BRAND = { colors: { brand: "#0b1f3a", accent: "#f5b301", ink: "#0b1220", paper: "#f6f4ee" }, fonts: { heading: "Inter", body: "Inter" } };
-const PERSON = new Set(["phone", "desk"]);
+const PERSON = new Set(["desk"]);
 const PNG = Buffer.from("89504e470d0a1a0a0000000d4948445200000001000000010806000000", "hex");
 
 function world() {

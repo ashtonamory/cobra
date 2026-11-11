@@ -643,7 +643,7 @@ const POLICY = (computer: string, revision: number): Dict => ({
 const API_LANE: Dict = {
   machine: "legion", enabled: true, capUsd: 50, key: true, workspace: true, keptToken: false, gateway: true, open: true, why: "",
   month: day(0).slice(0, 7), resetsAt: ahead(86400 * 12), here: { dollars: 4.2, requests: 120, byRole: { worker: 3.1, judge: 1.1 } },
-  fleetUsd: 6.5, fleet: { others: 2.3, at: NOW * 1000, from: "mini" }, lastError: null,
+  fleetUsd: 6.5, lastError: null,
 };
 
 const REFUSED: Dict = {

@@ -261,7 +261,7 @@ export const CAPABILITY_WORDS: Readonly<Record<string, string>> = {
 
 export const PRESET_TITLES: Readonly<Record<PresetName, string>> = NAME;
 
-/** Who may change the policy: a phone or a desk you linked. Never a Lead's or a Foreman's key, never a widget's. */
+/** Who may change the policy: the desk you linked. Never a Lead's or a Foreman's key. */
 export function mayChange(kind: string): boolean {
-  return kind === "phone" || kind === "desk";
+  return kind === "desk";
 }

@@ -87,7 +87,7 @@ function fakeDeps(overrides: Partial<PersonDeps> = {}, mirror: Record<string, un
 }
 
 const url = (route: string, query = "") => new URL(`http://agent.invalid${route}${query}`);
-const phone = { kind: "phone" };
+const phone = { kind: "desk" };
 const desk = { kind: "desk" };
 const get = (route: string, query: string, deps: PersonDeps, caller = phone) => handlePerson(route, "GET", url(route, query), "", caller, deps);
 const undo = (body: unknown, deps: PersonDeps, caller = phone) => handlePerson("/db/undo", "POST", url("/db/undo"), JSON.stringify(body), caller, deps);
@@ -119,7 +119,7 @@ test("a phone's and a desk's key are answered; a Lead's, a Foreman's, a widget's
 });
 
 test("auth.ts holds a Lead or Foreman key off these routes, and asks read of the GETs and act of the POST", () => {
-  const keys = (caller: { kind: "phone" | "desk" | "lead"; scopes: Array<"read" | "act" | "orch"> }) => ({
+  const keys = (caller: { kind: "desk" | "lead"; scopes: Array<"read" | "act" | "orch"> }) => ({
     authenticate: () => ({ id: "c", name: "c", keyHash: "h", linkedAt: 0, ...caller }),
   });
   const lead = keys({ kind: "lead", scopes: ["orch"] });
@@ -127,7 +127,7 @@ test("auth.ts holds a Lead or Foreman key off these routes, and asks read of the
   const reader = keys({ kind: "desk", scopes: ["read"] });
   assert.equal(authorize("Bearer k", "/db/journal", "GET", reader).ok, true);
   assert.equal(authorize("Bearer k", "/db/undo", "POST", reader).ok, false);
-  assert.equal(authorize("Bearer k", "/db/undo", "POST", keys({ kind: "phone", scopes: ["read", "act"] })).ok, true);
+  assert.equal(authorize("Bearer k", "/db/undo", "POST", keys({ kind: "desk", scopes: ["read", "act"] })).ok, true);
 });
 
 test("each route takes its own method", async () => {
@@ -236,7 +236,7 @@ test("undo: by the person, the mirror scheduled, the Foreman told, and the entry
   assert.deepEqual(mirrored, ["payroll"]);
   assert.equal(told.length, 1);
   assert.equal(told[0]!.owner, "payroll");
-  assert.match(told[0]!.text, /^The person undid journal 1 \(add_employee\) from the phone: /);
+  assert.match(told[0]!.text, /^The person undid journal 1 \(add_employee\) from the desk: /);
   assert.ok(logged.some((line) => line === "db payroll: undid journal 1 by person (journal 3, 1 row(s))"), logged.join("\n"));
 
   // The undo is journaled as the person's.

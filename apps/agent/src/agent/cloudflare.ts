@@ -458,7 +458,7 @@ export function cloudflareHere(log: (line: string) => void = (line) => console.l
   return here;
 }
 
-const PERSON_KINDS: ReadonlySet<string> = new Set(["phone", "desk"]);
+const PERSON_KINDS: ReadonlySet<string> = new Set(["desk"]);
 
 export type Reply = { status: number; body: unknown };
 

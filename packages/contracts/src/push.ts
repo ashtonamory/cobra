@@ -1,10 +1,8 @@
 import { z } from "zod";
 
 /**
- * What rides inside a push notification, so a tap can land in the right
- * terminal. Deliberately nothing sensitive: the notification transits Expo's
- * push service and APNs, so it carries names, never the token or any output
- * beyond the preview line.
+ * What a notification on this computer's desktop is about (agent push.ts):
+ * names only, never a key or any output beyond the preview line.
  */
 export const PushData = z.object({
   /** Hostname as the agent reports it; the app maps it back to a device. */
@@ -48,11 +46,5 @@ export const AlertPushData = z.object({
   kind: z.enum(["fired", "cleared"]),
 });
 
-export const PushRegistration = z.object({
-  /** An Expo push token, "ExponentPushToken[…]". */
-  token: z.string(),
-});
-
 export type PushData = z.infer<typeof PushData>;
 export type AlertPushData = z.infer<typeof AlertPushData>;
-export type PushRegistration = z.infer<typeof PushRegistration>;

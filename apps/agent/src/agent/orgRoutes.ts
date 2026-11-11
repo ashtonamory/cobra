@@ -28,7 +28,7 @@ export const ORG_PATH = process.env.COBRA_ORG ?? join(CONFIG_DIR, "org.json");
 export const PERSON_ORG_ROUTES: ReadonlySet<string> = new Set(["/org"]);
 export const ORCH_ORG_ROUTES: ReadonlySet<string> = new Set(["/orch/org", "/orch/org/set", "/orch/org/propose"]);
 export const ORCH_ORG_POSTS: ReadonlySet<string> = new Set(["/orch/org/set", "/orch/org/propose"]);
-const PERSON_KINDS: ReadonlySet<string> = new Set(["phone", "desk"]);
+const PERSON_KINDS: ReadonlySet<string> = new Set(["desk"]);
 const WHY_MAX = 400;
 
 export type Reply = { status: number; body: unknown };

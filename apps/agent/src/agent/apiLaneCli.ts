@@ -123,13 +123,11 @@ export async function apiLaneCommand(args: readonly string[], fail: (message: st
   if (verb === "status") {
     const book = new SpendBook();
     const month = book.month();
-    const facts = { policy: current, key: apiKey() !== null, spentUsd: book.fleetEstimate(), month: monthOf(Date.now()) };
+    const facts = { policy: current, key: apiKey() !== null, spentUsd: book.spent(), month: monthOf(Date.now()) };
     const state = laneState(facts);
     say(`API lane: ${current.enabled ? "on" : "off"}, cap ${current.monthlyCapUsd > 0 ? `${dollars(current.monthlyCapUsd)} a month` : "not set"}${current.enabled && current.testMode ? "; API test mode on" : ""}`);
     say(`Key here: ${facts.key ? `kept${apiWorkspace() ? ", with a workspace ID" : ""}` : "none (cobra-agent api-key)"}`);
     say(`Spent in ${month.month}: ${dollars(month.dollars)} here in ${month.requests} requests${Object.keys(month.byRole).length ? ` (${Object.entries(month.byRole).map(([role, value]) => `${role} ${dollars(value)}`).join(", ")})` : ""}`);
-    const heard = book.fleetHeard();
-    say(`The fleet: ${dollars(facts.spentUsd)}${heard ? ` (others ${dollars(heard.others)} as ${heard.from} said at ${new Date(heard.at).toLocaleString()})` : " (no word from the Lead's computer this month)"}`);
     say(state.open ? `Open: helpers and jobs (claude -p) move to the key when the subscription is full; Workers, Foremen, the Lead and your sessions stay on the subscription, since the key's included credits refuse interactive Claude Code. The cap resets ${new Date(nextMonthStart(Date.now())).toLocaleDateString()}.` : `Closed: ${state.why}.`);
     return;
   }

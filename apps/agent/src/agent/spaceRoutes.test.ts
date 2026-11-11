@@ -16,7 +16,7 @@ const { EMPTY_ORG } = await import("../../../../packages/contracts/src/org.ts");
 type Caller = { id: string; kind: string; name: string; project?: string };
 const LEAD: Caller = { id: "lead_legion_____", kind: "lead", name: "Lead on legion" };
 const FOREMAN: Caller = { id: "foreman_site_____", kind: "lead", name: "Foreman for site", project: "site" };
-const PHONE: Caller = { id: "phone_1", kind: "phone", name: "Sam's phone" };
+const PHONE: Caller = { id: "phone_1", kind: "desk", name: "Sam's phone" };
 
 const PROFILE = { purpose: "Schedule and messages", people: "12 families" };
 

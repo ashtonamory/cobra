@@ -57,7 +57,7 @@ export const ORCH_ROUTINE_ROUTES: ReadonlySet<string> = new Set(["/orch/routines
 export const ORCH_ROUTINE_POSTS: ReadonlySet<string> = new Set(["/orch/routine/set", "/orch/routine/remove"]);
 export const PERSON_ROUTINE_ROUTES: ReadonlySet<string> = new Set(["/routines", "/routines/pause", "/routines/remove", "/routines/run"]);
 export const PERSON_ROUTINE_POSTS: ReadonlySet<string> = new Set(["/routines/pause", "/routines/remove", "/routines/run"]);
-const PERSON_KINDS: ReadonlySet<string> = new Set(["phone", "desk"]);
+const PERSON_KINDS: ReadonlySet<string> = new Set(["desk"]);
 
 export type RoutineDeps = RoutineStore & {
   /** The projects registered on this computer. */

@@ -40,7 +40,7 @@ export type Reply = { status: number; body: unknown };
 
 export const PERSON_TRUST_ROUTES: ReadonlySet<string> = new Set(["/trust", "/trust/revoke", "/trust/clear"]);
 export const PERSON_TRUST_POSTS: ReadonlySet<string> = new Set(["/trust/revoke", "/trust/clear"]);
-const PERSON_KINDS: ReadonlySet<string> = new Set(["phone", "desk"]);
+const PERSON_KINDS: ReadonlySet<string> = new Set(["desk"]);
 
 export type TrustDeps = TrustStore & {
   approvals: { load: () => StoredApproval[]; save: (list: StoredApproval[]) => void };

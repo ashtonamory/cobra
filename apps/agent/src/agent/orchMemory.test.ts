@@ -53,7 +53,7 @@ test("memory_read refuses a path out of memory, and a POST", async () => {
 });
 
 test("memory_remember: a phone's key may not hand lessons in, and a Foreman only for its own project", async () => {
-  assert.equal((await call("/orch/memory/remember", "", "POST", { kind: "phone" }, JSON.stringify({ project: "cobra", kind: "gotcha", text: "something long enough" }))).status, 403);
+  assert.equal((await call("/orch/memory/remember", "", "POST", { kind: "desk" }, JSON.stringify({ project: "cobra", kind: "gotcha", text: "something long enough" }))).status, 403);
   const foreman = await call("/orch/memory/remember", "", "POST", { kind: "lead", project: "cobra" }, JSON.stringify({ project: "other", kind: "gotcha", text: "something long enough" }));
   assert.equal(foreman.status, 404);
   const lead = await call("/orch/memory/remember", "", "POST", { kind: "lead" }, JSON.stringify({ project: "octocat/cobra", kind: "gotcha", text: "OTA only after the merge" }));

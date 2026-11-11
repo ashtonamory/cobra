@@ -246,7 +246,7 @@ function harness(opts: FakeOpts & { foremanTemplate?: string; scopes?: string[];
 test("only a Website Builder Foreman reaches the routes", async () => {
   const h = harness();
   assert.equal((await h.call("/orch/site/read", undefined, { id: "lead", kind: "lead" })).status, 403);
-  assert.equal((await h.call("/orch/site/read", undefined, { id: "phone", kind: "phone", project: "p1" })).status, 403);
+  assert.equal((await h.call("/orch/site/read", undefined, { id: "phone", kind: "desk", project: "p1" })).status, 403);
   const other = harness({ foremanTemplate: "designer" });
   assert.equal((await other.call("/orch/site/read")).status, 403);
 });

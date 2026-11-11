@@ -15,30 +15,26 @@ import {
   mintLead,
   ORCH_KEY_LIFETIME_MS,
   parseCallers,
-  PHONE_SCOPES,
+  DESK_SCOPES,
   type Caller,
 } from "./keys.ts";
-
-/** A widget key as a Cobra phone registered it: Cobra mints none, but an old keys.json may hold one. */
-function legacyWidget(keyHash: string): Caller {
-  return { id: "widget_iphone_aaaaaaaaaaaaaaaa", name: "iPhone widgets", kind: "widget", keyHash, scopes: ["glance"], linkedAt: 1 };
-}
 
 function scratch(): { dir: string; done: () => void } {
   const dir = mkdtempSync(join(tmpdir(), "cobra-keys-"));
   return { dir, done: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
-function phone(id: string, key: string): Caller {
-  return { id, name: "iPhone", kind: "phone", keyHash: hashKey(key), scopes: [...PHONE_SCOPES], linkedAt: 1 };
+/** A desk key as keys.json holds it, with no expiry yet (one made before keys expired). */
+function desk(id: string, key: string): Caller {
+  return { id, name: "Desk", kind: "desk", keyHash: hashKey(key), scopes: [...DESK_SCOPES], linkedAt: 1 };
 }
 
-test("a linked phone is found by its key, and the file holds only the hash", () => {
+test("a linked desk is found by its key, and the file holds only the hash", () => {
   const { dir, done } = scratch();
   try {
     const store = createKeyStore(join(dir, "keys.json"));
-    store.upsert(phone("iphone_aaaaaaaaaaaaaaaa", "the-key"));
-    assert.equal(store.authenticate("the-key")?.id, "iphone_aaaaaaaaaaaaaaaa");
+    store.upsert(desk("desk_aaaaaaaaaaaaaaaa", "the-key"));
+    assert.equal(store.authenticate("the-key")?.id, "desk_aaaaaaaaaaaaaaaa");
     assert.equal(store.authenticate("another-key"), null);
     const text = readFileSync(join(dir, "keys.json"), "utf8");
     assert.ok(!text.includes("the-key"));
@@ -54,9 +50,9 @@ test("a change written by another process is seen on the next check", () => {
     const path = join(dir, "keys.json");
     const agent = createKeyStore(path);
     const cli = createKeyStore(path);
-    agent.upsert(phone("iphone_aaaaaaaaaaaaaaaa", "the-key"));
+    agent.upsert(desk("desk_aaaaaaaaaaaaaaaa", "the-key"));
     assert.ok(agent.authenticate("the-key"));
-    cli.remove("iphone_aaaaaaaaaaaaaaaa");
+    cli.remove("desk_aaaaaaaaaaaaaaaa");
     assert.equal(agent.authenticate("the-key"), null);
   } finally {
     done();
@@ -68,13 +64,13 @@ test("a file other accounts can read, or a symlink, admits nobody", () => {
   try {
     const path = join(dir, "keys.json");
     const store = createKeyStore(path);
-    store.upsert(phone("iphone_aaaaaaaaaaaaaaaa", "the-key"));
+    store.upsert(desk("desk_aaaaaaaaaaaaaaaa", "the-key"));
     chmodSync(path, 0o644);
     assert.equal(store.authenticate("the-key"), null);
     assert.match(store.load().refused ?? "", /mode 644/);
 
     const real = join(dir, "real.json");
-    writeFileSync(real, JSON.stringify([phone("iphone_aaaaaaaaaaaaaaaa", "the-key")]), { mode: 0o600 });
+    writeFileSync(real, JSON.stringify([desk("desk_aaaaaaaaaaaaaaaa", "the-key")]), { mode: 0o600 });
     const linked = join(dir, "linked.json");
     symlinkSync(real, linked);
     const viaLink = createKeyStore(linked);
@@ -86,7 +82,7 @@ test("a file other accounts can read, or a symlink, admits nobody", () => {
 });
 
 test("entries that fail a check are dropped, not trusted", () => {
-  const good = phone("iphone_aaaaaaaaaaaaaaaa", "k");
+  const good = desk("desk_aaaaaaaaaaaaaaaa", "k");
   const callers = parseCallers(
     JSON.stringify([
       good,
@@ -94,25 +90,40 @@ test("entries that fail a check are dropped, not trusted", () => {
       { ...good, keyHash: "not-a-hash" },
       { ...good, kind: "admin" },
       { ...good, scopes: ["root"] },
-      { ...good, scopes: ["read", "root"], id: "iphone_cccccccccccccccc" },
-      { ...good, pushToken: "nonsense", id: "iphone_dddddddddddddddd" },
+      { ...good, scopes: ["read", "root"], id: "desk_cccccccccccccccc" },
     ]),
   );
-  assert.deepEqual(callers.map((c) => c.id), ["iphone_aaaaaaaaaaaaaaaa", "iphone_cccccccccccccccc", "iphone_dddddddddddddddd"]);
+  assert.deepEqual(callers.map((c) => c.id), ["desk_aaaaaaaaaaaaaaaa", "desk_cccccccccccccccc"]);
   assert.deepEqual(callers[1]!.scopes, ["read"]);
-  assert.equal(callers[2]!.pushToken, undefined);
   assert.deepEqual(parseCallers("not json"), []);
   assert.deepEqual(parseCallers("{}"), []);
 });
 
-test("a desktop gets a key of its own that expires, read and act but no terminal, and no push", () => {
-  const { caller, key, relayKey } = mintDesk("  Legion desk  ", 5);
+test("a key of a kind Cobra no longer has stops working, and never becomes a desk or a Lead key", () => {
+  const good = desk("desk_aaaaaaaaaaaaaaaa", "k");
+  const old = [
+    { id: "iphone_aaaaaaaaaaaaaaaa", name: "iPhone", kind: "phone", keyHash: hashKey("p"), scopes: ["read", "act", "terminal"], linkedAt: 1 },
+    { id: "omarchy_HUB1234567890ab", name: "Hub", kind: "peer", keyHash: hashKey("h"), scopes: ["receive"], linkedAt: 1 },
+    { id: "widget_iphone_aaaaaaaaaaaaaaaa", name: "Widgets", kind: "widget", keyHash: hashKey("w"), scopes: ["glance"], linkedAt: 1 },
+    { id: "api_aaaaaaaaaaaaaaaaaaaa", name: "API", kind: "api", keyHash: hashKey("a"), scopes: ["read", "act"], linkedAt: 1 },
+    // A desk key whose only scopes are ones that are gone has nothing left to do.
+    { ...good, id: "desk_bbbbbbbbbbbbbbbb", keyHash: hashKey("b"), scopes: ["receive", "glance"] },
+  ];
+  const callers = parseCallers(JSON.stringify([...old, good]));
+  assert.deepEqual(callers.map((c) => c.id), ["desk_aaaaaaaaaaaaaaaa"]);
+  for (const key of ["p", "h", "w", "a", "b"]) assert.equal(findCaller(callers, key), null);
+  // Fields of the old kinds on a kept entry are ignored, never carried.
+  const [kept] = parseCallers(JSON.stringify([{ ...good, pushToken: "ExponentPushToken[abc]", pushKey: "B".repeat(43), signKey: "A".repeat(43), relayKey: "C".repeat(43) }]));
+  assert.deepEqual(kept, good);
+});
+
+test("a desk gets a key of its own that expires: read and act, no terminal", () => {
+  const { caller, key } = mintDesk("  Legion desk  ", 5);
   assert.equal(caller.kind, "desk");
   assert.equal(caller.name, "Legion desk");
   assert.match(caller.id, /^desk_[A-Za-z0-9_-]{22}$/);
   assert.deepEqual(caller.scopes, ["read", "act"]);
   assert.equal(caller.expiresAt, 5 + KEY_LIFETIME_MS);
-  assert.equal(caller.pushToken, undefined);
   // Only the hash is stored, and it survives a round trip through keys.json.
   assert.equal(JSON.stringify(caller).includes(key), false);
   const [back] = parseCallers(JSON.stringify([caller]));
@@ -120,67 +131,22 @@ test("a desktop gets a key of its own that expires, read and act but no terminal
   assert.equal(findCaller([back!], key)?.id, caller.id);
   assert.equal(findCaller([back!], `${key}x`), null);
   assert.notEqual(mintDesk("Legion desk", 5).key, key);
-  // The relay key is a second secret, kept whole, never the key itself.
-  assert.match(relayKey, /^[A-Za-z0-9_-]{43}$/);
-  assert.equal(caller.relayKey, relayKey);
-  assert.notEqual(relayKey, key);
-  assert.notEqual(mintDesk("Legion desk", 5).relayKey, relayKey);
 });
-
-test("a desktop's relay key round-trips through keys.json, and never opens a request", () => {
-  const { caller, key, relayKey } = mintDesk("Legion desk", 5);
-  const text = JSON.stringify([caller]);
-  assert.equal(text.includes(relayKey), true, "the relay key is stored whole, like a push key");
-  assert.equal(text.includes(key), false);
-  const [back] = parseCallers(text);
-  assert.equal(back?.relayKey, relayKey);
-  assert.equal(findCaller([back!], relayKey), null, "a relay key is not a caller's key");
-  // A wrong shape is dropped, not kept; a kind without a relay key never gets one.
-  assert.equal(parseCallers(JSON.stringify([{ ...caller, relayKey: "short" }]))[0]?.relayKey, undefined);
-  assert.equal(parseCallers(JSON.stringify([{ ...caller, kind: "lead", scopes: ["orch"], relayKey }]))[0]?.relayKey, undefined);
-});
-
 
 const DAY = 24 * 60 * 60_000;
 
-test("a phone's signing key is taken once and never replaced", () => {
-  const { dir, done } = scratch();
-  try {
-    const store = createKeyStore(join(dir, "keys.json"));
-    store.upsert(phone("iphone_aaaaaaaaaaaaaaaa", "the-key"));
-    const first = "A".repeat(43);
-    assert.equal(store.setSignKey("iphone_aaaaaaaaaaaaaaaa", first), "set");
-    assert.equal(store.setSignKey("iphone_aaaaaaaaaaaaaaaa", first), "set");
-    assert.equal(store.setSignKey("iphone_aaaaaaaaaaaaaaaa", "B".repeat(43)), "exists");
-    assert.equal(store.authenticate("the-key")?.signKey, first);
-    assert.equal(store.setSignKey("iphone_bbbbbbbbbbbbbbbb", first), "missing");
-  } finally {
-    done();
-  }
-});
-
-test("the device list shows each key's age and expiry, never a hash or a secret", () => {
+test("the key list shows each key's age and expiry, never a hash", () => {
   const now = 1_800_000_000_000;
-  const caller: Caller = {
-    ...phone("iphone_aaaaaaaaaaaaaaaa", "secret-key"),
-    linkedAt: now - 70 * DAY,
-    rotatedAt: now - 10 * DAY,
-    expiresAt: now + 80 * DAY,
-    signKey: "A".repeat(43),
-    pushKey: "B".repeat(43),
-  };
-  const view = keyView(caller, now, "iphone_aaaaaaaaaaaaaaaa");
+  const caller: Caller = { ...desk("desk_aaaaaaaaaaaaaaaa", "secret-key"), linkedAt: now - 70 * DAY, rotatedAt: now - 10 * DAY, expiresAt: now + 80 * DAY };
+  const view = keyView(caller, now, "desk_aaaaaaaaaaaaaaaa");
   assert.equal(view.keyAgeDays, 10);
   assert.equal(view.expiresInDays, 80);
   assert.equal(view.expiresAt, new Date(now + 80 * DAY).toISOString());
-  assert.equal(view.signs, true);
   assert.equal(view.you, true);
-  const text = JSON.stringify(view);
-  for (const secret of [caller.keyHash, "A".repeat(43), "B".repeat(43)]) assert.ok(!text.includes(secret));
-  const desk = keyView(mintDesk("Desk", now - DAY).caller, now);
-  assert.equal(desk.keyAgeDays, 1);
-  assert.equal(desk.you, false);
-  assert.equal(desk.signs, false);
+  assert.ok(!JSON.stringify(view).includes(caller.keyHash));
+  const other = keyView(mintDesk("Desk", now - DAY).caller, now);
+  assert.equal(other.keyAgeDays, 1);
+  assert.equal(other.you, false);
 });
 
 test("Lead and Foreman keys expire, and are extended only while their orchestrator runs (OV-SEC-VPS-001 F23b)", () => {
@@ -227,19 +193,16 @@ test("a Lead key made before orchestrator keys expired gets its 30 days on first
   }
 });
 
-test("a phone key made before keys expired gets 90 days on first use, not an instant lockout", () => {
+test("a desk key made before keys expired gets 90 days on first use, not an instant lockout", () => {
   const { dir, done } = scratch();
   try {
     const store = createKeyStore(join(dir, "keys.json"));
-    store.upsert(phone("iphone_aaaaaaaaaaaaaaaa", "old-key"));
+    store.upsert(desk("desk_aaaaaaaaaaaaaaaa", "old-key"));
     const now = 1_800_000_000_000;
     assert.equal(store.authenticate("old-key", now)?.expiresAt, now + KEY_LIFETIME_MS);
     // Written down: a later use does not push it out again.
     assert.equal(store.authenticate("old-key", now + DAY)?.expiresAt, now + KEY_LIFETIME_MS);
     assert.equal(parseCallers(readFileSync(join(dir, "keys.json"), "utf8"))[0]!.expiresAt, now + KEY_LIFETIME_MS);
-    // Keys that do not expire stay that way.
-    store.upsert(legacyWidget(hashKey("widget-key")));
-    assert.equal(store.authenticate("widget-key", now)?.expiresAt, undefined);
   } finally {
     done();
   }
@@ -251,49 +214,39 @@ test("a rotation swaps the key; the old one works until the new one is used, nev
   try {
     const store = createKeyStore(join(dir, "keys.json"));
     const now = 1_800_000_000_000;
-    store.upsert({ ...phone("iphone_aaaaaaaaaaaaaaaa", "old-key"), expiresAt: now + 10 * DAY });
-    const rotated = store.rotate("iphone_aaaaaaaaaaaaaaaa", "old-key", hashKey("new-key"), now);
+    store.upsert({ ...desk("desk_aaaaaaaaaaaaaaaa", "old-key"), expiresAt: now + 10 * DAY });
+    const rotated = store.rotate("desk_aaaaaaaaaaaaaaaa", "old-key", hashKey("new-key"), now);
     assert.equal(rotated?.expiresAt, now + KEY_LIFETIME_MS);
     assert.equal(rotated?.rotatedAt, now);
     assert.ok(!readFileSync(join(dir, "keys.json"), "utf8").includes("new-key"));
     // The reply may have been lost: the old key still works, with its own expiry.
     assert.equal(store.authenticate("old-key", now)?.expiresAt, now + 10 * DAY);
     // A second try from the old key replaces the unused new one, and the old key stays the fallback.
-    assert.ok(store.rotate("iphone_aaaaaaaaaaaaaaaa", "old-key", hashKey("newer-key"), now));
+    assert.ok(store.rotate("desk_aaaaaaaaaaaaaaaa", "old-key", hashKey("newer-key"), now));
     assert.equal(store.authenticate("new-key", now), null);
     assert.equal(store.authenticate("old-key", now)?.expiresAt, now + 10 * DAY);
     // The first use of the new key retires the old one.
     assert.equal(store.authenticate("newer-key", now)?.expiresAt, now + KEY_LIFETIME_MS);
     assert.equal(store.authenticate("old-key", now), null);
     // A hash already in use, or a caller whose key does not rotate, is refused.
-    assert.equal(store.rotate("iphone_aaaaaaaaaaaaaaaa", "newer-key", hashKey("newer-key"), now), null);
-    store.upsert(legacyWidget(hashKey("widget-key")));
-    assert.equal(store.rotate("widget_iphone_aaaaaaaaaaaaaaaa", "widget-key", hashKey("x"), now), null);
+    assert.equal(store.rotate("desk_aaaaaaaaaaaaaaaa", "newer-key", hashKey("newer-key"), now), null);
+    const { caller: lead, key: leadKey } = mintLead("legion", now);
+    store.upsert(lead);
+    assert.equal(store.rotate(lead.id, leadKey, hashKey("x"), now), null);
   } finally {
     done();
   }
 });
 
 
-test("a desktop key that could open terminals loses that; expiry and signing survive keys.json", () => {
+test("a desk key that could open terminals loses that; expiry and the rotated-out key survive keys.json", () => {
   const stored = [
-    { id: "desk_aaaaaaaaaaaaaaaaaaaaaa", name: "Desk", kind: "desk", keyHash: hashKey("d"), scopes: ["read", "act", "terminal"], linkedAt: 1 },
-    {
-      ...phone("iphone_aaaaaaaaaaaaaaaa", "p"),
-      expiresAt: 9,
-      rotatedAt: 2,
-      prevKeyHash: hashKey("q"),
-      prevExpiresAt: 8,
-      signKey: "A".repeat(43),
-    },
-    // A widget never signs, expires or keeps an old key.
-    { ...legacyWidget(hashKey("w")), expiresAt: 9, signKey: "A".repeat(43), prevKeyHash: hashKey("q"), prevExpiresAt: 8 },
+    { id: "desk_aaaaaaaaaaaaaaaaaaaaaa", name: "Desk", kind: "desk", keyHash: hashKey("d"), scopes: ["read", "act", "terminal"], linkedAt: 1, expiresAt: 9, rotatedAt: 2, prevKeyHash: hashKey("q"), prevExpiresAt: 8 },
+    // A Lead's key is never rotated by its holder, so it keeps no old key.
+    { ...mintLead("legion", 1).caller, prevKeyHash: hashKey("q"), prevExpiresAt: 8 },
   ];
-  const [desk, phoneBack, widget] = parseCallers(JSON.stringify(stored));
-  assert.deepEqual(desk!.scopes, ["read", "act"]);
-  assert.deepEqual(
-    [phoneBack!.expiresAt, phoneBack!.rotatedAt, phoneBack!.prevKeyHash, phoneBack!.prevExpiresAt, phoneBack!.signKey],
-    [9, 2, hashKey("q"), 8, "A".repeat(43)],
-  );
-  assert.deepEqual([widget!.expiresAt, widget!.signKey, widget!.prevKeyHash], [undefined, undefined, undefined]);
+  const [back, lead] = parseCallers(JSON.stringify(stored));
+  assert.deepEqual(back!.scopes, ["read", "act"]);
+  assert.deepEqual([back!.expiresAt, back!.rotatedAt, back!.prevKeyHash, back!.prevExpiresAt], [9, 2, hashKey("q"), 8]);
+  assert.deepEqual([lead!.prevKeyHash, lead!.prevExpiresAt], [undefined, undefined]);
 });

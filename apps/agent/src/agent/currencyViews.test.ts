@@ -60,7 +60,7 @@ function setup() {
     }
   };
   const view = async (id: string) => {
-    const reply = await handlePerson("/view", "GET", new URL(`http://agent.invalid/view?project=personal-money&view=${id}`), "", { kind: "phone" }, deps);
+    const reply = await handlePerson("/view", "GET", new URL(`http://agent.invalid/view?project=personal-money&view=${id}`), "", { kind: "desk" }, deps);
     assert.equal(reply.status, 200, `${id}: ${JSON.stringify(reply.body)}`);
     // What an app reads: a foreign amount comes as text, and the parser keeps it.
     return parseViewResult(reply.body) as ViewResult;

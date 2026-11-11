@@ -140,29 +140,15 @@ export type SessionInput = {
 };
 
 /**
- * Until when an Allow without a dialog key is still pressed: the phone that
- * sends one ships as an OTA after this agent, and until it lands an older
- * app's Allow would otherwise stop working. Each such Allow is logged. After
- * this date, or once the constant is null, an Allow without a key is a 409
- * like any other mismatch.
- *
- * TODO(security audit F1): set to null once the phone OTA that sends
- * `dialogKey` is out.
- */
-export const UNBOUND_ALLOW_UNTIL: string | null = "2026-10-27T00:00:00Z";
-
-/**
  * Why an Allow must not press Enter on this dialog, or null when it may.
  * `sent` is the key the person's app sent with it, `shown` the key of the
  * dialog up now. A different key means the dialog changed since they looked
  * — the model raised another prompt, or this one was answered and a new one
  * came up — and their Allow was never for it.
  */
-export function allowRefusal(sent: string | undefined, shown: string, now = Date.now(), until = UNBOUND_ALLOW_UNTIL): string | null {
-  if (sent === undefined || sent === "") {
-    if (until !== null && now < Date.parse(until)) return null;
-    return "this app sent no copy of the request it showed; update the Cobra desk app, or answer in the terminal";
-  }
+export function allowRefusal(sent: string | undefined, shown: string): string | null {
+  // An Allow that names no dialog could land on any prompt: refused, like a mismatch.
+  if (sent === undefined || sent === "") return "this app sent no copy of the request it showed; update the Cobra desk app, or answer in the terminal";
   return sent === shown ? null : "the request on screen changed since you saw it; look at it again";
 }
 
@@ -209,7 +195,6 @@ export async function runSessionAction(
       if (action === "approve") {
         const refusal = allowRefusal(input.dialogKey, dialogKey(pane.dialogText));
         if (refusal) throw new SessionError(refusal, 409);
-        if (!input.dialogKey) console.log(`[cobra-agent] approve on "${session}" without a dialog key (an older app); allowed until ${UNBOUND_ALLOW_UNTIL}`);
       }
       const key = action === "approve" ? "Enter" : "Escape";
       const at = paneTarget(session, found.windowIndex);

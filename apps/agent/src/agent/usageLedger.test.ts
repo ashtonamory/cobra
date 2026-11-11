@@ -125,7 +125,7 @@ test("who posts: --as is checked, a socket's id is a Worker or a job, a bad post
 test("the API cap counts only real spend: subscription lines go to their own ledger, and the report keeps the lanes apart", () => {
   const dir = mkdtempSync(join(tmpdir(), "usage-cap-"));
   try {
-    const paths = { ledger: join(dir, "api-ledger.jsonl"), spend: join(dir, "api-spend.json"), fleet: join(dir, "api-fleet.json") };
+    const paths = { ledger: join(dir, "api-ledger.jsonl"), spend: join(dir, "api-spend.json") };
     const book = new SpendBook(paths, () => Date.UTC(2026, 10, 6));
     book.record({ at: 1_000, who: "cobra_lead", role: "lead", model: "claude-sonnet-5-5", usage: usage(10, 10), dollars: 0.25, priced: true, trigger: "person", triggerAt: 900 });
     const usagePath = join(dir, "usage-ledger.jsonl");

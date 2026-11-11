@@ -50,7 +50,7 @@ import { GITHUB_TOKEN_ROUTE, githubHandoff } from "./mcp.ts";
 import { installLogRedaction, sentBody } from "./secretValues.ts";
 import { auditRoute } from "./auditRoutes.ts";
 import { onAuditFailure } from "./auditTrail.ts";
-import { sendPush, type PushMessage, type Recipient } from "./push.ts";
+import { LOCAL_RECIPIENT, sendPush, type PushMessage, type Recipient } from "./push.ts";
 import { KEY_EXPIRES_HEADER, mintForeman, mintLead, type Caller } from "./keys.ts";
 import { createRateLimiter } from "./rateLimit.ts";
 import { liveSources } from "./modelSources.ts";
@@ -848,7 +848,7 @@ async function notifyApproval(approval: StoredApproval): Promise<void> {
  * daily cap is used. POST /decided/undo {id}: that Undo, once.
  */
 async function handleDecided(route: string, url: URL, request: http.IncomingMessage, response: http.ServerResponse, caller: Caller): Promise<void> {
-  if (caller.kind !== "phone" && caller.kind !== "desk") return sendJson(response, 403, { error: "only the desk app you linked reads what Cobra did" });
+  if (caller.kind !== "desk") return sendJson(response, 403, { error: "only the desk app you linked reads what Cobra did" });
   if (route === "/decided") {
     if (request.method !== "GET") return sendJson(response, 405, { error: "GET only" });
     const days = Math.min(14, Math.max(1, Number(url.searchParams.get("days") ?? 7) || 7));
@@ -2794,7 +2794,7 @@ function sendJson(response: http.ServerResponse, status: number, body: unknown):
 }
 
 // Notifications go to this computer's desktop (push.ts); the recipient list is always the one desktop.
-const loadPushTokens = async (): Promise<Recipient[]> => config.keys.pushRecipients();
+const loadPushTokens = async (): Promise<Recipient[]> => [LOCAL_RECIPIENT];
 const dropPushToken = async (_token: string): Promise<void> => undefined;
 const push = (recipients: Recipient[], message: PushMessage) => sendPush(recipients, message);
 
@@ -2845,7 +2845,6 @@ function apiLaneView(): Record<string, unknown> {
     resetsAt: new Date(nextMonthStart(Date.now())).toISOString(),
     here: status?.here ?? { dollars: 0, requests: 0, byRole: {} },
     fleetUsd: facts?.spentUsd ?? 0,
-    fleet: status?.fleet ?? null,
     lastError: status?.lastError ?? null,
     testMode: policy.testMode === true,
     test: testView(),
@@ -3115,9 +3114,9 @@ const server = http.createServer((request, response) => {
         return sendJson(response, reply.status, reply.body);
       }
 
-      // Research runs (webRuns.ts): GET /web/runs?days= lists them with their reads; POST /web/runs/stop {id} ends one. For the phone and the desk.
+      // Research runs (webRuns.ts): GET /web/runs?days= lists them with their reads; POST /web/runs/stop {id} ends one. For the desk.
       if (route === "/web/runs" || route === "/web/runs/stop") {
-        if (caller.kind !== "phone" && caller.kind !== "desk") return sendJson(response, 403, { error: "only the desk app you linked reads and stops research runs" });
+        if (caller.kind !== "desk") return sendJson(response, 403, { error: "only the desk app you linked reads and stops research runs" });
         if (route === "/web/runs") {
           if (request.method !== "GET") return sendJson(response, 405, { error: "GET only" });
           const days = Math.min(14, Math.max(1, Number(url.searchParams.get("days") ?? 7) || 7));

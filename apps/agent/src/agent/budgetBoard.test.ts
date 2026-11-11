@@ -70,12 +70,12 @@ function setup(kind: "family" | "own" = "family") {
     }
   };
   const list = async (): Promise<ViewList> => {
-    const reply = await handlePerson("/views", "GET", new URL(`http://agent.invalid/views?project=${project.id}`), "", { kind: "phone" }, deps);
+    const reply = await handlePerson("/views", "GET", new URL(`http://agent.invalid/views?project=${project.id}`), "", { kind: "desk" }, deps);
     assert.equal(reply.status, 200, JSON.stringify(reply.body));
     return parseViewList(reply.body);
   };
   const view = async (id: string, extra = ""): Promise<ViewResult> => {
-    const reply = await handlePerson("/view", "GET", new URL(`http://agent.invalid/view?project=${project.id}&view=${id}${extra}`), "", { kind: "phone" }, deps);
+    const reply = await handlePerson("/view", "GET", new URL(`http://agent.invalid/view?project=${project.id}&view=${id}${extra}`), "", { kind: "desk" }, deps);
     assert.equal(reply.status, 200, `${id}: ${JSON.stringify(reply.body)}`);
     return parseViewResult(reply.body);
   };
