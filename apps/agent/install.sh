@@ -12,8 +12,6 @@
 #   ./install.sh --claude-skills      # Claude Code gets the ste-deep skill (~/.claude/skills)
 #   ./install.sh --codex-notify       # Codex tells the agent when a turn finishes (~/.codex/config.toml)
 #   ./install.sh --orchestrator-engine codex  # run the Lead and Foremen on Codex (claude to switch back)
-#   ./install.sh --home-ai            # small AI jobs (the daily brief, a voice note) may run on this computer's Ollama
-#   ./install.sh --no-home-ai         # home AI off again (undoes a kept --home-ai)
 #   ./install.sh --ollama-url http://127.0.0.1:11500  # where Ollama is, if not its default port (default: back to it)
 #   ./install.sh --ollama-url http://gpu-box:11434 --allow-remote-ollama  # an Ollama off this computer, on purpose
 #   ./install.sh --no-remote-ollama   # an Ollama off this computer is refused again (the default)
@@ -35,7 +33,7 @@
 # after that (Settings → This app → Updates).
 #
 # An update keeps this computer's settings. The ports, the name, git sync,
-# home AI, the tmux socket and contain are read back from agent.env (as data,
+# the tmux socket and contain are read back from agent.env (as data,
 # never sourced) and stay as they are; a flag given now changes only its own
 # setting. Any other COBRA_* line there (COBRA_AGENT_BIND, COBRA_EA=off...)
 # is kept as it is, when its value is plain enough to be sourced safely.
@@ -103,7 +101,6 @@ ARG_AGENT_PORT=
 ARG_TERM_PORT=
 ARG_MACHINE_NAME=
 ARG_GIT_SYNC=
-ARG_HOME_AI=
 ARG_TMUX_SOCKET=
 ARG_CONTAIN=
 ARG_ORCHESTRATOR_ENGINE=
@@ -131,8 +128,6 @@ while (($#)); do
     --claude-skills) CLAUDE_SKILLS=1; shift ;;
     --codex-notify) CODEX_NOTIFY=1; shift ;;
     --orchestrator-engine) ARG_ORCHESTRATOR_ENGINE=${2:?--orchestrator-engine needs claude or codex}; shift 2 ;;
-    --home-ai) ARG_HOME_AI=1; shift ;;
-    --no-home-ai) ARG_HOME_AI=0; shift ;;
     # Gone: memory stays on each computer. Accepted, so older command lines still run.
     --memory-repo) echo "note: --memory-repo is ignored; memory stays on each computer now" >&2; shift; if [[ $# -gt 0 && $1 != --* ]]; then shift; fi ;;
     --no-memory-repo) echo "note: --no-memory-repo is ignored; memory stays on each computer now" >&2; shift ;;
@@ -168,7 +163,7 @@ declare -A SAVED=()
 declare -A EXTRA=()
 EXTRA_KEYS=()
 DROPPED=()
-SETTING_KEY='^(COBRA_AGENT_PORT|COBRA_TERM_PORT|COBRA_MACHINE_NAME|COBRA_GIT_SYNC|COBRA_HOME_AI|COBRA_TMUX_SOCKET|COBRA_CONTAIN|COBRA_ORCHESTRATOR_ENGINE)$'
+SETTING_KEY='^(COBRA_AGENT_PORT|COBRA_TERM_PORT|COBRA_MACHINE_NAME|COBRA_GIT_SYNC|COBRA_TMUX_SOCKET|COBRA_CONTAIN|COBRA_ORCHESTRATOR_ENGINE)$'
 MEMORY_REPO_DROPPED=0
 # A first install (no agent.env yet) ends with the Workers' Claude token as a next step.
 FIRST_INSTALL=1
@@ -236,16 +231,11 @@ setting AGENT_PORT "$ARG_AGENT_PORT" COBRA_AGENT_PORT "agent port" 8787
 setting TERM_PORT "$ARG_TERM_PORT" COBRA_TERM_PORT "terminal port" 8788
 setting MACHINE_NAME "$ARG_MACHINE_NAME" COBRA_MACHINE_NAME "name" ""
 setting TMUX_SOCKET "$ARG_TMUX_SOCKET" COBRA_TMUX_SOCKET "tmux socket" cobra
-# The switches mean what the agent reads them as: git sync is on unless "off",
-# home AI is off unless "on".
+# The switch means what the agent reads it as: git sync is on unless "off".
 if [[ -n ${SAVED[COBRA_GIT_SYNC]+x} ]]; then
   [[ ${SAVED[COBRA_GIT_SYNC]} == off ]] && SAVED[COBRA_GIT_SYNC]=0 || SAVED[COBRA_GIT_SYNC]=1
 fi
-if [[ -n ${SAVED[COBRA_HOME_AI]+x} ]]; then
-  [[ ${SAVED[COBRA_HOME_AI]} == on ]] && SAVED[COBRA_HOME_AI]=1 || SAVED[COBRA_HOME_AI]=0
-fi
 setting GIT_SYNC "$ARG_GIT_SYNC" COBRA_GIT_SYNC "git sync" 1
-setting HOME_AI "$ARG_HOME_AI" COBRA_HOME_AI "home AI" 0
 setting ORCHESTRATOR_ENGINE "$ARG_ORCHESTRATOR_ENGINE" COBRA_ORCHESTRATOR_ENGINE "orchestrator engine" "claude"
 
 # Contain (contain.ts): Workers and jobs in Cobra's own sandbox. The agent
@@ -383,8 +373,8 @@ fi
 MODEL_PORT=$(model_port "$AGENT_PORT")
 
 if ((PRINT_CONFIG)); then
-  printf 'AGENT_PORT=%s\nTERM_PORT=%s\nMODEL_PORT=%s\nMACHINE_NAME=%s\nGIT_SYNC=%s\nHOME_AI=%s\nTMUX_SOCKET=%s\n' \
-    "$AGENT_PORT" "$TERM_PORT" "$MODEL_PORT" "$MACHINE_NAME" "$GIT_SYNC" "$HOME_AI" "$TMUX_SOCKET"
+  printf 'AGENT_PORT=%s\nTERM_PORT=%s\nMODEL_PORT=%s\nMACHINE_NAME=%s\nGIT_SYNC=%s\nTMUX_SOCKET=%s\n' \
+    "$AGENT_PORT" "$TERM_PORT" "$MODEL_PORT" "$MACHINE_NAME" "$GIT_SYNC" "$TMUX_SOCKET"
   printf 'CONTAIN=%s\n' "$CONTAIN"
   (IFS=,; printf 'KEPT=%s\nEXTRA=%s\nDROPPED=%s\n' "${KEPT[*]}" "${EXTRA_KEYS[*]}" "${DROPPED[*]}")
   printf 'PORTS_WHY=%s\n' "$PORTS_WHY"
@@ -449,7 +439,6 @@ agent_env() {
   printf 'COBRA_AGENT_PORT=%s\nCOBRA_TERM_PORT=%s\n' "$AGENT_PORT" "$TERM_PORT"
   [[ -z $MACHINE_NAME ]] || printf 'COBRA_MACHINE_NAME=%s\n' "$MACHINE_NAME"
   ((GIT_SYNC)) || printf 'COBRA_GIT_SYNC=off\n'
-  if ((HOME_AI)); then printf 'COBRA_HOME_AI=on\n'; fi
   [[ $ORCHESTRATOR_ENGINE == claude ]] || printf 'COBRA_ORCHESTRATOR_ENGINE=%s\n' "$ORCHESTRATOR_ENGINE"
   printf 'COBRA_TMUX_SOCKET=%s\n' "$TMUX_SOCKET"
   case $CONTAIN in
@@ -576,7 +565,7 @@ mkdir -p "$CONFIG"
 chmod 700 "$CONFIG"
 agent_env > "$CONFIG/agent.env"
 rm -f "$CONFIG/ports.env"
-ok "agent.env: agent $AGENT_PORT, terminal $TERM_PORT, model gateway $MODEL_PORT${MACHINE_NAME:+, name $MACHINE_NAME}$( ((GIT_SYNC)) || echo ", git sync off")$( ((HOME_AI)) && echo ", home AI on"), tmux $( [[ $TMUX_SOCKET == default ]] && echo "on your own server" || echo "-L $TMUX_SOCKET")$(
+ok "agent.env: agent $AGENT_PORT, terminal $TERM_PORT, model gateway $MODEL_PORT${MACHINE_NAME:+, name $MACHINE_NAME}$( ((GIT_SYNC)) || echo ", git sync off"), tmux $( [[ $TMUX_SOCKET == default ]] && echo "on your own server" || echo "-L $TMUX_SOCKET")$(
   if ((${#KEPT[@]})); then kept=$(printf '%s, ' "${KEPT[@]}"); echo " (kept from agent.env: ${kept%, })"
   elif ((RESET_CONFIG)); then echo " (--reset-config: agent.env's old settings not read)"; fi)"
 [[ -z $PORTS_WHY ]] || ok "ports: $PORTS_WHY"

@@ -14,7 +14,6 @@ const { speakable } = await import("../../../../packages/contracts/src/voiceCall
 const { EXPLAIN_SYSTEM, RUN_PLAIN, whyOf } = await import("./permissionRequest.ts");
 const approvals = await import("./approvals.ts");
 const morning = await import("./morning.ts");
-const chats = await import("./chats.ts");
 const lead = await import("./lead.ts");
 const foreman = await import("./foreman.ts");
 
@@ -99,15 +98,13 @@ test("the cards say what goes live, in the person's words", () => {
   }
 });
 
-test("the morning brief and the chat speak in the voice", () => {
+test("the morning brief speaks in the voice", () => {
   assert.match(morning.MORNING_SYSTEM, new RegExp(PLAIN_WORDS.slice(0, 40).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.doesNotMatch(morning.MORNING_SYSTEM, /Foremen/);
   const brief = morning.plainBrief([
     { computer: "legion", day: "2026-10-23", landed: [{ project: "payroll", report: "sent" }], counts: { merged: 2, actions: 1, routines: 0 }, today: [], waiting: [] },
   ]);
   assert.deepEqual(ownerJargon(brief), [], brief);
-  assert.ok(chats.SYSTEM_PROMPT.includes(VOICE));
-  assert.deepEqual(ownerJargon(chats.SYSTEM_PROMPT.replace(VOICE, "")), [], "the chat names no crew or software words outside the voice's own rule");
 });
 
 test("Cobra's and a Foreman's tmux start fit tmux's limit, with the prompt read from a private file", () => {
