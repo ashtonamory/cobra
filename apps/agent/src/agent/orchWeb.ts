@@ -5,7 +5,8 @@ import { hostsIn, type JudgeConfig, type ResolvedPolicy } from "./permissions.ts
 import { LOG_EXACT_MAX, type PolicyEntry } from "./policy.ts";
 import type { InRunAnswer } from "./webRuns.ts";
 import { webCallOf, type WebCall } from "./webRules.ts";
-import { isTainted, noteRead } from "./taint.ts";
+import { connectorPrefix } from "./connectors.ts";
+import { isTainted, noteRead, type TaintSource } from "./taint.ts";
 import { afterReadHooks } from "./webClaims.ts";
 
 /**
@@ -15,8 +16,10 @@ import { afterReadHooks } from "./webClaims.ts";
  * prints nothing, so Claude Code's own prompt stands and reaches your phone
  * as it always did.
  *
- * Only those two tools: the hook is registered for them alone (orchWebHooks),
- * and anything else that reaches it is left to Claude Code. The judge sees
+ * Only those two tools are judged: the before-hook is registered for them
+ * alone (orchWebHooks), and anything else that reaches it is left to Claude
+ * Code. A connector's tools are not judged, but what they give back taints
+ * the turn (noteConnectorRead). The judge sees
  * the role, never the conversation or the pages already read, so a page
  * cannot argue for the next fetch.
  *
@@ -60,7 +63,41 @@ export function orchWebHooks(paths: { node: string; policyHook: string }, who: O
   const quote = (value: string) => (/^[A-Za-z0-9_./:=-]+$/.test(value) ? value : `'${value.replace(/'/g, `'\\''`)}'`);
   const command = [quote(paths.node), "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", quote(paths.policyHook), "--orch", orchWhoText(who)].join(" ");
   // And after each page read: whether it was what its address claims (webClaims.ts), under any preset.
-  return { PreToolUse: [{ matcher: [...ORCH_WEB_TOOLS].join("|"), hooks: [{ type: "command", command, timeout: 30 }] }], ...afterReadHooks(command) };
+  const after = afterReadHooks(command);
+  // And after each connector tool: what it gave back is outside text (connectorRead).
+  const connectors = { matcher: OUTSIDE_MCP, hooks: [{ type: "command", command, timeout: 15 }] };
+  return { PreToolUse: [{ matcher: [...ORCH_WEB_TOOLS].join("|"), hooks: [{ type: "command", command, timeout: 30 }] }], ...after, PostToolUse: [...(after.PostToolUse ?? []), connectors] };
+}
+
+const OWN_MCP = "mcp__cobra-orch__";
+/** Every MCP tool but Cobra's own, as a hook matcher. */
+export const OUTSIDE_MCP = "mcp__(?!cobra-orch__).*";
+
+/**
+ * A connector tool's after-event read: which tool ran, and what kind of
+ * outside text it gave back. Cobra's own tools mark their reads themselves
+ * (orch.ts), so they are not one. Null for anything else.
+ */
+export function connectorRead(event: unknown): { tool: string; source: TaintSource } | null {
+  const raw = event as { hook_event_name?: unknown; tool_name?: unknown } | null;
+  if (raw?.hook_event_name !== "PostToolUse" || typeof raw.tool_name !== "string") return null;
+  const tool = raw.tool_name;
+  if (!tool.startsWith("mcp__") || tool.startsWith(OWN_MCP)) return null;
+  const source: TaintSource = tool.startsWith(`${connectorPrefix("Gmail")}__`) ? "email" : tool.startsWith(`${connectorPrefix("Google Calendar")}__`) ? "calendar" : "connector";
+  return { tool, source };
+}
+
+/**
+ * The Lead's or a Foreman's turn is tainted once a connector's tool has
+ * answered it: an email, an invite or an issue is someone else's words,
+ * whichever server read it. Says whether it marked.
+ */
+export function noteConnectorRead(who: string, event: unknown, mark: (who: string, why: string, source: TaintSource) => void = (session, why, source) => noteRead(session, why, [], Date.now(), undefined, source)): boolean {
+  if (!parseOrchWho(who)) return false;
+  const read = connectorRead(event);
+  if (!read) return false;
+  mark(who, read.tool.slice(0, 200), read.source);
+  return true;
 }
 
 export type OrchWebDeps = {

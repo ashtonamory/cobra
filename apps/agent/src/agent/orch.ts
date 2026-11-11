@@ -145,7 +145,7 @@ import { applyOrg, companyNote, parseOrg, seatKey, type OrgCompany } from "../..
 import { handleRoutineOrch, liveRoutineDeps, ORCH_ROUTINE_POSTS, ORCH_ROUTINE_ROUTES, type RoutineDeps } from "./routineRoutes.ts";
 import { loadRoutines, type StoredRoutine } from "./routines.ts";
 import { DRIVE_CONSENT, loadTrust, type TrustState } from "./actionTrust.ts";
-import { isTainted, noteRead, taintedOwner, taintWorker, type Taint, type TaintSource } from "./taint.ts";
+import { isTainted, noteRead, reportTaint, taintedOwner, taintWorker, type Taint, type TaintSource } from "./taint.ts";
 import { trustedApproval, type TrustDeps } from "./trustRoutes.ts";
 import { workerToolNames } from "./workerSpace.ts";
 import { redactDeep } from "./secretValues.ts";
@@ -895,6 +895,8 @@ export async function handleOrch(
     trust?: { deps: TrustDeps; carryOut: (approval: StoredApproval) => void };
     /** The taint in force for a session (`lead`, `foreman:<project>`, `worker:<id>`) this turn (taint.ts); the live file when left out. */
     taintOf?: (who: string) => Taint | null;
+    /** The taint on what a Foreman last said (taint.ts reportTaint). */
+    reportTaintOf?: (who: string) => Taint | null;
     /** Cobra's own Workers (directWorkers.ts): each project's Space and its setting, and whether Workers here are contained; the live ones when left out. */
     direct?: { foremen?: ProjectModeDeps; contained?: () => boolean };
   },
@@ -904,6 +906,7 @@ export async function handleOrch(
   // Taint (taint.ts): who is calling, the taint in force for its turn, and marking what it read.
   const who = io.caller.worker !== undefined ? `worker:${io.caller.worker}` : io.caller.project === undefined ? "lead" : `foreman:${io.caller.project}`;
   const taintOf = io.taintOf ?? ((session: string) => isTainted(session));
+  const reportOf = io.reportTaintOf ?? ((session: string) => reportTaint(session));
   const markRead = (session: string, source: TaintSource, why: string, hosts: readonly string[] = []): void => {
     try {
       noteRead(session, why, hosts, Date.now(), undefined, source);
@@ -1066,6 +1069,9 @@ export async function handleOrch(
       const transcript = foreman.running ? await sessionTranscript(foreman.session, after) : { offset: after ?? 0, messages: [] };
       // Cobra has read it: an on-call Foreman whose final report this was may sleep now (onCall.ts).
       if (audienceOf(io.caller) === "lead") onCall.leadRead(project.id, Date.now());
+      // A report written in a turn that read outside text carries it to its reader, though the Foreman's own taint ended at its Stop.
+      const said = who === `foreman:${project.id}` || transcript.messages.length === 0 ? null : reportOf(`foreman:${project.id}`);
+      if (said) markRead(who, "report", `foreman_read ${project.id}`, said.hosts);
       return send(response, 200, { foreman, ...transcript });
     }
     // request_read: the question a Worker under a Foreman the Lead briefed waits on (requestAnswer.ts).

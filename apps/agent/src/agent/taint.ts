@@ -27,6 +27,11 @@ import { writePrivateFile } from "./private.ts";
  *   file      files copied into a Worker from outside its worktree.
  *   worker    a tainted Worker's own words, read by its Foreman or the Lead.
  *   brief     a brief, answer or message from a tainted orchestrator.
+ *   connector what a connector's tool gave back to the Lead or a Foreman
+ *             (orchWeb.ts): any MCP server but Cobra's own. Gmail's and
+ *             Calendar's count as email and calendar.
+ *   report    a Foreman's words, read by the Lead, when the turn that wrote
+ *             them had read text from outside (reportTaint).
  *
  * How long it lasts:
  *
@@ -42,7 +47,7 @@ import { writePrivateFile } from "./private.ts";
  * An ended taint stays in the file (`ended`) for the record, KEEP_MS.
  */
 
-export type TaintSource = "web" | "email" | "calendar" | "records" | "file" | "worker" | "brief";
+export type TaintSource = "web" | "email" | "calendar" | "records" | "file" | "worker" | "brief" | "connector" | "report";
 
 export type Taint = {
   /** When it was first tainted, this turn or Worker. */
@@ -171,6 +176,23 @@ export function noteRead(who: string, why: string, hosts: readonly string[], now
   saveTaint(markRead(file, who, { why, hosts, source, now, turns: signal.turns }, over), now, path);
 }
 
+/**
+ * The taint on what `who` last said: the one in force, or the one that ended
+ * with its last finished turn. A Foreman's taint ends at its Stop, which is
+ * when the Lead reads its report, so the report carries it on. Null once a
+ * later turn has ended clean. Where the agent knows nothing of the turns
+ * since, it holds.
+ */
+export function reportTaint(who: string, path = TAINT_PATH, probe: TurnProbe = liveProbe): Taint | null {
+  const taint = loadTaint(path).sessions[who];
+  if (!taint) return null;
+  if (taint.ended === undefined) return taint;
+  if (isWorker(who)) return null;
+  const signal = probe(who);
+  if (signal.turns !== null && taint.turns !== undefined) return signal.turns > taint.turns + 1 ? null : taint;
+  return signal.stopAt !== null && signal.stopAt > Date.parse(taint.ended) ? null : taint;
+}
+
 /** Who a new Worker of `owner` ("lead" or a project id) takes taint from, or undefined when its orchestrator's turn is clean. */
 export function taintedOwner(owner: string, path = TAINT_PATH, probe: TurnProbe = liveProbe): string | undefined {
   const who = ownerWho(owner);
@@ -239,6 +261,8 @@ const READ_WORDS: Readonly<Record<TaintSource, string>> = {
   file: "a file from outside",
   worker: "the report of a Worker that had read text from outside",
   brief: "a brief written after reading text from outside",
+  connector: "what a connected app sent back",
+  report: "a report written after reading text from outside",
 };
 
 /** What was read, in the person's words: "web pages (caymanyogaclub.com)", "an email from outside". */
