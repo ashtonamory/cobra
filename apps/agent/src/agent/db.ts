@@ -349,8 +349,10 @@ export function openProjectDb(project: string, schema: TradeSchema, dir: string 
   // column that SQLite traces to a table column (an alias or a join still
   // does) is masked exactly when that column is sensitive, so a run's total
   // stays readable while an employee's pay does not. One SQLite cannot trace
-  // (an expression such as SUM(gross_cents)) is masked when its name matches
-  // a sensitive column in any table: erring wide is the safe side.
+  // (an expression such as SUM(gross_cents) or bank || '') is masked when its
+  // name matches a sensitive column in any table, or when the query names a
+  // sensitive column anywhere: an expression can carry the value under any
+  // name, so erring wide is the safe side.
   const sensitiveNames = new Set<string>();
   const sensitiveColumns = new Set<string>();
   for (const [tableName, table] of Object.entries(schema.tables)) {
@@ -361,8 +363,13 @@ export function openProjectDb(project: string, schema: TradeSchema, dir: string 
     }
   }
   const isSensitiveName = (name: string): boolean => sensitiveNames.has(name.slice(name.lastIndexOf(".") + 1));
-  const isSensitiveResult = (column: { name: string; table: string | null; column: string | null }): boolean =>
-    column.table !== null && column.column !== null ? sensitiveColumns.has(`${column.table}.${column.column}`) : isSensitiveName(column.name);
+  /** Whether the query's own words name a sensitive column: its text with the quoted strings taken out, read as identifiers. */
+  const namesSensitive = (sql: string): boolean => {
+    const words = sql.replace(/'(?:[^']|'')*'/g, " ").match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [];
+    return words.some((word) => sensitiveNames.has(word));
+  };
+  const isSensitiveResult = (column: { name: string; table: string | null; column: string | null }, untraced: boolean): boolean =>
+    column.table !== null && column.column !== null ? sensitiveColumns.has(`${column.table}.${column.column}`) : untraced || isSensitiveName(column.name);
 
   const tableOf = (name: string) => {
     const spec = schema.tables[name];
@@ -533,7 +540,8 @@ export function openProjectDb(project: string, schema: TradeSchema, dir: string 
         }
         rows.push(plainRow(raw as Record<string, SQLOutputValue>));
       }
-      const masked = withMask ? described.filter(isSensitiveResult).map((column) => column.name) : [];
+      const untraced = withMask && namesSensitive(trimmed);
+      const masked = withMask ? described.filter((column) => isSensitiveResult(column, untraced)).map((column) => column.name) : [];
       if (masked.length > 0) {
         for (const row of rows) for (const name of masked) row[name] = mask(row[name] ?? null);
       }
