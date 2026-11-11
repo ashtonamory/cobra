@@ -128,7 +128,7 @@ import { isAgentCommand } from "./collect/commands.ts";
 import { listMerged, readCommits, windowStart } from "./worklog.ts";
 import { allMoney, liveAllMoneyDeps } from "./allMoney.ts";
 import { eaArgs, liveEaRun, liveIndex, startEa } from "./ea.ts";
-import { answerOrchWeb, liveOrchWebDeps, parseOrchWho } from "./orchWeb.ts";
+import { answerOrchWeb, liveOrchWebDeps, noteConnectorRead, parseOrchWho } from "./orchWeb.ts";
 import { answerAfter, liveClaimDeps } from "./webClaims.ts";
 import { dueForJudge, judgeUnanswered, refusedImportNews } from "./unanswered.ts";
 import { startGate } from "./gate.ts";
@@ -4047,7 +4047,15 @@ const stopGate = startGate({
   },
   // After each page read, whether it is what its address claims (webClaims.ts).
   // A page a Foreman under Cobra read that was not what it claims: Cobra hears of it too.
-  after: (who, event) => answerAfter({ ...liveClaimDeps((line) => console.log(`[${SERVICE}] ${line}`)), tell: claimTeller }, who, event),
+  // And what a connector's tool gave the Lead or a Foreman taints its turn (orchWeb.ts).
+  after: (who, event) => {
+    try {
+      noteConnectorRead(who, event);
+    } catch (caught) {
+      console.log(`[${SERVICE}] taint: could not note ${who}'s connector read (${caught instanceof Error ? caught.message : String(caught)})`);
+    }
+    return answerAfter({ ...liveClaimDeps((line) => console.log(`[${SERVICE}] ${line}`)), tell: claimTeller }, who, event);
+  },
   // Each turn's tokens from the Stop hook of the Lead, a Foreman or a Worker out of the sandbox (usageLedger.ts).
   usage: (as, body) => void takeTurn(callerOfAs(as), body),
 });

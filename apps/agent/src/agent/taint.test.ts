@@ -145,3 +145,36 @@ test("a Drive save the audit read first says so on its receipt", () => {
   assert.match(receiptNotice({ ...base, trusted: { key: DRIVE_CONSENT, grantedAt: "x" } }).body, /connected Google: saved/);
   assert.match(receiptNotice({ ...base, trusted: { key: DRIVE_CONSENT, grantedAt: "x", audited: "clean" } }).body, /connected Google, checked for planted content first: saved/);
 });
+
+test("a Foreman's report carries its turn's taint after the Stop, until a later turn ends clean", () => {
+  const path = join(STATE, "report.json");
+  const who = "foreman:northwind";
+  const none = () => ({ stopAt: null, turns: null });
+  assert.equal(taint.reportTaint(who, path, none), null, "a clean Foreman's report is clean");
+  taint.noteRead(who, "mail_read", [], NOW, path, "email", none);
+  assert.deepEqual(taint.reportTaint(who, path, none)?.sources, ["email"], "while its turn runs");
+
+  // Its Stop ends the taint for its own actions; the report it just wrote still carries it.
+  const stopped = () => ({ stopAt: NOW + 5000, turns: null });
+  assert.deepEqual(taint.endTurns(() => true, NOW + 6000, path, stopped), [who]);
+  assert.equal(taint.isTainted(who, path, stopped), null);
+  assert.deepEqual(taint.reportTaint(who, path, stopped)?.sources, ["email"]);
+  assert.ok(taint.reportTaint(who, path, none), "mid-turn, the agent knows nothing newer: it holds");
+
+  // A later turn that read nothing from outside has ended: its report is clean.
+  assert.equal(taint.reportTaint(who, path, () => ({ stopAt: NOW + 60_000, turns: null })), null);
+});
+
+test("a headless Foreman's report carries the taint for the turn that read, and no further", () => {
+  const path = join(STATE, "report-headless.json");
+  const who = "foreman:northwind";
+  taint.noteRead(who, "mail_read", [], NOW, path, "email", () => ({ stopAt: null, turns: 4 }));
+  taint.endTurns(() => true, NOW + 1000, path, () => ({ stopAt: null, turns: 5 }));
+  assert.ok(taint.reportTaint(who, path, () => ({ stopAt: null, turns: 5 })));
+  assert.equal(taint.reportTaint(who, path, () => ({ stopAt: null, turns: 6 })), null);
+});
+
+test("the card names a connected app's answer and a report in plain words", () => {
+  assert.equal(taint.taintNote("lead", { sources: ["connector"], hosts: [] }), "Cobra read what a connected app sent back in this turn, so it asks you before this goes out.");
+  assert.equal(taint.taintNote("lead", { sources: ["report"], hosts: [] }), "Cobra read a report written after reading text from outside in this turn, so it asks you before this goes out.");
+});
