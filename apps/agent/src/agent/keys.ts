@@ -5,101 +5,67 @@ import { join } from "node:path";
 import { CONFIG_DIR } from "./paths.ts";
 import type { KeyView } from "@cobra/contracts";
 
-import { LOCAL_RECIPIENT, type Recipient } from "./push.ts";
-
-/** An Expo push token, as Cobra's phones registered them; kept only so an old keys.json still parses. */
-const PUSH_TOKEN = /^ExponentPushToken\[[A-Za-z0-9_-]+\]$/;
 import { audit } from "./auditTrail.ts";
 import { readPrivateFile, writePrivateFile } from "./private.ts";
 
 /**
  * Who may call this agent, and for what.
  *
- * There is no shared token. Each phone links with a key it made for this one
- * computer (see link.ts), and each peer computer (the file hub delivering to
- * this one) gets a key the phone made for that pair. Only a SHA-256 of each
- * key is kept here: the file proves a caller, it cannot become one. (A
- * phone's push key is kept whole, because sealing needs it; it can only make
- * notifications that phone opens, never a request this agent accepts.)
+ * There is no shared token. Each caller has a key of its own, and only a
+ * SHA-256 of it is kept here: the file proves a caller, it cannot become one.
  *
- * A desktop (Cobra's desktop app, apps/desktop) is a third kind: `cobra-agent
- * desk` on each computer makes it a key, because a desktop has no camera to
- * scan a link code with. It does what a phone does, minus pushes. The same
- * line makes it a relay key (relayKey below), kept whole here like a phone's
- * push key; Cobra has no relay now, so nothing reads it.
+ * Two kinds call. The desk (Cobra's desktop app, and the `cobra-agent`
+ * command): `cobra-agent desk` makes it a key. And a Lead (the orchestrator,
+ * workers.ts): its key reaches /orch/* and nothing else, Workers and their
+ * status, never a session, a file or git, so a Lead key that leaks starts
+ * sandboxed Workers at worst. A Foreman's key is a Lead key held to one
+ * project.
  *
- * A phone's widgets are a fourth: the widget extension keeps its own key in
- * the app group, where a lock-screen widget can read it, so that key may do
- * one thing — GET /glance. The phone makes it and sends only its hash
- * (POST /widget-key); it is replaced on each registration and removed with
- * the phone.
+ * Scopes keep each key to its job. A desk reads and acts; a Lead only
+ * orchestrates. No key holds `terminal` (the scope /ticket needs): the desk
+ * opens a terminal on this computer itself. A key of a kind Cobra no longer
+ * has (a phone's, a peer's, a widget's, a cloud API's) is skipped when
+ * keys.json is read, so it stops working and never becomes one of these.
  *
- * A Lead (the orchestrator, workers.ts) is a fifth: `cobra-agent lead-key`
- * makes it a key that reaches /orch/* and nothing else — Workers and their
- * status, never a terminal, the file browser, git or chat — so a Lead key
- * that leaks starts sandboxed Workers at worst.
+ * A desk key expires (KEY_LIFETIME_MS after it was made or last rotated) and
+ * is rotated by its holder before then (POST /keys/rotate), so a copy taken
+ * once stops working. A key made before keys expired gets its expiry on
+ * first use.
  *
- * An `api` key is a sixth, a leftover kind: Cobra has no cloud API, so
- * nothing mints one now. A stored one still loads; it reads and acts like a
- * desktop, never opens a terminal, and there is one at most (createKeyStore
- * upsert). `cobra-agent unlink` removes it.
- *
- * Scopes keep each key to its job. A phone reads, acts and opens terminals;
- * a desktop reads and acts (it opens terminals over SSH, never with its key);
- * a peer only drops files into ~/Downloads/Cobra; a widget only glances; a
- * Lead only orchestrates. Unlink removes the entry, and with it the phone's
- * push token.
- *
- * Phone and desktop keys expire (KEY_LIFETIME_MS after they were made or last
- * rotated) and are rotated by their holder before then (POST /keys/rotate),
- * so a copy taken once stops working. A key made before keys expired gets its
- * expiry on first use. A phone that registered a signing key (signKey,
- * packages/sync requestSigning.ts) must also sign everything that is not a
- * GET (signing.ts), so its key alone, wherever it leaked, only reads.
- *
- * A Lead's and a Foreman's key on this computer expire too
- * (ORCH_KEY_LIFETIME_MS). Only the agent holds them: it adds them to the
- * calls that come down each orchestrator's line (orchSocket.ts), mints them
- * at its own start and at each Foreman's, and pushes their expiry out while
- * it serves the line (extendOrch, from its hourly tick). A key whose line
- * closed dies within ORCH_KEY_LIFETIME_MS; a key that has expired is never
- * brought back.
+ * A Lead's and a Foreman's key expire too (ORCH_KEY_LIFETIME_MS). Only the
+ * agent holds them: it adds them to the calls that come down each
+ * orchestrator's line (orchSocket.ts), mints them at its own start and at
+ * each Foreman's, and pushes their expiry out while it serves the line
+ * (extendOrch, from its hourly tick). A key whose line closed dies within
+ * ORCH_KEY_LIFETIME_MS; a key that has expired is never brought back.
  */
-export type Scope = "read" | "act" | "terminal" | "receive" | "glance" | "orch";
-export const PHONE_SCOPES: readonly Scope[] = ["read", "act", "terminal"];
-export const PEER_SCOPES: readonly Scope[] = ["receive"];
+export type Scope = "read" | "act" | "terminal" | "orch";
 export const DESK_SCOPES: readonly Scope[] = ["read", "act"];
-export const API_SCOPES: readonly Scope[] = ["read", "act"];
-export const WIDGET_SCOPES: readonly Scope[] = ["glance"];
 export const LEAD_SCOPES: readonly Scope[] = ["orch"];
-const SCOPES: readonly Scope[] = ["read", "act", "terminal", "receive", "glance", "orch"];
+const SCOPES: readonly Scope[] = ["read", "act", "terminal", "orch"];
 
 const DAY_MS = 24 * 60 * 60_000;
-/** How long a phone, desktop or API key works after it was made or last rotated. */
+/** How long a desk key works after it was made or last rotated. */
 export const KEY_LIFETIME_MS = 90 * DAY_MS;
-/** How long a Lead's or Foreman's key on this computer works without a start or a run to extend it. */
+/** How long a Lead's or Foreman's key works without a start or a run to extend it. */
 export const ORCH_KEY_LIFETIME_MS = 30 * DAY_MS;
 /** A running orchestrator's key is pushed out again once a day of it has passed. */
 export const ORCH_EXTEND_AFTER_MS = DAY_MS;
-/** A phone or desktop rotates its key once less than this is left (`x-cobra-key-expires` on every reply). */
+/** The desk rotates its key once less than this is left (`x-cobra-key-expires` on every reply). */
 export const ROTATE_WITHIN_MS = 30 * DAY_MS;
-/** The reply header that tells a phone or desktop when its key expires (ms since the epoch). */
+/** The reply header that tells the desk when its key expires (ms since the epoch). */
 export const KEY_EXPIRES_HEADER = "x-cobra-key-expires";
 
 export type Caller = {
   id: string;
   name: string;
-  kind: "phone" | "peer" | "desk" | "widget" | "lead" | "api";
+  kind: "desk" | "lead";
   keyHash: string;
   scopes: Scope[];
   linkedAt: number;
-  /** A phone's Expo push token, once it registers one. */
-  pushToken?: string;
-  /** The key this phone gave for sealing its pushes (push.ts). A secret, like the rest of this file is not. */
-  pushKey?: string;
   /**
-   * When a phone or desktop key stops working (ms). Absent on a key made
-   * before keys expired, until its first use sets it (createKeyStore).
+   * When the key stops working (ms). Absent on a key made before keys
+   * expired, until its first use sets it (createKeyStore).
    */
   expiresAt?: number;
   /** When the key was last rotated (POST /keys/rotate). */
@@ -111,14 +77,6 @@ export type Caller = {
    */
   prevKeyHash?: string;
   prevExpiresAt?: number;
-  /** A phone's Ed25519 public signing key (packages/sync requestSigning.ts). */
-  signKey?: string;
-  /**
-   * A desk's or the API's secret for relay boxes (packages/sync relayBox.ts),
-   * made with its key; Cobra has no relay now. A phone has none: its
-   * push key serves, derived apart. A secret, like pushKey.
-   */
-  relayKey?: string;
   /**
    * A Foreman's key (foreman.ts): a Lead key held to one project. /orch/*
    * shows and acts on that project and its Workers only (orch.ts).
@@ -149,38 +107,35 @@ export function parseCallers(text: string): Caller[] {
     const v = (entry ?? {}) as Record<string, unknown>;
     if (typeof v.id !== "string" || !CALLER_ID.test(v.id)) continue;
     if (typeof v.name !== "string" || !v.name.trim() || v.name.length > 80) continue;
-    if (v.kind !== "phone" && v.kind !== "peer" && v.kind !== "desk" && v.kind !== "widget" && v.kind !== "lead" && v.kind !== "api") continue;
+    // Any other kind is from before Cobra ran on one computer (a phone, a peer, a widget, a cloud API): it stops working here.
+    if (v.kind !== "desk" && v.kind !== "lead") continue;
     if (typeof v.keyHash !== "string" || !KEY_HASH.test(v.keyHash)) continue;
     // A key made for another computer, from before Cobra ran on one only: it stops working here, never becomes a local key.
     if (v.remote === true) continue;
     if (!Array.isArray(v.scopes)) continue;
-    // A desktop never opened terminals with its key, nor does the API; one made when it could loses that here.
-    const scopes = v.scopes.filter((scope): scope is Scope => SCOPES.includes(scope as Scope) && !((v.kind === "desk" || v.kind === "api") && scope === "terminal"));
+    // A scope Cobra no longer has is dropped. The desk never opens terminals with its key; one made when it could loses that here.
+    const scopes = v.scopes.filter((scope): scope is Scope => SCOPES.includes(scope as Scope) && !(v.kind === "desk" && scope === "terminal"));
     if (scopes.length === 0) continue;
     if (typeof v.linkedAt !== "number") continue;
     const caller: Caller = { id: v.id, name: v.name, kind: v.kind, keyHash: v.keyHash, scopes, linkedAt: v.linkedAt };
-    if (typeof v.pushToken === "string" && PUSH_TOKEN.test(v.pushToken)) caller.pushToken = v.pushToken;
-    if (typeof v.pushKey === "string" && /^[A-Za-z0-9_-]{43}$/.test(v.pushKey)) caller.pushKey = v.pushKey;
     if (typeof v.expiresAt === "number" && (expiring(caller) || orchExpiring(caller))) caller.expiresAt = v.expiresAt;
     if (typeof v.rotatedAt === "number") caller.rotatedAt = v.rotatedAt;
     if (typeof v.prevKeyHash === "string" && KEY_HASH.test(v.prevKeyHash) && typeof v.prevExpiresAt === "number" && expiring(caller)) {
       caller.prevKeyHash = v.prevKeyHash;
       caller.prevExpiresAt = v.prevExpiresAt;
     }
-    if (typeof v.signKey === "string" && /^[A-Za-z0-9_-]{43}$/.test(v.signKey) && v.kind === "phone") caller.signKey = v.signKey;
-    if (typeof v.relayKey === "string" && /^[A-Za-z0-9_-]{43}$/.test(v.relayKey) && (v.kind === "desk" || v.kind === "phone" || v.kind === "api")) caller.relayKey = v.relayKey;
     if (typeof v.project === "string" && /^[A-Za-z0-9._-]{1,80}$/.test(v.project) && v.kind === "lead") caller.project = v.project;
     callers.push(caller);
   }
   return callers;
 }
 
-/** Whether a caller's key expires and is rotated: a phone's, a desktop's or the API's. */
+/** Whether a caller's key expires and is rotated by its holder: the desk's. */
 export function expiring(caller: Pick<Caller, "kind">): boolean {
-  return caller.kind === "phone" || caller.kind === "desk" || caller.kind === "api";
+  return caller.kind === "desk";
 }
 
-/** Whether a caller is a Lead's or Foreman's key on this computer, which expires and is extended while it runs. */
+/** Whether a caller is a Lead's or Foreman's key, which expires and is extended while it runs. */
 export function orchExpiring(caller: Pick<Caller, "kind">): boolean {
   return caller.kind === "lead";
 }
@@ -219,7 +174,7 @@ export function findCaller(callers: readonly Caller[], presented: string): Calle
   return match.previous ? { ...match.caller, expiresAt: match.caller.prevExpiresAt } : match.caller;
 }
 
-/** A caller as the device list shows it (GET /keys): never a hash or a secret. */
+/** A caller as the key list shows it (GET /keys): never a hash or a secret. */
 export function keyView(caller: Caller, now: number, you?: string): KeyView {
   const madeAt = caller.rotatedAt ?? caller.linkedAt;
   return {
@@ -233,24 +188,18 @@ export function keyView(caller: Caller, now: number, you?: string): KeyView {
     ...(caller.expiresAt !== undefined
       ? { expiresAt: new Date(caller.expiresAt).toISOString(), expiresInDays: Math.floor((caller.expiresAt - now) / DAY_MS) }
       : {}),
-    signs: Boolean(caller.signKey),
     ...(caller.project ? { project: caller.project } : {}),
     you: caller.id === you,
   };
 }
 
-/**
- * A new desktop caller, the key it will present and its relay key. Both are
- * returned once, for the desktop to keep; only the key's hash is stored here,
- * the relay key whole, since opening the desktop's boxes needs it.
- */
+/** A new desk caller and the key it will present, returned once for the desk to keep; only the key's hash is stored here. */
 export function mintDesk(
   name: string,
   now: number,
   random: (size: number) => Uint8Array = randomBytes,
-): { caller: Caller; key: string; relayKey: string } {
+): { caller: Caller; key: string } {
   const key = Buffer.from(random(32)).toString("base64url");
-  const relayKey = Buffer.from(random(32)).toString("base64url");
   const caller: Caller = {
     id: `desk_${Buffer.from(random(16)).toString("base64url")}`,
     name: name.trim().slice(0, 80) || "Desktop",
@@ -259,9 +208,8 @@ export function mintDesk(
     scopes: [...DESK_SCOPES],
     linkedAt: now,
     expiresAt: now + KEY_LIFETIME_MS,
-    relayKey,
   };
-  return { caller, key, relayKey };
+  return { caller, key };
 }
 
 /**
@@ -311,14 +259,9 @@ export function mintForeman(
   return { caller, key };
 }
 
-/** The id of a phone's widget key: one per phone, so a new registration replaces the last. */
-export function widgetIdFor(phoneId: string): string {
-  return `widget_${phoneId}`.slice(0, 128);
-}
-
 export type KeyStore = ReturnType<typeof createKeyStore>;
 
-/** A key made, rotated, removed or given a signing key, in the audit log (auditTrail.ts): who it is for, never the key or its hash. */
+/** A key made, rotated or removed, in the audit log (auditTrail.ts): who it is for, never the key or its hash. */
 function keyAudit(kind: string, caller: Caller, by: string): void {
   audit(kind, {
     actor: by,
@@ -363,9 +306,9 @@ export function createKeyStore(path = KEYS_PATH) {
     /**
      * The caller for a presented key, or null. A refused file admits nobody.
      * Expiry is the caller's to check (auth.ts): the caller comes back with
-     * the expiry of the key presented. A phone or desktop key made before
-     * keys expired gets one now, and the first use of a rotated key retires
-     * the one it replaced.
+     * the expiry of the key presented. A desk key made before keys expired
+     * gets one now, and the first use of a rotated key retires the one it
+     * replaced.
      */
     authenticate(presented: string, now = Date.now()): Caller | null {
       const { callers, refused } = load();
@@ -376,7 +319,7 @@ export function createKeyStore(path = KEYS_PATH) {
       if (previous) return { ...caller, expiresAt: caller.prevExpiresAt };
       if (orchExpiring(caller)) {
         if (caller.expiresAt !== undefined) return caller;
-        // An orchestrator key made before they expired gets its time on first use, as a phone's did.
+        // An orchestrator key made before they expired gets its time on first use.
         const next: Caller = { ...caller, expiresAt: now + ORCH_KEY_LIFETIME_MS };
         try {
           save(callers.map((entry) => (entry === caller ? next : entry)));
@@ -397,7 +340,7 @@ export function createKeyStore(path = KEYS_PATH) {
       return next;
     },
     /**
-     * Swap a phone's or desktop's key for one it made (only the hash comes
+     * Swap the desk's key for one it made (only the hash comes
      * here), good for KEY_LIFETIME_MS. The key presented stays accepted until
      * the new one is first used, or its own expiry. Null when there is no
      * such caller, or the hash is one already in use.
@@ -441,39 +384,20 @@ export function createKeyStore(path = KEYS_PATH) {
       if (extended.length) save(next);
       return extended;
     },
-    /** A phone's signing key, taken only while it has none: a thief cannot replace the phone's. */
-    setSignKey(id: string, publicKey: string): "set" | "exists" | "missing" {
-      const { callers } = load();
-      const caller = callers.find((entry) => entry.id === id && entry.kind === "phone");
-      if (!caller) return "missing";
-      if (caller.signKey) return caller.signKey === publicKey ? "set" : "exists";
-      save(callers.map((entry) => (entry === caller ? { ...caller, signKey: publicKey } : entry)));
-      keyAudit("key.signing", caller, id);
-      return "set";
-    },
-    /**
-     * Add a caller, or replace the one with the same id and kind (a re-link
-     * rotates the key). There is one API caller at most: a new one replaces
-     * whichever was there, whatever its id.
-     */
+    /** Add a caller, or replace the one with the same id and kind (minting again rotates the key). */
     upsert(caller: Caller, by = "agent"): void {
-      const rest = load().callers.filter((c) => !(c.id === caller.id && c.kind === caller.kind) && !(caller.kind === "api" && c.kind === "api"));
+      const rest = load().callers.filter((c) => !(c.id === caller.id && c.kind === caller.kind));
       save([...rest, caller]);
       keyAudit("key.minted", caller, by);
     },
-    /** Remove by id, and a phone's widget key with it; returns whether anything went. */
+    /** Remove by id; returns whether anything went. */
     remove(id: string, by = "agent"): boolean {
       const { callers } = load();
-      const widget = widgetIdFor(id);
-      const rest = callers.filter((caller) => caller.id !== id && caller.id !== widget);
+      const rest = callers.filter((caller) => caller.id !== id);
       if (rest.length === callers.length) return false;
       save(rest);
       for (const gone of callers.filter((caller) => !rest.includes(caller))) keyAudit("key.revoked", gone, by);
       return true;
-    },
-    /** Where notifications go: this computer's desktop, always (push.ts). */
-    pushRecipients(): Recipient[] {
-      return [LOCAL_RECIPIENT];
     },
   };
 }

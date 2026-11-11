@@ -1130,7 +1130,7 @@ export async function answeredRequest(
   if (!worker) return null;
   if (isHeadless(worker.id) || isPi(worker.id)) {
     const entry = waitingEntry(worker.id);
-    if (!entry || allowRefusal(sent, entry.key, deps.now()) !== null) return null;
+    if (!entry || allowRefusal(sent, entry.key) !== null) return null;
     return { worker, entry };
   }
   // A Codex Worker's ask is on no screen (codexAsks.ts): an answer naming no other dialog is for it, an Allow only with its key.
@@ -1139,7 +1139,7 @@ export async function answeredRequest(
   const screen = await deps.screen(session);
   const pane = screen ? readPane(screen) : null;
   if (!pane?.needsInput || pane.dialog !== "permission") return null;
-  if (allowRefusal(sent, dialogKey(pane.dialogText), deps.now()) !== null) return null;
+  if (allowRefusal(sent, dialogKey(pane.dialogText)) !== null) return null;
   const entry = pickPending(deps.pending(worker.id), pane.dialogText);
   return entry ? { worker, entry } : null;
 }

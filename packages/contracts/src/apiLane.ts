@@ -31,10 +31,8 @@ export const ApiLaneStatus = z.object({
   resetsAt: z.string(),
   /** This computer's spend this month, by role (worker, lead, foreman, session, chat, helper, job). */
   here: z.object({ dollars: z.number(), requests: z.number(), byRole: z.record(z.string(), z.number()) }),
-  /** The fleet's spend this month as this computer knows it. */
+  /** The key's spend this month, the number the cap is held against. */
   fleetUsd: z.number(),
-  /** What the other computers had spent, as the Lead's computer last said. */
-  fleet: z.object({ others: z.number(), at: z.number(), from: z.string() }).nullable(),
   /** The last error a request on the key met, e.g. a key that needs a workspace. */
   lastError: z.object({ at: z.number(), status: z.number(), message: z.string() }).nullable(),
   /**

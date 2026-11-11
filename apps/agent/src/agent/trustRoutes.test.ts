@@ -64,10 +64,10 @@ function granted(w: ReturnType<typeof world>) {
 test("/trust: a phone or a desk only, GET for the list and POST for the rest", async () => {
   const w = world(Date.parse("2026-10-30T10:00:00Z"));
   assert.equal((await tr.handleTrustPerson("/trust", "GET", url("/trust"), "", { kind: "lead" }, w.deps)).status, 403);
-  assert.equal((await tr.handleTrustPerson("/trust/revoke", "GET", url("/trust/revoke"), "", { kind: "phone" }, w.deps)).status, 405);
-  assert.equal((await tr.handleTrustPerson("/trust", "POST", url("/trust"), "", { kind: "phone" }, w.deps)).status, 405);
-  assert.equal((await tr.handleTrustPerson("/trust/revoke", "POST", url("/trust/revoke"), "{", { kind: "phone" }, w.deps)).status, 400);
-  assert.equal((await tr.handleTrustPerson("/trust/revoke", "POST", url("/trust/revoke"), "{}", { kind: "phone" }, w.deps)).status, 400);
+  assert.equal((await tr.handleTrustPerson("/trust/revoke", "GET", url("/trust/revoke"), "", { kind: "desk" }, w.deps)).status, 405);
+  assert.equal((await tr.handleTrustPerson("/trust", "POST", url("/trust"), "", { kind: "desk" }, w.deps)).status, 405);
+  assert.equal((await tr.handleTrustPerson("/trust/revoke", "POST", url("/trust/revoke"), "{", { kind: "desk" }, w.deps)).status, 400);
+  assert.equal((await tr.handleTrustPerson("/trust/revoke", "POST", url("/trust/revoke"), "{}", { kind: "desk" }, w.deps)).status, 400);
 });
 
 test("/trust lists the grants, the keys that always ask and the receipts, for one project when asked", async () => {
@@ -77,7 +77,7 @@ test("/trust lists the grants, the keys that always ask and the receipts, for on
   assert.equal(all.grants.length, 1);
   assert.equal(all.always.length, 1);
   assert.deepEqual(all.receipts, []);
-  const one = (await tr.handleTrustPerson("/trust", "GET", url("/trust?project=payroll"), "", { kind: "phone" }, w.deps)).body as import("@cobra/contracts").TrustList;
+  const one = (await tr.handleTrustPerson("/trust", "GET", url("/trust?project=payroll"), "", { kind: "desk" }, w.deps)).body as import("@cobra/contracts").TrustList;
   assert.equal(one.grants.length, 1);
   assert.equal(one.always.length, 0);
 });
@@ -85,11 +85,11 @@ test("/trust lists the grants, the keys that always ask and the receipts, for on
 test("/trust/revoke takes a grant back and tells the Foreman; /trust/clear lets a key earn trust again", async () => {
   const w = world(Date.parse("2026-10-30T10:00:00Z"));
   const subject = granted(w);
-  const revoked = await tr.handleTrustPerson("/trust/revoke", "POST", url("/trust/revoke"), JSON.stringify({ key: subject.key }), { kind: "phone" }, w.deps);
+  const revoked = await tr.handleTrustPerson("/trust/revoke", "POST", url("/trust/revoke"), JSON.stringify({ key: subject.key }), { kind: "desk" }, w.deps);
   assert.equal(revoked.status, 200);
   assert.deepEqual(w.state().grants, []);
   assert.deepEqual(w.told, [{ owner: "payroll", text: "The person stopped trusting you to send pay-stub to ana@example.com: those are cards to allow again." }]);
-  assert.equal((await tr.handleTrustPerson("/trust/revoke", "POST", url("/trust/revoke"), JSON.stringify({ key: subject.key }), { kind: "phone" }, w.deps)).status, 404);
+  assert.equal((await tr.handleTrustPerson("/trust/revoke", "POST", url("/trust/revoke"), JSON.stringify({ key: subject.key }), { kind: "desk" }, w.deps)).status, 404);
   const cleared = await tr.handleTrustPerson("/trust/clear", "POST", url("/trust/clear"), JSON.stringify({ key: "a".repeat(64) }), { kind: "desk" }, w.deps);
   assert.equal(cleared.status, 200);
   assert.deepEqual(w.state().always, []);

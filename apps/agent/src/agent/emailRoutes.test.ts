@@ -84,10 +84,10 @@ test("a template is saved, proposed as one card, and Allow makes it v1", async (
   assert.equal(card.title, "New email: Booking confirmation");
   assert.match(card.body, /Links: Directions → example\.com/);
   assert.deepEqual(card.emailTemplate?.fields, ["first_name", "class_name"]);
-  const view = handleEmailPerson("/email/preview", "GET", new URL(`http://x/email/preview?approval=${card.id}`), { kind: "phone" }, t.deps, new Set(["phone"]));
+  const view = handleEmailPerson("/email/preview", "GET", new URL(`http://x/email/preview?approval=${card.id}`), { kind: "desk" }, t.deps, new Set(["desk"]));
   assert.equal(view.status, 200);
   assert.match((view.body as { html: string }).html, /Alex/);
-  assert.equal(handleEmailPerson("/email/preview", "GET", new URL(`http://x/email/preview?approval=${card.id}`), { kind: "lead" }, t.deps, new Set(["phone"])).status, 403);
+  assert.equal(handleEmailPerson("/email/preview", "GET", new URL(`http://x/email/preview?approval=${card.id}`), { kind: "lead" }, t.deps, new Set(["desk"])).status, 403);
 
   const settled = settleTemplateApproval({ ...card, state: "allowed" }, t.deps, new Date());
   assert.equal(settled.approval.state, "done");
@@ -161,7 +161,7 @@ test("the person's own HTML email is saved from its file, read back, previewed a
 
   const proposed = await t.post("/orch/email/template/propose", { slug: "agents" });
   assert.equal(proposed.status, 202, JSON.stringify(proposed.body));
-  const view = handleEmailPerson("/email/preview", "GET", new URL(`http://x/email/preview?approval=${t.approvals()[0]!.id}`), { kind: "phone" }, t.deps, new Set(["phone"]));
+  const view = handleEmailPerson("/email/preview", "GET", new URL(`http://x/email/preview?approval=${t.approvals()[0]!.id}`), { kind: "desk" }, t.deps, new Set(["desk"]));
   const drawn = (view.body as { html: string }).html;
   assert.match(drawn, /From a lump of clay to your own&nbsp;mug\./, "the design itself, not blocks");
   assert.match(drawn, /src="data:image\/png;base64,/, "its images drawn from the email images folder");

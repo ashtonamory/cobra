@@ -361,8 +361,6 @@ export type LaneStatus = {
   why: string;
   /** The month's spend here, by role. */
   here: { dollars: number; requests: number; byRole: Record<string, number> };
-  /** What the other computers had spent, as the Lead's computer last said, and when. */
-  fleet: { others: number; at: number; from: string } | null;
   workspace: boolean;
   lastError: { at: number; status: number; message: string } | null;
   gateway: boolean;
@@ -385,7 +383,7 @@ function gatherFacts(book: SpendBook, now: number): LaneFacts {
   const policy = readPolicyFile().policy.apiLane ?? { enabled: false, monthlyCapUsd: 0 };
   const key = apiKey();
   const account = apiAccount(key, apiWorkspace());
-  return { policy, key: key !== null, ...(account ? { account } : {}), spentUsd: book.fleetEstimate(), month: monthOf(now) };
+  return { policy, key: key !== null, ...(account ? { account } : {}), spentUsd: book.spent(), month: monthOf(now) };
 }
 
 export function refreshLane(now = Date.now()): LaneFacts | null {
@@ -419,7 +417,7 @@ export function liveRouteDeps(token: () => string | null, log: (line: string) =>
       state.book.record(entry);
       // The cap closes the lane at once, not at the next refresh.
       const facts = laneFactsNow();
-      if (facts) setLaneFacts({ ...facts, spentUsd: state.book.fleetEstimate() });
+      if (facts) setLaneFacts({ ...facts, spentUsd: state.book.spent() });
     },
     noteLimits(limits) {
       state.router.noteLimits(limits);
@@ -524,31 +522,24 @@ export function laneStatus(): LaneStatus | null {
   const facts = refreshLane() ?? laneFactsNow();
   if (!facts) return null;
   const month = live.book.month();
-  const heard = live.book.fleetHeard();
   const state = laneState(facts);
   return {
     facts,
     open: state.open,
     why: state.why,
     here: { dollars: month.dollars, requests: month.requests, byRole: month.byRole },
-    fleet: heard ? { others: heard.others, at: heard.at, from: heard.from } : null,
     workspace: apiWorkspace() !== null,
     lastError: live.lastError,
     gateway: live.listening,
   };
 }
 
-/** This month's spend here, for the Lead's computer's fleet total. */
+/** This month's spend here, for the Lead (GET /orch/api-lane). */
 export function monthSpendHere(): { month: string; dollars: number } {
   const month = ensureLive().book.month();
   return { month: month.month, dollars: month.dollars };
 }
 
-/** The Lead's computer's word on the others' spend this month. */
-export function noteFleetSpend(month: string, others: number, from: string): void {
-  ensureLive().book.noteFleet({ month, others, at: Date.now(), from });
-  refreshLane();
-}
 
 /** Whether `who`'s last Messages request, in the last 10 minutes, went on the key: the phone's API badge. */
 export function onKeyNow(who: string, now = Date.now()): boolean {

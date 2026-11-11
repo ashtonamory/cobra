@@ -10,9 +10,8 @@
 //   GET  /spaces/<id>/foremen                            {space, name, foremen}
 //   POST /spaces/<id>/foremen {foremen}                  the same, after the change
 //
-// The routes are the person's: a phone's or a desk's key, signed as every
-// change from a phone is (signing.ts, in index.ts before any route). The Lead
-// and the Foremen never change it.
+// The routes are the person's: the desk's key. The Lead and the Foremen
+// never change it.
 //
 // A project's mode is its Space's. A project with no trade (a code project)
 // is always standing: a merge always needs its Foreman (O4).
@@ -90,7 +89,7 @@ export function liveProjectModeDeps(spaceOfOrg: (project: string) => string | nu
 // --- the person's route --------------------------------------------------------
 
 export const SPACE_FOREMEN_ROUTE = /^\/spaces\/([^/]{1,64})\/foremen$/;
-const PERSON_KINDS: ReadonlySet<string> = new Set(["phone", "desk"]);
+const PERSON_KINDS: ReadonlySet<string> = new Set(["desk"]);
 
 type Reply = { status: number; body: unknown };
 

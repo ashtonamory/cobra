@@ -43,8 +43,8 @@ import type { MirrorStatus } from "./mirror.ts";
 export const PERSON_ROUTES: ReadonlySet<string> = new Set(["/integrations/google", "/db/journal", "/db/undo", "/db/mirror", "/views", "/view", "/view/write", "/view/reveal", "/boards", "/board/view", "/boards/remove"]);
 export const PERSON_POSTS: ReadonlySet<string> = new Set(["/db/undo", "/view/write", "/view/reveal", "/boards/remove"]);
 
-/** The key kinds these routes answer: the person's own phone and desk. */
-export const PERSON_KINDS: ReadonlySet<string> = new Set(["phone", "desk"]);
+/** The key kinds these routes answer: the person's own desk. */
+export const PERSON_KINDS: ReadonlySet<string> = new Set(["desk"]);
 
 const DAY_MS = 86_400_000;
 

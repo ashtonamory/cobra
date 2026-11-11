@@ -79,7 +79,7 @@ test("the spend book: the month's totals by role and caller, a new month from no
   const dir = mkdtempSync(join(tmpdir(), "api-spend-"));
   try {
     let now = NOW;
-    const paths = { ledger: join(dir, "ledger.jsonl"), spend: join(dir, "spend.json"), fleet: join(dir, "fleet.json") };
+    const paths = { ledger: join(dir, "ledger.jsonl"), spend: join(dir, "spend.json") };
     const book = new SpendBook(paths, () => now);
     book.record({ at: now, who: "w1", role: "worker", model: "claude-opus-5-5", usage: {}, dollars: 0.5, priced: true });
     book.record({ at: now, who: "cobra_lead", role: "lead", model: "claude-opus-5-5", usage: {}, dollars: 0.25, priced: true });
@@ -88,11 +88,10 @@ test("the spend book: the month's totals by role and caller, a new month from no
     assert.equal(book.month().requests, 3);
     assert.equal(readFileSync(paths.ledger, "utf8").trim().split("\n").length, 3);
     assert.equal(new SpendBook(paths, () => now).month().dollars, 1, "the totals survive a restart");
-    book.noteFleet({ month: monthOf(now), others: 4, at: now, from: "legion" });
-    assert.equal(book.fleetEstimate(), 5);
+    assert.equal(book.spent(), 1);
     now = new Date(2026, 10, 1, 0, 1).getTime();
     assert.equal(book.month().dollars, 0, "a new month starts from nothing");
-    assert.equal(book.fleetEstimate(), 0, "last month's fleet total is not this month's");
+    assert.equal(book.spent(), 0, "last month's spend is not this month's");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

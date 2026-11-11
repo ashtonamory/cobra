@@ -51,7 +51,7 @@ function setup() {
     now: () => clock.now,
     log: (line) => void logged.push(line),
   };
-  const phone = { kind: "phone" };
+  const phone = { kind: "desk" };
   const url = (route: string, query = "") => new URL(`http://agent.invalid${route}${query}`);
   const get = (route: string, query: string) => handlePerson(route, "GET", url(route, query), "", phone, deps);
   const post = (route: string, body: unknown) => handlePerson(route, "POST", url(route), JSON.stringify(body), phone, deps);
@@ -233,7 +233,7 @@ test("a sensitive value is masked on the way out, and Show returns just that one
   assert.equal((await post("/view/reveal", { project: "paws-crm", view: "person", id: "1", field: "phone" })).status, 400, "a page needs its block");
   assert.equal((await post("/view/reveal", { project: "paws-crm", view: "person", id: "1", block: 3 })).status, 400, "and a field");
   assert.equal(logged.some((line) => line.includes("555-010") || line.includes("Elm")), false, "a reveal is logged, never its value");
-  assert.ok(logged.some((line) => line.includes("phone shown to a phone")));
+  assert.ok(logged.some((line) => line.includes("phone shown to a desk")));
 });
 
 test("a button writes as the person, only what a view names, and the Foreman is told", async () => {
@@ -244,7 +244,7 @@ test("a button writes as the person, only what a view names, and the Foreman is 
   const before = await entries();
   const done = await write("note_add", { person_id: 1, body: "Likes mornings" });
   assert.equal(done.status, 200);
-  assert.match(told[0]!, /note_add from the phone's dashboard \(journal \d+\)/);
+  assert.match(told[0]!, /note_add from the desk's dashboard \(journal \d+\)/);
   assert.equal(await entries(), before + 1);
 
   // Not a button of any view: refused, though it is a real write of the schema.
@@ -255,7 +255,7 @@ test("a button writes as the person, only what a view names, and the Foreman is 
   assert.equal((await write("person_update", { id: 99, name: "x" })).status, 400, "the engine's own refusal comes back in words");
 
   // It is in the journal as the person, so the person's Undo reverses it.
-  const journal = await handlePerson("/db/journal", "GET", new URL("http://agent.invalid/db/journal?project=paws-crm"), "", { kind: "phone" }, deps);
+  const journal = await handlePerson("/db/journal", "GET", new URL("http://agent.invalid/db/journal?project=paws-crm"), "", { kind: "desk" }, deps);
   assert.equal((journal.body as { entries: { by: string; mutation: string }[] }).entries[0]!.by, "person");
   assert.equal((await post("/db/undo", { project: "paws-crm", journal: 2 })).status, 200);
   assert.equal(await entries(), before, "undone: the note is off the timeline again");
@@ -265,8 +265,8 @@ test("a Foreman's or Lead's key reaches none of it, and the verbs are held", asy
   const { deps } = setup();
   const url = (route: string) => new URL(`http://agent.invalid${route}?project=paws-crm&view=people`);
   for (const kind of ["foreman", "lead"]) assert.equal((await handlePerson("/view", "GET", url("/view"), "", { kind }, deps)).status, 403);
-  assert.equal((await handlePerson("/view/write", "GET", url("/view/write"), "", { kind: "phone" }, deps)).status, 405);
-  assert.equal((await handlePerson("/view", "POST", url("/view"), "{}", { kind: "phone" }, deps)).status, 405);
+  assert.equal((await handlePerson("/view/write", "GET", url("/view/write"), "", { kind: "desk" }, deps)).status, 405);
+  assert.equal((await handlePerson("/view", "POST", url("/view"), "{}", { kind: "desk" }, deps)).status, 405);
   assert.equal((await handlePerson("/view", "GET", new URL("http://agent.invalid/view?project=paws-crm&view=nope"), "", { kind: "desk" }, deps)).status, 404);
   assert.equal((await handlePerson("/view", "GET", url("/view"), "", { kind: "desk" }, deps)).status, 200, "a desk reads it too");
 });

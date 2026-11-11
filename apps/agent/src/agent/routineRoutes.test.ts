@@ -38,7 +38,7 @@ const session: Project = { ...project("payroll_2", "Payroll"), parent: "payroll"
 type Caller = { id: string; kind: string; name: string; project?: string };
 const LEAD: Caller = { id: "lead_legion", kind: "lead", name: "Lead on legion" };
 const foremanOf = (id: string): Caller => ({ id: foremanCallerId(id), kind: "lead", name: `Foreman for ${id}`, project: id });
-const PHONE: Caller = { id: "phone_1", kind: "phone", name: "Phone" };
+const PHONE: Caller = { id: "phone_1", kind: "desk", name: "Phone" };
 const DESK: Caller = { id: "desk_1", kind: "desk", name: "Desk" };
 
 const PAYROLL_RULE = { every: "week", interval: 2, days: ["fri"], at: "09:00", starts: "2026-10-30" };

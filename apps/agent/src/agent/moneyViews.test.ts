@@ -47,7 +47,7 @@ function setup() {
     now: () => clock.now,
     log: () => {},
   };
-  const phone = { kind: "phone" };
+  const phone = { kind: "desk" };
   const url = (route: string, query = "") => new URL(`http://agent.invalid${route}${query}`);
   /** Seeds the store as the engine's own writers would: any named write, as the person. */
   const seed = (mutation: string, args: Record<string, unknown>) => {
@@ -89,7 +89,7 @@ test("every Money view reads against the real schema, and every button names a r
   books(seed);
   for (const name of actionMutations(MONEY_VIEWS)) assert.ok(SPACE_SCHEMA.mutations[name], `${name} is a Space write`);
   for (const spec of MONEY_VIEWS) for (const range of spec.chart?.ranged ? ["30d", "quarter", "6mo", "year", "all"] : [""]) await view(spec.id, spec.kind === "page" ? "&id=1" : range ? `&range=${range}` : "");
-  const listed = await handlePerson("/views", "GET", new URL("http://agent.invalid/views?project=paws-money"), "", { kind: "phone" }, deps);
+  const listed = await handlePerson("/views", "GET", new URL("http://agent.invalid/views?project=paws-money"), "", { kind: "desk" }, deps);
   const list = listed.body as ViewList;
   assert.deepEqual(list.views.map((v) => v.id), [
     "summary", "money-in", "money-out", "to-check", "overdue", "month", "spending", "accounts", "activity", "invoices", "expense", "move", "invoice",
@@ -168,7 +168,7 @@ test("what waits is allowed with the person's own Allow, and nothing counts unti
 test("each row of To allow offers its own Allow and Not mine, from the view in /views (the reply carries no buttons)", async () => {
   const { seed, view, deps } = setup();
   books(seed);
-  const listed = await handlePerson("/views", "GET", new URL("http://agent.invalid/views?project=paws-money"), "", { kind: "phone" }, deps);
+  const listed = await handlePerson("/views", "GET", new URL("http://agent.invalid/views?project=paws-money"), "", { kind: "desk" }, deps);
   // As the apps read it: the tolerant reader, then the same rule both apps draw a row's buttons with.
   const spec = parseViewList(listed.body).views.find((v) => v.id === "waiting")!;
   const reply = await view("waiting");
@@ -301,7 +301,7 @@ test("waiting on you: money in and out as groups, and Allow all allows only the 
   assert.equal((await view("to-check")).rows!.map((r) => r.kind).join(), "import");
 
   // The batch is a button on the view, and the person's alone.
-  const listed = await handlePerson("/views", "GET", new URL("http://agent.invalid/views?project=paws-money"), "", { kind: "phone" }, deps);
+  const listed = await handlePerson("/views", "GET", new URL("http://agent.invalid/views?project=paws-money"), "", { kind: "desk" }, deps);
   const views = parseViewList(listed.body);
   assert.deepEqual(views.views.find((v) => v.id === "money-in")?.batch, { mutation: "moves_allow", label: "Allow all", amount: "home_cents" });
   assert.equal(views.mutations.moves_allow?.personOnly, true);

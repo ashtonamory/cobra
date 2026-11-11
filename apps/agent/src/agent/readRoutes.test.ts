@@ -148,7 +148,7 @@ type OrchCaller = { id: string; kind: string; name: string; remote?: boolean; pr
 const foremanFor = (id: string): OrchCaller => ({ id: `foreman_${id}`, kind: "lead", name: `Foreman for ${id}`, project: id });
 const LEAD: OrchCaller = { id: "lead_legion", kind: "lead", name: "Lead on legion" };
 const REMOTE_LEAD: OrchCaller = { id: "lead_mini", kind: "lead", name: "Lead on mini", remote: true };
-const PHONE: OrchCaller = { id: "phone_1", kind: "phone", name: "Sam's phone" };
+const PHONE: OrchCaller = { id: "phone_1", kind: "desk", name: "Sam's phone" };
 const DESK: OrchCaller = { id: "desk_1", kind: "desk", name: "Desk" };
 
 async function routes() {

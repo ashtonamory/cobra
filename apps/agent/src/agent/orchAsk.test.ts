@@ -51,7 +51,7 @@ test("ask_person: the Lead asks, ask_wait reads nothing yet, your answer is then
 });
 
 test("ask_person is refused to a phone's key, and a question needs options", async () => {
-  assert.equal((await call("/orch/ask", "", "POST", { kind: "phone" }, question)).status, 403);
+  assert.equal((await call("/orch/ask", "", "POST", { kind: "desk" }, question)).status, 403);
   assert.equal((await call("/orch/ask", "", "POST", { kind: "lead" }, JSON.stringify({ question: "q", options: [] }))).status, 400);
   assert.equal((await call("/orch/ask/wait", "?id=ask-nope&timeout=0", "GET", { kind: "lead" })).status, 404);
 });

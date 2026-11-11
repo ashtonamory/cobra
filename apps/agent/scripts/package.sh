@@ -22,11 +22,9 @@
 # desk app's AppImage, which install.sh installs and links.
 #
 # Inside: its own Node runtime (pinned and checksum-verified), the agent and
-# gateway TypeScript sources with the pairing code they share with the phone
-# (Node runs them directly, so there is no build step), the runtime modules
-# (ws, node-pty with its prebuilt addon, the xterm page assets, @noble for the
-# pairing crypto, qrcode-terminal for `cobra-agent link`), the systemd units
-# and install.sh. Nothing from the target machine is needed but systemd (or
+# gateway TypeScript sources (Node runs them directly, so there is no build
+# step), the runtime modules (ws, node-pty with its prebuilt addon, the xterm
+# page assets), the systemd units and install.sh. Nothing from the target machine is needed but systemd (or
 # launchd), tmux and git — no compiler, no npm.
 #
 # The sources keep their places in the repo (apps/agent/src, packages/ste/src)
@@ -177,21 +175,6 @@ copy_module ws index.js wrapper.mjs lib
 copy_module @xterm/xterm lib css
 copy_module @xterm/addon-fit lib
 copy_module node-pty lib
-# Pure JavaScript, small, and shipped whole: the pairing crypto and the QR.
-# @noble exports no package.json, so require.resolve cannot find its folder:
-# walk the lookup paths Node would use from the agent's folder instead.
-package_dir() {
-  node -e "const {createRequire}=require('module');const fs=require('fs'),path=require('path');for (const d of createRequire('$AGENT/package.json').resolve.paths('$1')) {const c=path.join(d,'$1');if (fs.existsSync(path.join(c,'package.json'))) {console.log(fs.realpathSync(c));process.exit(0)}}process.exit(1)"
-}
-copy_whole() {
-  local name=$1 src
-  src=$(package_dir "$name")
-  mkdir -p "$(dirname "$STAGE/node_modules/$name")"
-  cp -a "$src" "$STAGE/node_modules/$name"
-  rm -rf "$STAGE/node_modules/$name/src" "$STAGE/node_modules/$name/test" "$STAGE/node_modules/$name/example"
-  echo "    $name $(node -p "require('$src/package.json').version")"
-}
-for name in @noble/ciphers @noble/curves @noble/hashes qrcode-terminal; do copy_whole "$name"; done
 # zod, for ste-check's report schema: the built files only.
 FROM="$ROOT/packages/ste" copy_module zod index.js index.cjs v3 v4 v4-mini
 if [[ $OS == linux ]]; then

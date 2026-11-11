@@ -42,13 +42,13 @@ test("a project's mode is its Space's; a code project is always standing; a proj
   assert.equal(foremen.projectForemen({ id: "northwind-crm", foremanTemplate: "people" }, { ...deps, spaceOf: () => { throw new Error("broken org"); } }).mode, "standing");
 });
 
-test("GET and POST /spaces/<id>/foremen: the person's phone or desk only, standing or on-call", () => {
-  const phone = { kind: "phone", name: "iPhone" };
+test("GET and POST /spaces/<id>/foremen: the desk only, standing or on-call", () => {
+  const phone = { kind: "desk", name: "Desk" };
   const log: string[] = [];
   assert.deepEqual(foremen.handleSpaceForemen("northwind", "GET", "", phone, (line) => void log.push(line)), { status: 200, body: { space: "northwind", name: "Northwind", foremen: "standing" } });
   assert.deepEqual(foremen.handleSpaceForemen("northwind", "POST", JSON.stringify({ foremen: "on-call" }), phone, (line) => void log.push(line)), { status: 200, body: { space: "northwind", name: "Northwind", foremen: "on-call" } });
-  assert.match(log[0] ?? "", /Space northwind: Foremen on-call, set by phone iPhone/);
-  for (const caller of [{ kind: "lead" }, { kind: "api" }, { kind: "widget" }]) {
+  assert.match(log[0] ?? "", /Space northwind: Foremen on-call, set by desk Desk/);
+  for (const caller of [{ kind: "lead" }, { kind: "phone" }, { kind: "api" }]) {
     assert.equal(foremen.handleSpaceForemen("northwind", "POST", JSON.stringify({ foremen: "standing" }), caller, () => undefined).status, 403, caller.kind);
   }
   assert.equal(foremen.spaceForemen("northwind"), "on-call", "a refused key changed nothing");

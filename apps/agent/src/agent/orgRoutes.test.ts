@@ -47,7 +47,7 @@ function deps(home = true) {
   };
 }
 
-const phone = { id: "phone-1", kind: "phone" };
+const phone = { id: "phone-1", kind: "desk" };
 const lead = { id: "lead-1", kind: "lead" };
 
 test("the phone reads and changes the org; Northwind's key and a Lead's are refused", async () => {
@@ -59,7 +59,7 @@ test("the phone reads and changes the org; Northwind's key and a Lead's are refu
   assert.equal((made.body as { created: string }).created, "happy-tails");
   const stale = await handleOrgPerson("/org", "POST", JSON.stringify({ change: { op: "company", name: "Other" }, revision: 0 }), phone, t.deps);
   assert.equal(stale.status, 409, "a write against an older revision is refused");
-  assert.equal((await handleOrgPerson("/org", "GET", "", { id: "o", kind: "api" }, t.deps)).status, 403);
+  assert.equal((await handleOrgPerson("/org", "GET", "", { id: "o", kind: "phone" }, t.deps)).status, 403);
   assert.equal((await handleOrgPerson("/org", "GET", "", lead, t.deps)).status, 403);
   assert.equal((await handleOrgPerson("/org", "POST", "{", phone, t.deps)).status, 400);
 });

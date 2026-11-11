@@ -6,13 +6,13 @@ import { join } from "node:path";
 
 import { handleMailboxes } from "./mailboxRoutes.ts";
 
-const PERSON = new Set(["phone", "desk"]);
+const PERSON = new Set(["desk"]);
 
-test("phase 7: the phone or desk adds a box, points a Space at it, and never sees the password", async () => {
+test("phase 7: the desk adds a box, points a Space at it, and never sees the password", async () => {
   const path = join(mkdtempSync(join(tmpdir(), "cobra-box-routes-")), "mailboxes.json");
   const logs: string[] = [];
   const deps = { spaces: () => [{ id: "s1", name: "Happy Tails" }], now: () => new Date("2026-11-02T15:00:00Z"), log: (l: string) => logs.push(l), path, checks: { smtp: async () => {}, imap: async () => {} } };
-  const call = (route: string, method: string, body: unknown, kind = "phone") => handleMailboxes(route, method, JSON.stringify(body ?? {}), { kind }, deps, PERSON);
+  const call = (route: string, method: string, body: unknown, kind = "desk") => handleMailboxes(route, method, JSON.stringify(body ?? {}), { kind }, deps, PERSON);
 
   assert.equal((await call("/email/mailboxes", "GET", null, "foreman")).status, 403);
   const empty = (await call("/email/mailboxes", "GET", null)).body as { boxes: unknown[]; providers: { id: string }[]; spaces: { box: string }[] };
@@ -37,7 +37,7 @@ test("phase 7: the phone or desk adds a box, points a Space at it, and never see
 test("F18: a mailboxes.json others can read is a 500 that says what to do, not an empty list", async () => {
   const path = join(mkdtempSync(join(tmpdir(), "cobra-box-routes-")), "mailboxes.json");
   const deps = { spaces: () => [{ id: "s1", name: "Happy Tails" }], now: () => new Date("2026-11-02T15:00:00Z"), log: () => {}, path, checks: { smtp: async () => {}, imap: async () => {} } };
-  const call = (route: string, method: string, body: unknown) => handleMailboxes(route, method, JSON.stringify(body ?? {}), { kind: "phone" }, deps, PERSON);
+  const call = (route: string, method: string, body: unknown) => handleMailboxes(route, method, JSON.stringify(body ?? {}), { kind: "desk" }, deps, PERSON);
   assert.equal((await call("/email/mailboxes", "POST", { provider: "icloud", address: "studio@icloud.com", password: "abcd-efgh-ijkl-mnop" })).status, 200);
   chmodSync(path, 0o644);
   const listed = await call("/email/mailboxes", "GET", null);

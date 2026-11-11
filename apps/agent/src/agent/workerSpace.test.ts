@@ -255,7 +255,7 @@ test("spawn with spaceTools: a Foreman's, for a trade that has Space tools; refu
     });
     return reply as unknown as { status: number; body: { error?: string } };
   };
-  const phone = await spawn({ id: "phone_1", kind: "phone", name: "Phone" }, { project: "acme-billing", task: "t", spaceTools: true });
+  const phone = await spawn({ id: "phone_1", kind: "desk", name: "Phone" }, { project: "acme-billing", task: "t", spaceTools: true });
   assert.equal(phone.status, 403);
   assert.match(phone.body.error ?? "", /only a Foreman gives its Workers Space tools/);
   const none = await spawn({ id: "foreman_app_______", kind: "lead", name: "Foreman for app", project: "app" }, { project: "app", task: "t", spaceTools: true });

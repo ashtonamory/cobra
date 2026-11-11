@@ -9,14 +9,11 @@ import type { Stamp } from "./wakes.ts";
 /**
  * What the API lane spent: every request on the
  * key as one line of `api-ledger.jsonl`, and this month's totals by role and
- * by caller in `api-spend.json`. The fleet's total comes from the Lead's
- * computer (`api-fleet.json`): what every other computer had spent when it
- * last asked, so this computer's estimate is that plus its own now.
+ * by caller in `api-spend.json`.
  */
 
 export const API_LEDGER = join(STATE_DIR, "api-ledger.jsonl");
 export const API_SPEND = join(STATE_DIR, "api-spend.json");
-export const API_FLEET = join(STATE_DIR, "api-fleet.json");
 
 /** A ledger past this is moved aside once; the totals never depend on it. */
 const LEDGER_MAX_BYTES = 20_000_000;
@@ -36,22 +33,18 @@ export type MonthSpend = {
   byWho: Record<string, number>;
 };
 
-/** What the other computers had spent this month, as the Lead's computer last told this one. */
-export type FleetSpend = { month: string; others: number; at: number; from: string };
-
 const round = (value: number) => Math.round(value * 1_000_000) / 1_000_000;
 
 function emptyMonth(month: string): MonthSpend {
   return { month, dollars: 0, requests: 0, byRole: {}, byWho: {} };
 }
 
-export type SpendPaths = { ledger: string; spend: string; fleet: string };
+export type SpendPaths = { ledger: string; spend: string };
 
-export const SPEND_PATHS: SpendPaths = { ledger: API_LEDGER, spend: API_SPEND, fleet: API_FLEET };
+export const SPEND_PATHS: SpendPaths = { ledger: API_LEDGER, spend: API_SPEND };
 
 export class SpendBook {
   private current: MonthSpend;
-  private fleet: FleetSpend | null;
   private readonly paths: SpendPaths;
   private readonly now: () => number;
 
@@ -59,7 +52,6 @@ export class SpendBook {
     this.paths = paths;
     this.now = now;
     this.current = this.read(paths.spend) ?? emptyMonth(monthOf(now()));
-    this.fleet = readFleet(paths.fleet);
   }
 
   private read(path: string): MonthSpend | null {
@@ -96,37 +88,8 @@ export class SpendBook {
     return month;
   }
 
-  /** The Lead's computer's word on the others' spend. A total for another month is not this month's. */
-  noteFleet(fleet: FleetSpend): void {
-    this.fleet = fleet;
-    try {
-      writePrivateFile(this.paths.fleet, `${JSON.stringify(fleet)}\n`);
-    } catch {
-      // Kept in memory.
-    }
-  }
-
-  /** What the others spent this month, as last heard; 0 when nothing was heard this month. */
-  others(): number {
-    const fleet = this.fleet;
-    return fleet && fleet.month === this.month().month ? fleet.others : 0;
-  }
-
-  fleetHeard(): FleetSpend | null {
-    return this.fleet && this.fleet.month === this.month().month ? this.fleet : null;
-  }
-
-  /** The fleet's spend this month as this computer knows it: the others' last total and its own now. */
-  fleetEstimate(): number {
-    return round(this.others() + this.month().dollars);
-  }
-}
-
-function readFleet(path: string): FleetSpend | null {
-  try {
-    const raw = JSON.parse(readFileSync(path, "utf8")) as FleetSpend;
-    return typeof raw.month === "string" && typeof raw.others === "number" ? raw : null;
-  } catch {
-    return null;
+  /** What the key spent this month, for the cap. */
+  spent(): number {
+    return round(this.month().dollars);
   }
 }

@@ -64,7 +64,7 @@ function harness(opts: { tokens?: { status: number; body: unknown }[]; accounts?
   return { cf: new Cloudflare(deps), calls, lines, file: () => file, tick: (ms: number) => (now += ms) };
 }
 
-const phone = { kind: "phone" };
+const phone = { kind: "desk" };
 
 test("the consent page carries the client, the return page, the scopes and an S256 challenge, never the verifier", () => {
   const url = new URL(authUrl({ state: "s", verifier: "v", at: 0 }, "client", "https://cobra.example/connect/cloudflare"));

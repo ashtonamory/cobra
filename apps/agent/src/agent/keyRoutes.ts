@@ -29,7 +29,7 @@ export function keyRoute(
   caller: Caller,
   presented: string,
   bodyText: string,
-  keys: Pick<KeyStore, "load" | "rotate" | "setSignKey">,
+  keys: Pick<KeyStore, "load" | "rotate">,
   machine: string,
   now: number,
 ): KeyReply {
@@ -44,7 +44,6 @@ export function keyRoute(
 
   if (route === "/keys/rotate") {
     if (!expiring(caller)) return { status: 403, body: { error: "only the desk app's key is rotated this way" } };
-    // A phone rotates once it signs: before that, its bearer key alone could keep itself alive.
     const keyHash = typeof body.keyHash === "string" ? body.keyHash : "";
     if (!/^[0-9a-f]{64}$/.test(keyHash)) return { status: 400, body: { error: "keyHash must be a SHA-256 in hex" } };
     const rotated = keys.rotate(caller.id, presented, keyHash, now);
