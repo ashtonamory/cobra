@@ -110,6 +110,8 @@ export const OrchForeman = z.object({
   name: z.string(),
   /** Its own name (crew.ts), as the person writes it after @ ("Rusty"); absent from older agents. */
   crew: z.string().optional(),
+  /** What it is for, in one line (specialists.ts); absent when nobody set one and its trade has no name. */
+  title: z.string().optional(),
   session: z.string(),
   running: z.boolean(),
   /** What the session is doing (agent-working, agent-idle, ...), when it runs. */

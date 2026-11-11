@@ -14,8 +14,12 @@ export const ORCH_MODELS: Readonly<Record<OrchRole, { model: string; effort: str
   foreman: { model: "sonnet", effort: "medium" },
 };
 
-/** Claude Code's flags for a role's model and effort. */
-export function orchModelArgs(role: OrchRole): string[] {
-  const { model, effort } = ORCH_MODELS[role];
-  return ["--model", model, "--effort", effort];
+/**
+ * Claude Code's flags for a role's model and effort. `model`: a Foreman's
+ * own (specialists.ts), which the person set or allowed; the effort stays
+ * the role's.
+ */
+export function orchModelArgs(role: OrchRole, model?: string | null): string[] {
+  const usual = ORCH_MODELS[role];
+  return ["--model", model || usual.model, "--effort", usual.effort];
 }

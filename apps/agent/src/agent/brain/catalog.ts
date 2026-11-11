@@ -23,7 +23,7 @@ export type Candidate = {
   provider: Provider;
 };
 
-const CLAUDE_MODELS = ["opus", "sonnet", "haiku", "fable"] as const;
+export const CLAUDE_MODELS = ["opus", "sonnet", "haiku", "fable"] as const;
 
 /**
  * What can be routed to on this computer: the Claude models always (the

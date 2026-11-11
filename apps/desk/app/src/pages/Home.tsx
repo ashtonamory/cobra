@@ -33,6 +33,7 @@ import * as api from "../lib/api.ts";
 import { actionView } from "../lib/approvalAction.ts";
 import { routineApprovalView } from "../lib/routines.ts";
 import * as trust from "../lib/trust.ts";
+import { specialistText } from "../lib/specialistCard.ts";
 import { trustApprovalView } from "../lib/trust.ts";
 import * as charts from "../lib/charts.ts";
 import * as config from "../lib/config.ts";
@@ -486,13 +487,15 @@ function BlockerRow({ b }: { b: ops.Blocker }) {
     const no = action?.no ?? (board ? "Not now" : expenses ? "Not mine" : "Deny");
     // A card from a turn that read text from outside says why it asks (lib/trust.ts taintNote).
     const tainted = trust.taintNote(b.approval);
-    const shown = action ? <ActionCard view={action} /> : board ? <BoardPreview board={board} /> : expenses ? <ExpensesPreview machine={b.machine} approval={String(b.approval!.id)} expenses={expenses} /> : bills ? <BillsPreview approval={String(b.approval!.id)} bills={bills} /> : source || siteShots(b.approval).length ? <>
+    // A change to a specialist (lib/specialistCard.ts): every word of it, since Allow puts them into its rules.
+    const whole = specialistText(b.approval);
+    const shown = whole ? <pre className="card-whole" onClick={(e) => e.stopPropagation()}>{whole}</pre> : action ? <ActionCard view={action} /> : board ? <BoardPreview board={board} /> : expenses ? <ExpensesPreview machine={b.machine} approval={String(b.approval!.id)} expenses={expenses} /> : bills ? <BillsPreview approval={String(b.approval!.id)} bills={bills} /> : source || siteShots(b.approval).length ? <>
           {source && <div className="bdetail">{source}</div>}
           <SiteShots machine={b.machine} approval={b.approval} />
         </> : undefined;
     return (
       <BoardRow time={b.time} title={b.title} word={action ? action.word : board ? "BOARD" : expenses ? "RECEIPTS" : bills ? "BILLS" : b.word} tone="signal" machine={b.machine} keepActions
-        detail={action || bills ? null : body ? body.split("\n")[0] : null} tooltip={action ? undefined : body || undefined}
+        detail={action || bills || whole ? null : body ? body.split("\n")[0] : null} tooltip={action || whole ? undefined : body || undefined}
         extra={tainted ? <>
           <div className="bdetail">{tainted}</div>
           {shown}

@@ -18,6 +18,8 @@ import { loadExtras, ownGit, withExtras } from "../extras.ts";
 import { LEAD_SESSION, leadProject } from "../lead.ts";
 import { foremanProject, foremanSession } from "../foreman.ts";
 import { withCrew } from "../crew.ts";
+import { withTitles } from "../specialists.ts";
+import { allTrades } from "../trades.ts";
 import { explainedRequest } from "../permissionRequest.ts";
 import { remoteShown } from "../codexAsks.ts";
 import { overlayAsk, pendingAsk } from "../asks.ts";
@@ -136,7 +138,9 @@ async function collectNow(configPath: string, options: CollectOptions): Promise<
   }
   if (mine.length === 0) return { machine, projects: [] };
   // Each repository's Foreman by name (crew.ts), on it and on everything under it.
-  const named = withCrew(mine);
+  // And what each is for (specialists.ts), which the desk draws beside the name.
+  const trades = allTrades();
+  const named = withTitles(withCrew(mine), (id) => trades.find((trade) => trade.id === id)?.name);
 
   const sessions = new Map(tmux.sessions.map((session) => [session.name, session]));
   // What the agents said through their hooks (hooks.ts): read once a collect.

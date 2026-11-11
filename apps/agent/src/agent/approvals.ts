@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import os from "node:os";
 import { join } from "node:path";
 
-import type { Approval, ApprovalAction, ApprovalBoard, ApprovalEmailTemplate, ApprovalBrand, ApprovalExpenses, ApprovalBudget, ApprovalBills, ApprovalImport, ApprovalLand, ApprovalOrg, ApprovalPlan, ApprovalPr, ApprovalRoutine, ApprovalSite, ApprovalSpace, ApprovalTrade, ApprovalTrust, ApprovalTrusted, McpPin } from "@cobra/contracts";
+import type { Approval, ApprovalAction, ApprovalBoard, ApprovalEmailTemplate, ApprovalBrand, ApprovalExpenses, ApprovalBudget, ApprovalBills, ApprovalImport, ApprovalLand, ApprovalOrg, ApprovalPlan, ApprovalPr, ApprovalRoutine, ApprovalSite, ApprovalSpace, ApprovalSpecialist, ApprovalTrade, ApprovalTrust, ApprovalTrusted, McpPin } from "@cobra/contracts";
 
 import { audit, recipients, type AuditFields } from "./auditTrail.ts";
 import { landLine, landOne, type LandDeps } from "./landing.ts";
@@ -45,6 +45,8 @@ export const PENDING_MS: Record<string, number> = {
   trust: 3 * 24 * 60 * 60_000,
   // A new trade (tradeRoutes.ts) is read at leisure: three days, as trust.
   trade: 3 * 24 * 60 * 60_000,
+  // A change to a specialist (specialistRoutes.ts) is read with care, every word of it: three days, as a trade.
+  specialist: 3 * 24 * 60 * 60_000,
   // A move in My Organization (orgRoutes.ts) is never urgent: three days.
   org: 3 * 24 * 60 * 60_000,
   // A new Space (spaceCreate.ts) opens with its folder, profile and brain: read at leisure, as a trade.
@@ -71,7 +73,7 @@ export const PENDING_MS: Record<string, number> = {
   bills: 7 * 24 * 60 * 60_000,
 };
 /** How much body a card may hold, by kind: an action carries its whole email, so the person allows exactly what they read (actions.ts refuses one that would not fit). */
-export const BODY_MAX: Record<string, number> = { action: 8000, routine: 2600, trust: 2600, trade: 8000, import: 4000, space: 4000, board: 2600, expenses: 6000, budget: 4000, bills: 4000 };
+export const BODY_MAX: Record<string, number> = { action: 8000, routine: 2600, trust: 2600, trade: 8000, specialist: 18000, import: 4000, space: 4000, board: 2600, expenses: 6000, budget: 4000, bills: 4000 };
 const KEEP = 100;
 
 /** The agent's own record: the contract's shape, and who asked. */
@@ -234,6 +236,7 @@ export type NewApproval = {
   /** An action that runs on trust: made already allowed (the propose route), never pending. */
   trusted?: ApprovalTrusted;
   trade?: ApprovalTrade;
+  specialist?: ApprovalSpecialist;
   org?: ApprovalOrg;
   space?: ApprovalSpace;
   imports?: ApprovalImport;
@@ -272,6 +275,7 @@ export function makeApproval(
     ...(input.routine ? { routine: input.routine } : {}),
     ...(input.trust ? { trust: input.trust } : {}),
     ...(input.trade ? { trade: input.trade } : {}),
+    ...(input.specialist ? { specialist: input.specialist } : {}),
     ...(input.org ? { org: input.org } : {}),
     ...(input.space ? { space: input.space } : {}),
     ...(input.imports ? { imports: input.imports } : {}),

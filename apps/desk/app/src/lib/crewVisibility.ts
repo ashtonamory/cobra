@@ -1,11 +1,10 @@
 /**
- * The hidden crew on the desk: the person talks only to Cobra.
- * Her Foremen and Workers still do the work, but with Settings → This app → "Show the crew" off (the
- * default) nobody sees their names, sprites, the roster, Hire or code projects: a Space shows tiles by
- * skill, her thread one activity line, and what needs you names the Space or Cobra. The switch is kept
+ * The crew on the desk: the person sees their specialists by name and may write to any of them, and
+ * Cobra is the one manager over all of it. Settings → This app → "Show the crew" is on unless the
+ * person turns it off. Off, nobody sees names, sprites, the roster, Hire or code projects: a Space
+ * shows tiles by skill, her thread one activity line, and what needs you names the Space or Cobra. The switch is kept
  * in this webview's storage as Appearance is (lib/theme.ts), so every window (main, popup, picker,
- * box) reads it and follows a change made in another. The rules are pure so vitest pins them; the
- * switch on means everything works as it did before.
+ * box) reads it and follows a change made in another. The rules are pure so vitest pins them.
  */
 import { useSyncExternalStore } from "react";
 import type { Org } from "../../../../../packages/contracts/src/org.ts";
@@ -15,18 +14,18 @@ import { LEAD_NAME } from "./appName.ts";
 
 export const SHOW_CREW_KEY = "cobra.showCrew";
 export const SHOW_CREW_LABEL = "Show the crew";
-export const SHOW_CREW_HELP = `Shows ${LEAD_NAME}'s Foremen and Workers, their names and code projects. For you only; nobody else sees them.`;
+export const SHOW_CREW_HELP = `Shows your specialists by name, the helpers that work for them and code projects. Turn it off to talk only to ${LEAD_NAME}.`;
 
-/** Only "on" shows the crew; anything else (nothing kept, a private window) hides it. */
+/** Only "off" hides the crew; anything else (nothing kept, a private window, the old "on") shows it. */
 export function parseShowCrew(raw: string | null | undefined): boolean {
-  return raw === "on";
+  return raw !== "off";
 }
 
 export function readShowCrew(): boolean {
   try {
     return parseShowCrew(localStorage.getItem(SHOW_CREW_KEY));
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -35,8 +34,9 @@ let current: boolean | null = null;
 
 export function saveShowCrew(on: boolean): void {
   try {
-    if (on) localStorage.setItem(SHOW_CREW_KEY, "on");
-    else localStorage.removeItem(SHOW_CREW_KEY);
+    // Only the choice to hide is kept: shown is what nothing kept means.
+    if (on) localStorage.removeItem(SHOW_CREW_KEY);
+    else localStorage.setItem(SHOW_CREW_KEY, "off");
   } catch {
     // A private window keeps the choice for this window only.
   }
@@ -67,7 +67,7 @@ function snapshot(): boolean {
 
 /** Whether the crew is shown, following the switch in every window. */
 export function useShowCrew(): boolean {
-  return useSyncExternalStore(subscribe, snapshot, () => false);
+  return useSyncExternalStore(subscribe, snapshot, () => true);
 }
 
 // -- skills -----------------------------------------------------------------------

@@ -75,6 +75,7 @@ test("initialize, tools/list and a notification", async () => {
     "form_link",
     "form_unlink",
     "trade_define",
+    "specialist_set",
     "org_read",
     "org_set",
     "org_propose",
@@ -255,6 +256,16 @@ test("trade_define posts the definition and says the person was asked", async ()
   assert.match(text, /^Asked the person to add the Dog walking trade \(approval ap_1\)\. Cobra has no connection for Stripe/);
   assert.match(text, /foreman_create with template dog-walking/);
   await assert.rejects(mcp.runTool("trade_define", {}, [computer], fetcher), /definition is required/);
+});
+
+test("specialist_set posts only the fields that change and says nothing changed yet", async () => {
+  const { fetcher, seen } = agent({ "/orch/specialist/set": { approval: "ap_7", specialist: "invoicing", name: "Rosa", fields: ["instructions"] } }, 202);
+  const text = await mcp.runTool("specialist_set", { specialist: "Rosa", instructions: "Always write in Spanish." }, [computer], fetcher);
+  assert.equal(seen[0]?.url, "http://127.0.0.1:8797/orch/specialist/set");
+  assert.deepEqual(seen[0]?.body, { specialist: "Rosa", instructions: "Always write in Spanish." });
+  assert.match(text, /^Asked the person to allow the change to Rosa \(instructions; approval ap_7\)\. Nothing has changed yet\./);
+  const same = agent({ "/orch/specialist/set": { unchanged: true, name: "Rosa" } });
+  assert.equal(await mcp.runTool("specialist_set", { specialist: "Rosa", title: "Invoices" }, [computer], same.fetcher), "Rosa is set exactly so already; nothing to allow.");
 });
 
 test("the org tools go to this computer, with no computer argument", async () => {
