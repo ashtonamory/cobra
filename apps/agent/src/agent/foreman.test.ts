@@ -110,10 +110,9 @@ test("with COBRA_CONTAIN=require and no jail, neither the Lead nor a Foreman sta
   assert.doesNotThrow(() => lead.requireJail(null));
 });
 
-type OrchCaller = { id: string; kind: string; name: string; remote?: boolean; project?: string };
+type OrchCaller = { id: string; kind: string; name: string; project?: string };
 const FOREMAN_CALLER: OrchCaller = { id: "foreman_alpha____", kind: "lead", name: "Foreman for alpha", project: "alpha" };
 const LEAD_CALLER: OrchCaller = { id: "lead_legion_____", kind: "lead", name: "Lead on legion" };
-const REMOTE_LEAD: OrchCaller = { id: "lead_from_mini__", kind: "lead", name: "Lead on mini", remote: true };
 
 /** /orch/* through handleOrch, with two projects in a registry and nothing behind them. */
 async function routes() {
@@ -157,7 +156,7 @@ test("through the routes: a Foreman's key cannot reach another project's spawn, 
 
 test("the Lead's own key is refused the Worker controls and merge requests; it briefs Foremen instead", async () => {
   const { call } = await routes();
-  for (const caller of [LEAD_CALLER, REMOTE_LEAD]) {
+  for (const caller of [LEAD_CALLER]) {
     // Merges and denials are never hers.
     for (const [route, body] of [
       ["/orch/worker/deny", { id: "alpha_2" }],
@@ -167,7 +166,7 @@ test("the Lead's own key is refused the Worker controls and merge requests; it b
       assert.equal(reply.status, 403, `${caller.id} ${route}`);
       assert.match(JSON.stringify(reply.body), /brief the project's Foreman/);
     }
-    // A spawn outside an on-call Space (here a code project, or from another computer) is a Foreman's (JK-PLAN-WF-001 B3).
+    // A spawn outside an on-call Space (here a code project) is a Foreman's (JK-PLAN-WF-001 B3).
     const spawn = await call("/orch/worker/spawn", { project: "alpha", task: "x" }, caller);
     assert.equal(spawn.status, 409, caller.id);
     assert.match(JSON.stringify(spawn.body), /brief the Foreman: /);
@@ -188,9 +187,8 @@ test("a Foreman's key is refused the Foreman routes", async () => {
   assert.equal((await call("/orch/foreman/answer", { project: "alpha", option: 1 })).status, 403);
 });
 
-test("foreman_answer's route: the Lead here only, a known project, one answer, a Foreman it briefed", async () => {
+test("foreman_answer's route: the Lead only, a known project, one answer, a Foreman it briefed", async () => {
   const { call } = await routes();
-  assert.equal((await call("/orch/foreman/answer", { project: "alpha", option: 1 }, REMOTE_LEAD)).status, 403);
   assert.equal((await call("/orch/foreman/answer", { project: "gamma", option: 1 }, LEAD_CALLER)).status, 404);
   const bad = await call("/orch/foreman/answer", { project: "alpha", option: 1, text: "x" }, LEAD_CALLER);
   assert.equal(bad.status, 400);
@@ -201,16 +199,10 @@ test("foreman_answer's route: the Lead here only, a known project, one answer, a
   assert.match(JSON.stringify(theirs.body), /not briefed by you/);
 });
 
-test("a brief: unknown project 404, empty text 400, a remote Lead waits for the person's Allow first", async () => {
-  const { call, notified } = await routes();
+test("a brief: unknown project 404, empty text 400", async () => {
+  const { call } = await routes();
   assert.equal((await call("/orch/foreman/brief", { project: "gamma", text: "x" }, LEAD_CALLER)).status, 404);
   assert.equal((await call("/orch/foreman/brief", { project: "alpha", text: "  \n " }, LEAD_CALLER)).status, 400);
-  const first = await call("/orch/foreman/brief", { project: "alpha", text: "ship the badge fix" }, REMOTE_LEAD);
-  assert.equal(first.status, 202);
-  assert.match(JSON.stringify(first.body), /Work on legion\?/);
-  const again = await call("/orch/foreman/brief", { project: "alpha", text: "ship the badge fix" }, REMOTE_LEAD);
-  assert.equal(again.status, 202);
-  assert.deepEqual(notified, ["Work on legion?"], "asked once while it waits");
   assert.equal((await call("/orch/foreman/wait", {}, LEAD_CALLER, "GET")).status, 400);
   assert.equal((await call("/orch/foreman", {}, LEAD_CALLER, "GET")).status, 404);
 });
@@ -425,7 +417,7 @@ test("through the routes: a Foreman proposes an action for its own project; the 
   assert.equal(bad.status, 400);
   assert.match(JSON.stringify(bad.body), /not an email address/);
   // The Lead briefs the Foreman; it does not send.
-  for (const caller of [LEAD_CALLER, REMOTE_LEAD]) {
+  for (const caller of [LEAD_CALLER]) {
     const reply = await call("/orch/action/propose", note, caller);
     assert.equal(reply.status, 403);
     assert.match(JSON.stringify(reply.body), /brief the project's Foreman/);
@@ -524,11 +516,10 @@ test("rosterOf: a project's trade, whether it reports to the Lead, its routines 
   assert.deepEqual(rosterOf({ id: "plain" }, roster), {});
 });
 
-test("trade_define's route: the Lead here only; a good definition becomes a card for the person", async () => {
+test("trade_define's route: the Lead only; a good definition becomes a card for the person", async () => {
   const { call, notified } = await routes();
   const { DOG_WALKING } = await import("./tradeFixtures.test.ts");
   assert.equal((await call("/orch/trade/define", { definition: DOG_WALKING })).status, 403);
-  assert.equal((await call("/orch/trade/define", { definition: DOG_WALKING }, REMOTE_LEAD)).status, 403);
   const bad = await call("/orch/trade/define", { definition: { ...DOG_WALKING, id: "payroll-manager" } }, LEAD_CALLER);
   assert.equal(bad.status, 400);
   assert.match(JSON.stringify(bad.body), /a trade Cobra ships/);

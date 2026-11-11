@@ -22,8 +22,6 @@ export const KeyView = z.object({
   expiresInDays: z.number().int().optional(),
   /** A phone that signs what it changes (its bearer key alone only reads). */
   signs: z.boolean(),
-  /** A key held by another computer: a desktop added over SSH, or a Lead elsewhere. */
-  remote: z.boolean(),
   /** A Foreman's project. */
   project: z.string().optional(),
   /** The key that asked. */

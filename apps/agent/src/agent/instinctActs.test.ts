@@ -25,7 +25,7 @@ const nowhere = () => false;
 
 test("Instinct allows the orchestrators' low-stakes cards and nothing else", () => {
   for (const kind of ["routine", "trade", "org"]) assert.equal(actsAlone(card(kind), everywhere), "allowed on your Instinct policy", kind);
-  for (const kind of ["merge", "land", "action", "import", "remote-spawn", "trust", "mcp-verify"]) assert.equal(actsAlone(card(kind), everywhere), null, kind);
+  for (const kind of ["merge", "land", "action", "import", "trust", "mcp-verify"]) assert.equal(actsAlone(card(kind), everywhere), null, kind);
 });
 
 test("only under Instinct, read where the card belongs", () => {

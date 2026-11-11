@@ -617,7 +617,7 @@ const POLICY = (computer: string, revision: number): Dict => ({
     version: 1, revision, preset: "balanced", network: { allow: ["pypi.org", "registry.npmjs.org"] },
     judge: { model: "claude-haiku-5-5", fallback: "local:qwen-tuned:fast96k" },
     models: { fallbacks: { opus: ["sonnet", "codex"] } },
-    lead: { webTools: true, remoteSpawnHours: 4 },
+    lead: { webTools: true },
     foreman: { maxWorkers: 3, maxWorkersPerComputer: 4, workerModels: ["sonnet", "codex"], mergeOnGreen: false },
     job: { models: ["sonnet"], concurrent: 2 }, local: { slots: 1 },
     computers: { mini: { preset: "locked" } }, projects: { "me/lookfocus": { network: { allow: ["docs.expo.dev"] } } },
@@ -632,11 +632,11 @@ const POLICY = (computer: string, revision: number): Dict => ({
   floor: ["Never pushes to main", "Never reads ~/.ssh"], blocklist: ["evil.com"],
   capabilities: { "web.fetch": "judge", "git.push": "ask" },
   roles: {
-    lead: { webTools: true, remoteSpawnHours: 4 },
+    lead: { webTools: true },
     foreman: { maxWorkers: 3, maxWorkersPerComputer: 4, workerModels: ["sonnet", "codex"], mergeOnGreen: false },
     job: { models: ["sonnet"], concurrent: 2 }, local: { slots: 1 },
   },
-  hardCaps: { workersPerProject: 6, workersPerComputer: 8, remoteSpawnHours: 24, jobsAtOnce: 4, localSlots: 2 },
+  hardCaps: { workersPerProject: 6, workersPerComputer: 8, jobsAtOnce: 4, localSlots: 2 },
   changes: [{ at: NOW * 1000 - 3600_000, revision, by: "desk", lines: [{ text: "Preset: Locked → Balanced", widens: true }] }],
 });
 

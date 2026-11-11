@@ -34,8 +34,6 @@ export type DirectSpawn = {
   /** The spawn's JSON body, as the Lead's worker_spawn sent it. */
   body: Record<string, unknown>;
   task: string;
-  /** A Lead on another computer (her key reaches this agent from the hub elsewhere). */
-  remote: boolean;
   /** Whether the project's trade has Space tools for a Worker (workerSpace.ts workerToolNames). */
   tools: boolean;
   /** Whether Workers here run in Cobra's sandbox, which alone gives a Worker its own socket. */
@@ -48,7 +46,6 @@ export type DirectSpawn = {
 
 /** Why the Lead may not start this Worker herself (409 "brief the Foreman: …"), or null when she may. */
 export function directSpawnRefusal(spawn: DirectSpawn): Refusal | null {
-  if (spawn.remote) return briefTheForeman("Cobra starts a Worker herself only on her own computer");
   if (spawn.mode.mode !== "on-call") return briefTheForeman(spawn.mode.why);
   if (!spawn.tools) return briefTheForeman("its trade has no Space tools for a Worker");
   const order = ORDER_FIELDS.filter((key) => spawn.body[key] !== undefined && spawn.body[key] !== null);

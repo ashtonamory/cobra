@@ -13,9 +13,8 @@ process.env.COBRA_AGENT_DATA_DIR = join(ROOT, "data");
 const { handleOrch, ORCH_ROUTES, FOREMAN_ONLY } = await import("./orch.ts");
 const { EMPTY_ORG } = await import("../../../../packages/contracts/src/org.ts");
 
-type Caller = { id: string; kind: string; name: string; remote?: boolean; project?: string };
+type Caller = { id: string; kind: string; name: string; project?: string };
 const LEAD: Caller = { id: "lead_legion_____", kind: "lead", name: "Lead on legion" };
-const REMOTE_LEAD: Caller = { ...LEAD, id: "lead_remote_____", remote: true };
 const FOREMAN: Caller = { id: "foreman_site_____", kind: "lead", name: "Foreman for site", project: "site" };
 const PHONE: Caller = { id: "phone_1", kind: "phone", name: "Sam's phone" };
 
@@ -61,9 +60,9 @@ test("space_create is a route the Lead may call, and the Lead is not told to bri
   assert.equal(FOREMAN_ONLY.has("/orch/space/create"), false);
 });
 
-test("only the Lead on this computer opens a Space: a Foreman, a remote Lead and a phone are refused", async () => {
+test("only the Lead opens a Space: a Foreman and a phone are refused", async () => {
   const { call, saved } = harness();
-  for (const caller of [FOREMAN, REMOTE_LEAD, PHONE]) {
+  for (const caller of [FOREMAN, PHONE]) {
     const reply = await call(caller, { name: "Maya's Soccer", kind: "team", profile: PROFILE });
     assert.equal(reply.status, 403, caller.name);
   }

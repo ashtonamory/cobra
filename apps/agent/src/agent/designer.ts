@@ -536,13 +536,13 @@ export type DesignerDeps = {
   conceptCode?: ConceptCode;
 };
 
-type Caller = { id: string; kind: string; remote?: boolean; project?: string };
+type Caller = { id: string; kind: string; project?: string };
 
 const bad = (status: number, error: string): Reply => ({ status, body: { error } });
 
 /** A Designer Foreman's routes. Anyone else, the Lead included, is refused: the Designer is the one who drafts and shows. */
 export async function handleDesignerOrch(route: string, bodyText: string, caller: Caller, deps: DesignerDeps): Promise<Reply> {
-  if (caller.kind !== "lead" || caller.project === undefined || caller.remote === true) return bad(403, "only a Designer Foreman on this computer proposes a brand kit or shows designs");
+  if (caller.kind !== "lead" || caller.project === undefined) return bad(403, "only a Designer Foreman proposes a brand kit or shows designs");
   const project = await deps.project(caller.project);
   if (!project || project.foremanTemplate !== DESIGNER) return bad(403, "only a Designer Foreman proposes a brand kit or shows designs");
   let input: Record<string, unknown>;

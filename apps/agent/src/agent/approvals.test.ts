@@ -13,8 +13,6 @@ import {
   plainWhat,
   publishedText,
   publicView,
-  REMOTE_GRANT_MS,
-  remoteGrant,
   runMerge,
   saveApprovals,
   settle,
@@ -38,20 +36,10 @@ test("an approval is pending until answered once; a second answer is refused", (
 });
 
 test("a question nobody answered lapses and cannot be allowed after", () => {
-  const made = makeApproval({ kind: "remote-spawn", title: "t", body: "b", requestedBy: "lead_x" }, NOW, "mini", random);
+  const made = makeApproval({ kind: "mcp-verify", title: "t", body: "b", requestedBy: "lead_x" }, NOW, "mini", random);
   const later = NOW + 31 * 60_000;
   assert.equal(settle([made], later)[0]?.state, "expired");
   assert.throws(() => answer([made], made.id, true, later), /already expired/);
-});
-
-test("a remote-spawn grant lasts 12 hours, for the Lead that asked", () => {
-  const ask = makeApproval({ kind: "remote-spawn", title: "t", body: "b", requestedBy: "lead_legion" }, NOW, "mini", random);
-  const { list } = answer([ask], ask.id, true, NOW);
-  assert.equal(remoteGrant(list, "lead_legion", NOW + 60_000), NOW + REMOTE_GRANT_MS);
-  assert.equal(remoteGrant(list, "lead_legion", NOW + REMOTE_GRANT_MS + 1), null);
-  assert.equal(remoteGrant(list, "lead_other", NOW), null);
-  const denied = answer([ask], ask.id, false, NOW).list;
-  assert.equal(remoteGrant(denied, "lead_legion", NOW), null);
 });
 
 test("approvals are kept in a private file", () => {
@@ -98,37 +86,6 @@ test("an allowed merge merges each PR at the head you saw; one failing does not 
   assert.equal(done.state, "failed");
   assert.deepEqual(done.results?.map((r) => r.ok), [true, false]);
   assert.match(done.results?.[1]?.message ?? "", /new commits/);
-});
-
-test("a remote Lead's first spawn asks once; asking again waits on the same question; Allow opens 12 hours", async () => {
-  const { remoteSpawnGate } = await import("./approvals.ts");
-  const lead = { id: "lead_from_legion", name: "Lead on legion" };
-  const first = remoteSpawnGate([], lead, "mini", "fix the badge", NOW);
-  assert.equal(first.allowed, false);
-  if (first.allowed) return;
-  assert.equal(first.created, true);
-  assert.equal(first.approval.kind, "remote-spawn");
-  assert.equal(first.approval.title, "Work on mini?");
-  assert.match(first.approval.body, /fix the badge/);
-  const again = remoteSpawnGate([first.approval], lead, "mini", "another", NOW + 60_000);
-  assert.equal(again.allowed, false);
-  if (!again.allowed) assert.deepEqual([again.created, again.approval.id], [false, first.approval.id]);
-  const { list } = answer([first.approval], first.approval.id, true, NOW + 120_000);
-  const open = remoteSpawnGate(list, lead, "mini", "x", NOW + 180_000);
-  assert.equal(open.allowed, true);
-  const lapsed = remoteSpawnGate(list, lead, "mini", "x", NOW + 120_000 + REMOTE_GRANT_MS + 1);
-  assert.equal(lapsed.allowed, false);
-});
-
-test("under Instinct a remote Lead's Workers start with nothing asked, a waiting question or none", async () => {
-  const { remoteSpawnGate } = await import("./approvals.ts");
-  const lead = { id: "lead_from_legion", name: "Lead on legion" };
-  const asked = remoteSpawnGate([], lead, "mini", "fix the badge", NOW);
-  assert.equal(asked.allowed, false);
-  for (const list of [[], asked.allowed ? [] : [asked.approval]]) {
-    const gate = remoteSpawnGate(list, lead, "mini", "fix the badge", NOW, REMOTE_GRANT_MS, true);
-    assert.deepEqual(gate, { allowed: true, until: NOW, instinct: true });
-  }
 });
 
 test("an action approval keeps the Foreman's exact content and waits a day", () => {

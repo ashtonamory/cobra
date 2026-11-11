@@ -29,8 +29,7 @@ import type { Needs } from "./onCall.ts";
  * this, or an agent down for a day) is kept without telling: old news would
  * only wake an idle Foreman. When the owner is a Foreman that is not running
  * and the Lead briefed it, the line goes to the Lead instead, which would
- * otherwise wait on that Foreman's report: the Lead here, or a Lead on
- * another computer through /orch/lead/news (finishes.ts tellRemote).
+ * otherwise wait on that Foreman's report.
  *
  * Lines carry ids, numbers and fixed words only, never a PR's title or gh's
  * message: the prompts call [cobra] lines status, not instructions.
@@ -50,12 +49,8 @@ export type PrNewsDeps = {
   foremanRunning: (project: string) => Promise<boolean>;
   /** Whether the Lead here briefed this project's Foreman (finishes.ts). */
   briefed: (project: string) => boolean;
-  /** The Leads on other computers that briefed this project's Foreman (finishes.ts briefersOf); none when absent. */
-  remoteBriefers?: (project: string) => string[];
   /** finishes.ts tell; `needs` "decision" for a PR closed, denied or not merged (onCall.ts). */
   tell: (owner: string, text: string, needs?: Needs) => void;
-  /** A line for a Lead on another computer (finishes.ts tellRemote). */
-  tellRemote?: (lead: string, text: string) => void;
   log: (line: string) => void;
   now: () => number;
 };
@@ -69,8 +64,8 @@ export function prLine(worker: string, number: number, state: Settled): string {
     : `PR #${number} of Worker ${worker} was closed without merging. worker_read ${worker}`;
 }
 
-/** Tells who hears of a Worker: its owner, or the Lead (here or elsewhere) when that owner is a stopped Foreman it briefed. Returns who was told. */
-async function tellAbout(deps: Pick<PrNewsDeps, "foremanRunning" | "briefed" | "remoteBriefers" | "tell" | "tellRemote">, extra: Extra, text: string, needs: Needs = "info"): Promise<string> {
+/** Tells who hears of a Worker: its owner, or the Lead when that owner is a stopped Foreman it briefed. Returns who was told. */
+async function tellAbout(deps: Pick<PrNewsDeps, "foremanRunning" | "briefed" | "tell">, extra: Extra, text: string, needs: Needs = "info"): Promise<string> {
   const owner = extra.worker?.owner ?? "lead";
   if (owner !== "lead" && !(await deps.foremanRunning(owner).catch(() => true))) {
     const prefix = `For ${owner}, whose Foreman is not running: `;
@@ -78,9 +73,6 @@ async function tellAbout(deps: Pick<PrNewsDeps, "foremanRunning" | "briefed" | "
       deps.tell("lead", `${prefix}${text}`);
       return "lead";
     }
-    const remote = deps.tellRemote ? (deps.remoteBriefers?.(owner) ?? []) : [];
-    for (const lead of remote) deps.tellRemote?.(lead, `${prefix}${text}`);
-    if (remote.length > 0) return remote.join(", ");
   }
   deps.tell(owner, text, needs);
   return owner;
@@ -182,7 +174,6 @@ export function livePrNewsDeps(
   tell: PrNewsDeps["tell"],
   briefed: PrNewsDeps["briefed"],
   log: PrNewsDeps["log"],
-  remote?: Pick<PrNewsDeps, "remoteBriefers" | "tellRemote">,
 ): PrNewsDeps {
   return {
     workers: workerRecords,
@@ -199,7 +190,6 @@ export function livePrNewsDeps(
     },
     briefed,
     tell,
-    ...remote,
     log,
     now: () => Date.now(),
   };

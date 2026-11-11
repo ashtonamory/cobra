@@ -35,7 +35,6 @@ export const APPROVALS_PATH = join(STATE_DIR, "approvals.json");
 export const PENDING_MS: Record<string, number> = {
   merge: 6 * 60 * 60_000,
   land: 6 * 60 * 60_000,
-  "remote-spawn": 30 * 60_000,
   "mcp-verify": 30 * 60_000,
   // A plan waits as long as a merge: you may answer it after a meeting.
   plan: 6 * 60 * 60_000,
@@ -73,8 +72,6 @@ export const PENDING_MS: Record<string, number> = {
 };
 /** How much body a card may hold, by kind: an action carries its whole email, so the person allows exactly what they read (actions.ts refuses one that would not fit). */
 export const BODY_MAX: Record<string, number> = { action: 8000, routine: 2600, trust: 2600, trade: 8000, import: 4000, space: 4000, board: 2600, expenses: 6000, budget: 4000, bills: 4000 };
-/** How long an allowed remote-spawn lets the Lead start Workers on this computer. */
-export const REMOTE_GRANT_MS = 12 * 60 * 60_000;
 const KEEP = 100;
 
 /** The agent's own record: the contract's shape, and who asked. */
@@ -318,18 +315,6 @@ export function answer(list: StoredApproval[], id: string, allow: boolean, now: 
   return { list: current.map((a) => (a.id === id ? approval : a)), approval };
 }
 
-/** Whether a Lead holds an allowed remote-spawn for this computer, and until when. */
-export function remoteGrant(list: readonly StoredApproval[], lead: string, now: number, grantMs = REMOTE_GRANT_MS): number | null {
-  let until: number | null = null;
-  for (const a of list) {
-    if (a.kind !== "remote-spawn" || a.requestedBy !== lead || !a.answeredAt) continue;
-    if (a.state !== "allowed" && a.state !== "done") continue;
-    const end = Date.parse(a.answeredAt) + grantMs;
-    if (end > now && (until === null || end > until)) until = end;
-  }
-  return until;
-}
-
 // --- merges -------------------------------------------------------------------
 
 export type MergeDeps = {
@@ -447,43 +432,4 @@ export async function runLand(deps: LandDeps, approval: StoredApproval): Promise
     }
   }
   return { ...approval, state: results.every((r) => r.ok) ? "done" : "failed", results };
-}
-
-// --- Workers from a Lead on another computer --------------------------------------
-
-export type SpawnGate = { allowed: true; until: number; instinct?: true } | { allowed: false; approval: StoredApproval; created: boolean };
-
-/**
- * Whether a Lead on another computer may start a Worker here now. Under
- * Instinct here, yes, with nothing asked: the Foreman's plan still lands as
- * its receipt (instinctActs.ts). With a live grant, yes. Without, the one
- * question waiting for its Allow, made now if there is none: asking again
- * while it waits does not push again.
- */
-export function remoteSpawnGate(
-  list: readonly StoredApproval[],
-  lead: { id: string; name: string },
-  here: string,
-  task: string,
-  now: number,
-  /** How long an Allow lasts: the policy's lead.remoteSpawnHours (permissions.ts), 12 hours by default. */
-  grantMs = REMOTE_GRANT_MS,
-  /** Instinct is in force here for the project (permissions.ts `escalate`). */
-  instinct = false,
-): SpawnGate {
-  if (instinct) return { allowed: true, until: now, instinct: true };
-  const until = remoteGrant(list, lead.id, now, grantMs);
-  if (until !== null) return { allowed: true, until };
-  const waiting = settle([...list], now).find((a) => a.kind === "remote-spawn" && a.requestedBy === lead.id && a.state === "pending");
-  if (waiting) return { allowed: false, approval: waiting, created: false };
-  const approval = makeApproval(
-    {
-      kind: "remote-spawn",
-      title: `Work on ${here}?`,
-      body: `Cobra wants to start work on ${here}. Allow lasts ${Math.round(grantMs / 3_600_000)} hours. First task: ${task.slice(0, 300)}`,
-      requestedBy: lead.id,
-    },
-    now,
-  );
-  return { allowed: false, approval, created: true };
 }

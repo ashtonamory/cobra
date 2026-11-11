@@ -3780,7 +3780,6 @@ const prNewsDeps = livePrNewsDeps(
   tellLine,
   (project) => finishes.isBriefed(project),
   (line) => console.log(`[${SERVICE}] ${line}`),
-  { remoteBriefers: (project) => finishes.briefersOf(project), tellRemote: (lead, text) => finishes.tellRemote(lead, text) },
 );
 const stopPrNews = startPrNews(prNewsDeps);
 

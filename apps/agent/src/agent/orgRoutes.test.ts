@@ -64,7 +64,7 @@ test("the phone reads and changes the org; Northwind's key and a Lead's are refu
   assert.equal((await handleOrgPerson("/org", "POST", "{", phone, t.deps)).status, 400);
 });
 
-test("the Lead on this computer sets what it was told; a Foreman or a remote Lead is refused", async () => {
+test("the Lead sets what it was told; a Foreman is refused", async () => {
   const t = deps();
   const opened = await handleOrgOrch("/orch/org/set", JSON.stringify({ change: { op: "company", name: "Happy Tails" } }), lead, t.deps);
   assert.equal(opened.status, 200);
@@ -72,7 +72,6 @@ test("the Lead on this computer sets what it was told; a Foreman or a remote Lea
   const read = await handleOrgOrch("/orch/org", "", lead, t.deps);
   assert.match((read.body as { text: string }).text, /happy-tails: Happy Tails/);
   assert.equal((await handleOrgOrch("/orch/org", "", { ...lead, project: "cobra" }, t.deps)).status, 403);
-  assert.equal((await handleOrgOrch("/orch/org", "", { ...lead, remote: true }, t.deps)).status, 403);
   assert.equal((await handleOrgOrch("/orch/org/set", JSON.stringify({ change: { op: "assign", seat: "m/p", company: "ghost" } }), lead, t.deps)).status, 404);
 });
 

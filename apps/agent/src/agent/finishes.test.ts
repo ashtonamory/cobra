@@ -135,10 +135,9 @@ test("noticeLine: one line, newest finish per Worker, offsets, fixed words only"
   assert.doesNotMatch(line, /ignore|\n/);
 });
 
-test("audienceOf: a Foreman by its project, the Lead here as lead, anyone else by id", () => {
+test("audienceOf: a Foreman by its project, the Lead as lead, anyone else by id", () => {
   assert.equal(audienceOf({ id: "lead_legion_____", kind: "lead" }), "lead");
   assert.equal(audienceOf({ id: "foreman_cobra", kind: "lead", project: "cobra" }), "cobra");
-  assert.equal(audienceOf({ id: "lead_from_mini__", kind: "lead", remote: true }), "lead_from_mini__");
   assert.equal(audienceOf({ id: "desk_x", kind: "desk" }), "desk_x");
 });
 
@@ -640,61 +639,6 @@ test("the Lead briefs a kept Foreman again before its stopped notice is told: it
   await finishes.tick(f.deps);
   await finishes.tick(f.deps);
   assert.deepEqual(f.typed, [["cobra_lead", "[cobra] Foreman for cobra finished its turn (idle). foreman_read cobra after=8123"]]);
-});
-
-// --- a Lead on another computer (/orch/lead/news, leadNews.ts) ----------------------------
-
-const REMOTE = "lead_from_legion";
-
-test("a Lead elsewhere hears of the Foremen it briefed here once each, and of nobody else's", async () => {
-  const f = withForemen();
-  const finishes = createFinishes();
-  finishes.briefedFrom("cobra", REMOTE);
-  f.setForeman(foremanOf("cobra"));
-  f.setForeman(foremanOf("book"));
-  await finishes.tick(f.deps);
-  assert.deepEqual(finishes.remoteNews(REMOTE), { finishes: [], lines: [] }, "working: nothing yet");
-  f.setForeman(foremanOf("cobra", { activity: "agent-idle" }));
-  f.setForeman(foremanOf("book", { activity: "agent-idle" }));
-  await finishes.tick(f.deps);
-  await finishes.tick(f.deps);
-  assert.deepEqual(f.typed, [], "the Lead here briefed neither");
-  const news = finishes.remoteNews(REMOTE);
-  assert.deepEqual(news.finishes.map((finish) => [finish.id, finish.kind, finish.offset]), [["cobra", "idle", 8123]]);
-  assert.deepEqual(finishes.remoteNews(REMOTE).finishes, [], "told once");
-  assert.deepEqual(finishes.unseenForemen(["cobra"], REMOTE), [], "and foreman_wait does not repeat it");
-  assert.deepEqual(finishes.remoteNews("lead_from_mbp").finishes, [], "another Lead briefed nothing here");
-  assert.deepEqual(finishes.briefersOf("cobra"), [REMOTE]);
-  assert.deepEqual(finishes.briefersOf("book"), []);
-});
-
-test("a Lead elsewhere gets its lines with its next news, and a first sight after a restart is not news", async () => {
-  const path = join(STATE, "remote-briefed.json");
-  const f = withForemen();
-  const before = createFinishes({ remotePath: path });
-  before.briefedFrom("cobra", REMOTE);
-  assert.deepEqual(JSON.parse(readFileSync(path, "utf8")), { leads: [{ lead: REMOTE, projects: ["cobra"] }] });
-  assert.equal(statSync(path).mode & 0o777, 0o600);
-
-  // The agent restarts with the Foreman at rest: kept for foreman_wait, but no news.
-  f.setForeman(foremanOf("cobra", { activity: "agent-idle" }));
-  const after = createFinishes({ remotePath: path });
-  for (let i = 0; i < 3; i += 1) await after.tick(f.deps);
-  after.tellRemote(REMOTE, "For cobra, whose Foreman is not running: PR #9 of Worker cobra_2 merged. worker_read cobra_2");
-  assert.deepEqual(after.remoteNews(REMOTE), { finishes: [], lines: ["For cobra, whose Foreman is not running: PR #9 of Worker cobra_2 merged. worker_read cobra_2"] });
-  assert.deepEqual(after.remoteNews(REMOTE).lines, [], "a line is handed over once");
-  assert.equal(after.unseenForemen(["cobra"], REMOTE).length, 1, "foreman_wait still sees it");
-
-  // Its next turn is news; its project leaving the registry forgets the brief.
-  f.setForeman(foremanOf("cobra"));
-  await after.tick(f.deps);
-  f.setForeman(foremanOf("cobra", { activity: "agent-idle" }));
-  for (let i = 0; i < 3; i += 1) await after.tick(f.deps);
-  assert.deepEqual(after.remoteNews(REMOTE).finishes.map((finish) => finish.id), ["cobra"]);
-  f.foremen.clear();
-  await after.tick(f.deps);
-  assert.deepEqual(after.briefersOf("cobra"), []);
-  assert.deepEqual(JSON.parse(readFileSync(path, "utf8")), { leads: [] });
 });
 
 test("a Worker's question under a Foreman Cobra briefed is told to her too, with request_read; its permission prompt is not", async () => {

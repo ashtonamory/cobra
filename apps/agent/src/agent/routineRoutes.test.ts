@@ -35,9 +35,8 @@ const payroll = project("payroll", "Payroll");
 const site = project("site", "Site");
 const session: Project = { ...project("payroll_2", "Payroll"), parent: "payroll" };
 
-type Caller = { id: string; kind: string; name: string; remote?: boolean; project?: string };
+type Caller = { id: string; kind: string; name: string; project?: string };
 const LEAD: Caller = { id: "lead_legion", kind: "lead", name: "Lead on legion" };
-const REMOTE_LEAD: Caller = { id: "lead_mini", kind: "lead", name: "Lead on mini", remote: true };
 const foremanOf = (id: string): Caller => ({ id: foremanCallerId(id), kind: "lead", name: `Foreman for ${id}`, project: id });
 const PHONE: Caller = { id: "phone_1", kind: "phone", name: "Phone" };
 const DESK: Caller = { id: "desk_1", kind: "desk", name: "Desk" };
@@ -154,7 +153,7 @@ test("routine_set is checked: name, brief and rule, in words", async () => {
   assert.equal((unanchored.body as { routine: ApprovalRoutine }).routine.rule.starts, "2026-10-23");
 });
 
-test("scoping: a Foreman sets and removes its own project's only; the Lead any project here; a Lead elsewhere and the apps' keys none", async () => {
+test("scoping: a Foreman sets and removes its own project's only; the Lead any project here; the apps' keys none", async () => {
   const w = world();
   const foreign = await w.orch("/orch/routine/set", foremanOf("payroll"), { project: "site", name: "Site check", rule: { every: "day", at: "07:00" }, brief: "Check the site." });
   assert.equal(foreign.status, 403);
@@ -163,8 +162,6 @@ test("scoping: a Foreman sets and removes its own project's only; the Lead any p
   assert.equal(own.status, 202);
   const byLead = await w.orch("/orch/routine/set", LEAD, { project: "site", name: "Site check", rule: { every: "day", at: "07:00" }, brief: "Check the site." });
   assert.equal(byLead.status, 202);
-  const remote = await w.orch("/orch/routine/set", REMOTE_LEAD, { project: "site", name: "Site check", rule: { every: "day", at: "07:00" }, brief: "Check." });
-  assert.equal(remote.status, 403);
   for (const caller of [PHONE, DESK]) {
     const app = await w.orch("/orch/routine/set", caller, { project: "site", name: "S", rule: { every: "day", at: "07:00" }, brief: "Check." });
     assert.equal(app.status, 403);

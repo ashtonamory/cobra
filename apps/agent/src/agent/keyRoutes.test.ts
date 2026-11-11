@@ -32,12 +32,12 @@ test("GET /keys lists every key with its age and expiry, in the contract's shape
   const { store, done } = scratch();
   try {
     store.upsert(phone);
-    store.upsert(mintDesk("Legion desktop", NOW, undefined, true).caller);
+    store.upsert(mintDesk("Legion desktop", NOW).caller);
     const reply = keyRoute("/keys", "GET", phone, "phone-key", "", store, "omarchy", NOW);
     assert.equal(reply.status, 200);
     const list = KeyList.parse(reply.body);
     assert.equal(list.machine, "omarchy");
-    assert.deepEqual(list.keys.map((key) => [key.kind, key.you, key.remote]), [["phone", true, false], ["desk", false, true]]);
+    assert.deepEqual(list.keys.map((key) => [key.kind, key.you]), [["phone", true], ["desk", false]]);
     assert.ok(!JSON.stringify(reply.body).includes(PUSH_KEY));
     assert.ok(!JSON.stringify(reply.body).includes(phone.keyHash));
     assert.equal(keyRoute("/keys", "POST", phone, "phone-key", "{}", store, "omarchy", NOW).status, 405);

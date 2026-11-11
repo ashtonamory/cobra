@@ -53,7 +53,6 @@ const spawnFacts = (patch: Partial<import("./directWorkers.ts").DirectSpawn> = {
   mode: onCall,
   body: { project: "acme-billing", task: "add Dana to the CRM" },
   task: "add Dana to the CRM",
-  remote: false,
   tools: true,
   contained: true,
   engine: "claude",
@@ -68,7 +67,6 @@ test("a light task in an on-call Space passes; each deep reason is a 409 that sa
   const cases: Array<[string, Partial<import("./directWorkers.ts").DirectSpawn>, RegExp]> = [
     ["standing", { mode: standing }, /calm has standing Foremen/],
     ["code project", { mode: { mode: "standing", space: null, why: "app is a code project, and a merge always needs its Foreman" } }, /code project/],
-    ["remote", { remote: true }, /only on her own computer/],
     ["no tools", { tools: false }, /no Space tools/],
     ["after", { body: { after: ["q_1"] } }, /order or a second task \(after\)/],
     ["dependencies", { body: { dependsOn: "acme-billing_2" } }, /order or a second task \(dependsOn\)/],
@@ -133,7 +131,7 @@ test("liveDirect counts the Lead's running Workers of the project, not the Forem
 
 const LEAD = { id: "lead_testbox_____", kind: "lead", name: "Cobra" };
 
-async function orch(route: string, body: Record<string, unknown>, caller: { id: string; kind: string; name: string; project?: string; remote?: boolean } = LEAD, contained = false) {
+async function orch(route: string, body: Record<string, unknown>, caller: { id: string; kind: string; name: string; project?: string } = LEAD, contained = false) {
   let reply: { status: number; body: { error?: string; ended?: boolean } } | null = null;
   await handleOrch(route, new URL(`http://x${route}`), { method: "POST", on: () => undefined } as never, {} as never, {
     send: (_response, status, sent) => void (reply = { status, body: sent as { error?: string } }),
@@ -165,9 +163,6 @@ test("the Lead's spawn: refused in a standing Space and for a code project; in a
   const uncontained = await orch("/orch/worker/spawn", { project: "acme-billing", task: "add Dana" });
   assert.equal(uncontained.status, 409);
   assert.match(uncontained.body.error ?? "", /do not run in Cobra's sandbox/);
-  // A Lead on another computer never starts one here.
-  const remote = await orch("/orch/worker/spawn", { project: "acme-billing", task: "add Dana" }, { ...LEAD, remote: true });
-  assert.match(remote.body.error ?? "", /only on her own computer/);
 });
 
 test("one light task per project at a time: a queued one of hers holds the next, and the same task is named", async () => {

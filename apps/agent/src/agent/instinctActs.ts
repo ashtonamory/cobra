@@ -29,8 +29,7 @@ const execFileAsync = promisify(execFile);
  *
  * Everything else keeps its card: merges (merge on green has its own rule
  * below), lands, emails and files (trust), files copied in from outside a
- * worktree, trust itself, MCP pins. A Lead on another computer is never
- * asked about under Instinct: no card is made (approvals.ts remoteSpawnGate).
+ * worktree, trust itself, MCP pins.
  */
 
 export const ACTS_ALONE: ReadonlySet<string> = new Set(["plan", "routine", "trade", "org"]);

@@ -63,9 +63,7 @@ import { readPrivateFile, writePrivateFile } from "./private.ts";
  * at its own start and at each Foreman's, and pushes their expiry out while
  * it serves the line (extendOrch, from its hourly tick). A key whose line
  * closed dies within ORCH_KEY_LIFETIME_MS; a key that has expired is never
- * brought back. A Lead on another computer
- * (`lead-key --for`) keeps no expiry yet: its holder is that computer, and
- * refreshing it needs a step between the two (OV-SEC-VPS-001 F23b).
+ * brought back.
  */
 export type Scope = "read" | "act" | "terminal" | "receive" | "glance" | "orch";
 export const PHONE_SCOPES: readonly Scope[] = ["read", "act", "terminal"];
@@ -99,11 +97,6 @@ export type Caller = {
   pushToken?: string;
   /** The key this phone gave for sealing its pushes (push.ts). A secret, like the rest of this file is not. */
   pushKey?: string;
-  /**
-   * A Lead on another computer (`cobra-agent lead-key --for <name>`). Its
-   * Workers here wait for your Allow, which lasts 12 hours (approvals.ts).
-   */
-  remote?: boolean;
   /**
    * When a phone or desktop key stops working (ms). Absent on a key made
    * before keys expired, until its first use sets it (createKeyStore).
@@ -158,6 +151,8 @@ export function parseCallers(text: string): Caller[] {
     if (typeof v.name !== "string" || !v.name.trim() || v.name.length > 80) continue;
     if (v.kind !== "phone" && v.kind !== "peer" && v.kind !== "desk" && v.kind !== "widget" && v.kind !== "lead" && v.kind !== "api") continue;
     if (typeof v.keyHash !== "string" || !KEY_HASH.test(v.keyHash)) continue;
+    // A key made for another computer, from before Cobra ran on one only: it stops working here, never becomes a local key.
+    if (v.remote === true) continue;
     if (!Array.isArray(v.scopes)) continue;
     // A desktop never opened terminals with its key, nor does the API; one made when it could loses that here.
     const scopes = v.scopes.filter((scope): scope is Scope => SCOPES.includes(scope as Scope) && !((v.kind === "desk" || v.kind === "api") && scope === "terminal"));
@@ -166,7 +161,6 @@ export function parseCallers(text: string): Caller[] {
     const caller: Caller = { id: v.id, name: v.name, kind: v.kind, keyHash: v.keyHash, scopes, linkedAt: v.linkedAt };
     if (typeof v.pushToken === "string" && PUSH_TOKEN.test(v.pushToken)) caller.pushToken = v.pushToken;
     if (typeof v.pushKey === "string" && /^[A-Za-z0-9_-]{43}$/.test(v.pushKey)) caller.pushKey = v.pushKey;
-    if (v.remote === true && (v.kind === "lead" || v.kind === "desk")) caller.remote = true;
     if (typeof v.expiresAt === "number" && (expiring(caller) || orchExpiring(caller))) caller.expiresAt = v.expiresAt;
     if (typeof v.rotatedAt === "number") caller.rotatedAt = v.rotatedAt;
     if (typeof v.prevKeyHash === "string" && KEY_HASH.test(v.prevKeyHash) && typeof v.prevExpiresAt === "number" && expiring(caller)) {
@@ -187,8 +181,8 @@ export function expiring(caller: Pick<Caller, "kind">): boolean {
 }
 
 /** Whether a caller is a Lead's or Foreman's key on this computer, which expires and is extended while it runs. */
-export function orchExpiring(caller: Pick<Caller, "kind" | "remote">): boolean {
-  return caller.kind === "lead" && caller.remote !== true;
+export function orchExpiring(caller: Pick<Caller, "kind">): boolean {
+  return caller.kind === "lead";
 }
 
 function sameHash(stored: string | undefined, hash: Buffer): boolean {
@@ -240,7 +234,6 @@ export function keyView(caller: Caller, now: number, you?: string): KeyView {
       ? { expiresAt: new Date(caller.expiresAt).toISOString(), expiresInDays: Math.floor((caller.expiresAt - now) / DAY_MS) }
       : {}),
     signs: Boolean(caller.signKey),
-    remote: caller.remote === true,
     ...(caller.project ? { project: caller.project } : {}),
     you: caller.id === you,
   };
@@ -255,8 +248,6 @@ export function mintDesk(
   name: string,
   now: number,
   random: (size: number) => Uint8Array = randomBytes,
-  /** Made over SSH, for a desktop on another computer (cli.ts desk). */
-  remote = false,
 ): { caller: Caller; key: string; relayKey: string } {
   const key = Buffer.from(random(32)).toString("base64url");
   const relayKey = Buffer.from(random(32)).toString("base64url");
@@ -269,32 +260,29 @@ export function mintDesk(
     linkedAt: now,
     expiresAt: now + KEY_LIFETIME_MS,
     relayKey,
-    ...(remote ? { remote: true } : {}),
   };
   return { caller, key, relayKey };
 }
 
 /**
  * A new Lead caller and its key, returned once. `id` is fixed per Lead (the
- * computer the Lead runs on), so minting again rotates the key. `remote`: the
- * Lead runs on another computer, and its Workers here wait for your Allow.
+ * computer the Lead runs on), so minting again rotates the key.
  */
 export function mintLead(
   name: string,
   now: number,
   random: (size: number) => Uint8Array = randomBytes,
-  remote = false,
 ): { caller: Caller; key: string } {
   const key = Buffer.from(random(32)).toString("base64url");
   const slug = name.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "local";
   const caller: Caller = {
-    id: `${remote ? "lead_from_" : "lead_"}${slug}`.padEnd(16, "_"),
+    id: `lead_${slug}`.padEnd(16, "_"),
     name: `Lead on ${name.trim().slice(0, 60) || "this computer"}`,
     kind: "lead",
     keyHash: hashKey(key),
     scopes: [...LEAD_SCOPES],
     linkedAt: now,
-    ...(remote ? { remote: true } : { expiresAt: now + ORCH_KEY_LIFETIME_MS }),
+    expiresAt: now + ORCH_KEY_LIFETIME_MS,
   };
   return { caller, key };
 }

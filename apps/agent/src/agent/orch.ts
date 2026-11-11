@@ -51,7 +51,6 @@ import {
   runMerge,
   mergeCandidates,
   publicView,
-  remoteSpawnGate,
   saveApprovals,
   settle,
   stampTaint,
@@ -841,7 +840,7 @@ export async function handleOrch(
     configPath: string;
     log: (line: string) => void;
     /** `worker`: a Worker's Space tool, run as its owner project's Foreman (workerSpace.ts). */
-    caller: { id: string; kind: string; name: string; remote?: boolean; project?: string; worker?: string };
+    caller: { id: string; kind: string; name: string; project?: string; worker?: string };
     /** Tells your phones about a new approval. */
     notify: (approval: StoredApproval) => Promise<void>;
     /** Tells your phones something that needs no answer (a merge on green). */
@@ -1076,7 +1075,7 @@ export async function handleOrch(
     }
     // request_read: the question a Worker under a Foreman the Lead briefed waits on (requestAnswer.ts).
     if (route === "/orch/request") {
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer reads a Worker's question" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer reads a Worker's question" });
       const extra = await findWorker(url.searchParams.get("worker"), orchWorkerRecords);
       const refused = requestRefusal(extra, (project) => finishes.isBriefed(project));
       if (refused) return send(response, 409, { error: refused });
@@ -1148,7 +1147,7 @@ export async function handleOrch(
     }
     // ask_person (asks.ts): the Lead or a Foreman on this computer asks you; it shows as its question card.
     const askSession = async (): Promise<string | { status: number; error: string }> => {
-      if (!isLead || io.caller.remote) return { status: 403, error: "only the Lead and the Foremen on this computer ask the person" };
+      if (!isLead) return { status: 403, error: "only the Lead and the Foremen on this computer ask the person" };
       const project = only === undefined ? null : (await inScope())[0];
       if (only !== undefined && !project) return { status: 404, error: `no project ${only} here` };
       return project ? foremanSession(project) : LEAD_SESSION;
@@ -1282,7 +1281,7 @@ export async function handleOrch(
 
     // board_schema (spaceBoards.ts): a GET, so it is answered before the body below is read.
     if (route === "/orch/board/schema") {
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer makes a Space's boards" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer makes a Space's boards" });
       const deps = boardDeps();
       const id = url.searchParams.get("space") ?? "";
       let space;
@@ -1311,40 +1310,10 @@ export async function handleOrch(
     // contact_lookup (contactLookup.ts): Cobra's one read of a Space's People, for a duplicate check without waking its CRM Foreman.
     // Hers alone, on this computer: a Foreman reads its store with db_query, and a Worker's Space tools never reach it.
     if (route === CONTACT_LOOKUP_ROUTE) {
-      if (!isLead || only !== undefined || io.caller.remote || io.caller.worker !== undefined) return send(response, 403, { error: "only Cobra on this computer looks up a Space's contacts" });
+      if (!isLead || only !== undefined || io.caller.worker !== undefined) return send(response, 403, { error: "only Cobra on this computer looks up a Space's contacts" });
       const reply = handleContactLookup(body, io.contacts ?? liveContactDeps());
       return send(response, reply.status, reply.body);
     }
-
-    /**
-     * A Lead on another computer: its Workers here, and the Foreman that runs
-     * them, wait for your Allow (12 hours). Under Instinct here they start as
-     * hers at home do: the Foreman's plan still lands as its receipt. Sends
-     * the 202 and says so when it waits.
-     */
-    const waitsForRemoteAllow = async (task: string, project: { id: string; path: string }): Promise<boolean> => {
-      if (!(isLead && io.caller.remote === true)) return false;
-      const key = await projectKeyFor(project).catch(() => undefined);
-      const instinct = loadPolicy({ computer: computerName(), ...(key ? { project: key } : {}) }).escalate;
-      const now = Date.now();
-      const list = settle(loadApprovals(), now);
-      const gate = remoteSpawnGate(list, io.caller, io.machineLabel, task, now, loadRoles({ computer: computerName() }).lead.remoteSpawnHours * 3_600_000, instinct);
-      if (gate.allowed) {
-        if (gate.instinct) io.log(`${io.caller.id} reaches ${project.id} with no Allow asked: Instinct is in force here`);
-        return false;
-      }
-      if (gate.created) {
-        saveApprovals([...list, gate.approval]);
-        await io.notify(gate.approval);
-        io.log(`approval ${gate.approval.id}: ${gate.approval.title} asked by ${io.caller.id}`);
-      }
-      send(response, 202, {
-        waiting: true,
-        approval: publicView(gate.approval),
-        error: `Workers on ${io.machineLabel} wait for the person's Allow in the desk app; try again once approval_status says allowed`,
-      });
-      return true;
-    };
 
     if (route === "/orch/foreman/brief") {
       const id = text("project") ?? "";
@@ -1357,16 +1326,14 @@ export async function handleOrch(
       // The company and its rules for the work (companyBrain.ts), from this computer's brain or its copy of it.
       const note = sentOrg ? [companyNote(sentOrg, os.hostname(), project.id), seated ? rulesLine(MEMORY_DIR, computerName(), seated) : null].filter(Boolean).join(" ") || null : null;
       const brief = briefText(text("text") ?? "", isLead, note);
-      if (await waitsForRemoteAllow(brief, project)) return;
       const session = foremanSession(project);
       const started = !(await runningSessions()).has(session);
       if (started) {
         await startForeman(project);
         io.log(`Foreman started for ${project.id} by ${io.caller.id}`);
       }
-      // The Lead here hears of this Foreman's finishes from now on, across restarts too (finishes.ts); a Lead elsewhere through /orch/lead/news.
+      // The Lead hears of this Foreman's finishes from now on, across restarts too (finishes.ts).
       if (audienceOf(io.caller) === "lead") finishes.briefed(project.id, { quiet: body.quiet === true });
-      else if (isLead && io.caller.remote === true) finishes.briefedFrom(project.id, audienceOf(io.caller));
       // A brief from a turn that read text from outside carries it: the Foreman's turn it starts is tainted (taint.ts).
       const briefTaint = isLead ? taintOf(who) : null;
       if (briefTaint) markRead(`foreman:${project.id}`, "brief", `brief from ${who}`, briefTaint.hosts);
@@ -1378,7 +1345,7 @@ export async function handleOrch(
 
     // Cobra answers a Foreman's question (foremanAnswer.ts): only a question, never a permission prompt, and only from the Lead on this computer.
     if (route === "/orch/foreman/answer") {
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer answers a Foreman's question" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer answers a Foreman's question" });
       const id = text("project") ?? "";
       const project = projectNamed(await inScope(), id);
       if (!project) return send(response, 404, { error: notHere(id) });
@@ -1409,7 +1376,7 @@ export async function handleOrch(
 
     // request_answer for a Worker: its question, answered for the person as a Foreman's is (requestAnswer.ts).
     if (route === "/orch/request/answer") {
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer answers a Worker's question" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer answers a Worker's question" });
       const extra = await findWorker(text("worker"), orchWorkerRecords);
       const refused = requestRefusal(extra, (project) => finishes.isBriefed(project));
       if (refused) return send(response, 409, { error: refused });
@@ -1433,7 +1400,7 @@ export async function handleOrch(
 
     // Cobra defines a trade (tradeRoutes.ts): the Lead here proposes it, and only the person's Allow installs it.
     if (route === "/orch/trade/define") {
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer defines a trade" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer defines a trade" });
       const deps = io.trades ?? liveTradeDeps({ approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) }, notify: io.notify, tell: tellLine, log: io.log });
       const outcome = await proposeTrade(deps, io.caller.id, body.definition);
       return send(response, outcome.status, outcome.body);
@@ -1441,7 +1408,7 @@ export async function handleOrch(
 
     // A new Space from the intake (spaceCreate.ts): one card for the person; on Allow the agent opens the Space, with no Foremen until Cobra hires one on first need.
     if (route === "/orch/space/create") {
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer opens a Space" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer opens a Space" });
       const deps = io.space ?? liveSpaceDeps({ configPath: io.configPath, approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) }, notify: io.notify, tell: tellLine, log: io.log });
       const reply = await proposeSpace(deps, io.caller.id, body);
       return send(response, reply.status, reply.body);
@@ -1449,25 +1416,23 @@ export async function handleOrch(
 
     // A board for a Space (spaceBoards.ts): board_schema reads its store's tables (a GET, read above with no body), board_propose checks and test-runs the widgets, then one card.
     if (route === "/orch/board/propose") {
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer makes a Space's boards" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer makes a Space's boards" });
       const reply = await proposeBoard(boardDeps(), io.caller.id, body);
       return send(response, reply.status, reply.body);
     }
 
     // A form on a website Cobra did not build (formLinks.ts): form_sources reads the account's databases (names and counts), form_link makes one card, form_unlink stops the reading.
     if (ORCH_FORM_ROUTES.has(route)) {
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer links a website's form" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer links a website's form" });
       const deps = io.forms ?? liveFormDeps({ approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) }, card: io.notify, tell: tellLine, log: io.log });
       const reply = await handleFormOrch(route, body, io.caller.id, deps);
       return send(response, reply.status, reply.body);
     }
 
-    // The Lead may create a new, local project only through a saved trade.
-    // It cannot choose arbitrary shell commands or a starter prompt. This is
-    // intentionally local: creating folders on another computer is a person
-    // decision, not a side effect of a remote Lead conversation.
+    // The Lead may create a new project only through a saved trade. It
+    // cannot choose arbitrary shell commands or a starter prompt.
     if (route === "/orch/foreman/create") {
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer may create a templated Foreman" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer may create a templated Foreman" });
       const template = text("template");
       if (!knownTrade(template)) {
         return send(response, 400, { error: unknownTemplateError() });
@@ -1534,10 +1499,8 @@ export async function handleOrch(
       if (!parent) return send(response, 404, { error: `no project "${id}" on this computer` });
       // The Lead's own key starts a Worker only for a light task in an on-call Space (directWorkers.ts, Figure 2); the rest is checked below.
       const direct = isLead && only === undefined;
-      if (direct && io.caller.remote) return send(response, 409, { error: "brief the Foreman: Cobra starts a Worker herself only on her own computer" });
       const mode = direct ? modeOf(parent) : null;
       if (mode && mode.mode !== "on-call") return send(response, 409, { error: `brief the Foreman: ${mode.why}` });
-      if (await waitsForRemoteAllow(text("task") ?? "", parent)) return;
       const model = text("model");
       const branch = text("branch");
       // A Foreman's Workers are owned by its project, whatever it says; so are Cobra's own.
@@ -1551,7 +1514,7 @@ export async function handleOrch(
       // Cobra's own Worker always has them: its work is what it does with them.
       const spaceTools = direct || body.spaceTools === true;
       if (spaceTools && !direct) {
-        if (!isLead || only === undefined || io.caller.remote) return send(response, 403, { error: "only a Foreman gives its Workers Space tools, for its own project" });
+        if (!isLead || only === undefined) return send(response, 403, { error: "only a Foreman gives its Workers Space tools, for its own project" });
         const own = projects.find((project) => project.id === only);
         if (!own || workerToolNames(own.foremanTemplate ?? "").length === 0) return send(response, 409, { error: `${own?.name ?? only}'s trade has no Space tools for a Worker: leave out spaceTools` });
       }
@@ -1569,7 +1532,6 @@ export async function handleOrch(
           mode: mode ?? modeOf(parent),
           body,
           task,
-          remote: io.caller.remote === true,
           tools: workerToolNames(parent.foremanTemplate ?? "").length > 0,
           contained: io.direct?.contained?.() ?? (containEnabled() && containAvailable()),
           engine: parseModel(chosen).kind,
@@ -1662,7 +1624,7 @@ export async function handleOrch(
     }
     if (route === "/orch/notify") {
       // Only the Lead on this computer: the top of the chain is the one that tells you (notifyPolicy.ts).
-      if (!isLead || only !== undefined || io.caller.remote) return send(response, 403, { error: "only the Lead on this computer notifies the person" });
+      if (!isLead || only !== undefined) return send(response, 403, { error: "only the Lead on this computer notifies the person" });
       if (!io.tell) return send(response, 503, { error: "notifications are not set up on this computer" });
       const asked = (text("project") ?? "").trim();
       const project = asked ? (await inScope()).find((candidate) => candidate.id === asked) : undefined;
@@ -1673,7 +1635,7 @@ export async function handleOrch(
     }
     // A research run (webRuns.ts): the Lead here or a Foreman declares one goal, judged once.
     if (route === "/orch/web/run") {
-      if (!isLead || (only === undefined && io.caller.remote)) return send(response, 403, { error: "only the Lead on this computer and the Foremen research the web here" });
+      if (!isLead) return send(response, 403, { error: "only the Lead and the Foremen research the web here" });
       const { liveWebRunDeps, startResearch } = await import("./webRuns.ts");
       const deps = io.webRuns ?? liveWebRunDeps({ approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) }, notify: io.notify, tell: tellLine, decided: io.decided ?? (() => undefined), log: io.log });
       const who = only === undefined ? ({ role: "lead" } as const) : ({ role: "foreman", project: only } as const);
@@ -1914,7 +1876,6 @@ export async function handleOrch(
     const extra = await scopedWorker(body.id);
     // The Lead's key reaches only her own direct Workers, on her own computer (directWorkers.ts).
     if (isLead && only === undefined && LEAD_WORKER_ROUTES.has(route)) {
-      if (io.caller.remote) return send(response, 403, { error: "a Lead on another computer does not run Workers here: brief the project's Foreman (foreman_brief)" });
       const home = (await registered(io.configPath)).find((candidate) => candidate.id === extra.parent);
       const refused = directControlRefusal(route, extra, home ? modeOf(home) : { mode: "standing", space: null, why: `${extra.parent} is not on this computer` });
       if (refused) return send(response, refused.status, { error: refused.error });

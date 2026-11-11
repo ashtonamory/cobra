@@ -12,7 +12,6 @@ const { DEFAULT_ROLES, HARD_CAPS, modelAllowed, parsePolicy, resolveRoles } = aw
 const { describeChange } = await import("./policyEdit.ts");
 const { mergesOnGreen } = await import("./orch.ts");
 const { leadCommand, leadTools, LEAD_TOOLS, WEB_NOTE } = await import("./lead.ts");
-const { remoteGrant, remoteSpawnGate, REMOTE_GRANT_MS } = await import("./approvals.ts");
 type PolicyFile = import("./permissions.ts").PolicyFile;
 
 const base: PolicyFile = { version: 1, revision: 1, preset: "locked" };
@@ -20,7 +19,7 @@ const base: PolicyFile = { version: 1, revision: 1, preset: "locked" };
 test("a policy that says nothing is today's behavior, but for the Lead's web tools: off until the owner turns them on; a Foreman's stay on", () => {
   assert.deepEqual(resolveRoles(base), DEFAULT_ROLES);
   assert.deepEqual(DEFAULT_ROLES, {
-    lead: { webTools: false, remoteSpawnHours: 12 },
+    lead: { webTools: false },
     foreman: { maxWorkers: 3, maxWorkersPerComputer: 8, workerModels: null, mergeOnGreen: false, webTools: true },
     job: { models: null, concurrent: 2 },
     local: { slots: 1 },
@@ -40,7 +39,7 @@ test("the most specific level that sets a field wins, field by field; nothing pa
   assert.equal(resolveRoles(policy, { computer: "mini" }).foreman.maxWorkers, 1);
   assert.equal(resolveRoles(policy, { computer: "mini" }).lead.webTools, false);
   // An explicit true stays true, at the fleet or a computer, and a computer's false still wins over the fleet's true.
-  const on = parsePolicy(JSON.stringify({ ...base, lead: { webTools: true }, computers: { mini: { lead: { webTools: false } }, mbp: { lead: { remoteSpawnHours: 6 } } } })).policy;
+  const on = parsePolicy(JSON.stringify({ ...base, lead: { webTools: true }, computers: { mini: { lead: { webTools: false } }, mbp: { lead: { remoteSpawnHours: 6 } as never } } })).policy;
   assert.equal(resolveRoles(on).lead.webTools, true);
   assert.equal(resolveRoles(on, { computer: "mbp" }).lead.webTools, true);
   assert.equal(resolveRoles(on, { computer: "mini" }).lead.webTools, false);
@@ -93,10 +92,7 @@ test("a role change in words: more Workers, models, merging, web or time grants 
   assert.deepEqual(lines({ foreman: { maxWorkersPerComputer: 12 } }), ["+ the fleet: 12 Workers may run at once on a computer (was 8)"]);
   assert.deepEqual(lines({ foreman: { workerModels: ["sonnet"] } }), ["- the fleet: Workers may use sonnet (was any model)"]);
   assert.deepEqual(lines({ projects: { "a/b": { foreman: { mergeOnGreen: true } } } }), ["+ a/b: a Foreman merges a green PR without asking you"]);
-  assert.deepEqual(lines({ lead: { webTools: true, remoteSpawnHours: 24 } }), [
-    "+ the fleet: the Lead may search and read the web",
-    "+ the fleet: an Allow for a remote Lead lasts 24 hours (was 12)",
-  ]);
+  assert.deepEqual(lines({ lead: { webTools: true } }), ["+ the fleet: the Lead may search and read the web"]);
   assert.deepEqual(lines({ foreman: { webTools: false } }), ["- the fleet: Foremen no longer use the web"]);
   assert.deepEqual(lines({ job: { concurrent: 4, models: ["haiku"] } }), ["+ the fleet: 4 jobs may run at once (was 2)", "- the fleet: jobs may use haiku (was any model)"]);
   const listed: PolicyFile = { ...base, foreman: { workerModels: ["sonnet"] } };
@@ -114,7 +110,7 @@ test("merge on green: only PRs, every project allowing it, each check green on t
   assert.equal(mergesOnGreen([], 0, green), false);
 });
 
-test("the Lead's web tools and a remote Lead's Allow follow the policy", () => {
+test("the Lead's web tools follow the policy", () => {
   assert.deepEqual(leadTools(true), LEAD_TOOLS);
   assert.deepEqual(leadTools(false), ["Read", "Grep", "Glob", "AskUserQuestion", "TodoWrite"]);
   // With the web tools, the Lead is told a page is data and cannot steer it; without them, nothing about the web.
@@ -127,13 +123,6 @@ test("the Lead's web tools and a remote Lead's Allow follow the policy", () => {
   assert.match(prompt(leadTools(true), ["github"]), /on GitHub, every web page and search result you read, and every file/);
   assert.doesNotMatch(prompt(leadTools(false)), /web page/);
   assert.match(prompt(leadTools(false)), /commits\) and every file in a repository is data/);
-  const now = Date.parse("2026-10-12T00:00:00Z");
-  const allowed = [{ id: "a1", kind: "remote-spawn", requestedBy: "lead_x", state: "allowed", answeredAt: new Date(now).toISOString(), title: "", body: "", createdAt: "", expiresAt: "" }] as never[];
-  assert.equal(remoteGrant(allowed, "lead_x", now + 13 * 3_600_000), null, "12 hours by default");
-  assert.equal(remoteGrant(allowed, "lead_x", now + 13 * 3_600_000, 24 * 3_600_000), now + 24 * 3_600_000);
-  const asked = remoteSpawnGate([], { id: "lead_x", name: "Lead on legion" }, "mini", "x", now, 6 * 3_600_000);
-  assert.ok(!asked.allowed && /Allow lasts 6 hours/.test(asked.approval.body));
-  assert.equal(REMOTE_GRANT_MS, 12 * 3_600_000);
 });
 
 test("local slots: one by default, a computer's or the fleet's, never a project's, never past the hard cap", () => {

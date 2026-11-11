@@ -75,9 +75,6 @@ function roleLines(label: string, was: Roles, now: Roles, project = false): Chan
   if (was.foreman.webTools !== now.foreman.webTools) line(now.foreman.webTools ? "Foremen may search and read the web" : "Foremen no longer use the web", now.foreman.webTools);
   // The Lead and local slots belong to a computer: a project's preset moving the Lead's default there means nothing.
   if (!project && was.lead.webTools !== now.lead.webTools) line(now.lead.webTools ? "the Lead may search and read the web" : "the Lead no longer uses the web", now.lead.webTools);
-  if (!project && was.lead.remoteSpawnHours !== now.lead.remoteSpawnHours) {
-    line(`an Allow for a remote Lead lasts ${now.lead.remoteSpawnHours} hours (was ${was.lead.remoteSpawnHours})`, now.lead.remoteSpawnHours > was.lead.remoteSpawnHours);
-  }
   if (!project && was.local.slots !== now.local.slots) {
     line(`${now.local.slots} local-model ${now.local.slots === 1 ? "session runs" : "sessions run"} at once on a computer (was ${was.local.slots})`, now.local.slots > was.local.slots);
   }
