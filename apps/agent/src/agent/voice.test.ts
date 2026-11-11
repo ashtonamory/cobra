@@ -102,7 +102,7 @@ test("the morning brief speaks in the voice", () => {
   assert.match(morning.MORNING_SYSTEM, new RegExp(PLAIN_WORDS.slice(0, 40).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.doesNotMatch(morning.MORNING_SYSTEM, /Foremen/);
   const brief = morning.plainBrief([
-    { computer: "legion", day: "2026-10-23", landed: [{ project: "payroll", report: "sent" }], counts: { merged: 2, actions: 1, routines: 0 }, today: [], waiting: [] },
+    { computer: "laptop", day: "2026-10-23", landed: [{ project: "payroll", report: "sent" }], counts: { merged: 2, actions: 1, routines: 0 }, today: [], waiting: [] },
   ]);
   assert.deepEqual(ownerJargon(brief), [], brief);
 });
@@ -110,7 +110,7 @@ test("the morning brief speaks in the voice", () => {
 test("Cobra's and a Foreman's tmux start fit tmux's limit, with the prompt read from a private file", () => {
   const written = new Map<string, string>();
   const write = (path: string, text: string) => void written.set(path, text);
-  const project = { id: "cobra", name: "Cobra", machine: "legion", path: "/p/cobra", session: "cobra" } as never;
+  const project = { id: "cobra", name: "Cobra", machine: "laptop", path: "/p/cobra", session: "cobra" } as never;
   const full = lead.leadCommand(undefined, lead.leadTools(true));
   for (const [command, file] of [
     [full, "/l/system-prompt.md"],

@@ -27,7 +27,7 @@
   ],
   "procedure": [
     {
-      "text": "Open a terminal on the Legion.",
+      "text": "Open a terminal on the Laptop.",
       "result": "A shell prompt shows."
     },
     {
@@ -41,7 +41,7 @@
         {
           "kind": "CAUTION",
           "sentences": [
-            "Do not restart the Legion while a Claude session runs in the agent.",
+            "Do not restart the Laptop while a Claude session runs in the agent.",
             "If you restart it, the session stops and you can lose work that you did not save."
           ]
         }
@@ -52,11 +52,11 @@
       "result": "The output shows `Linger=yes`."
     },
     {
-      "text": "Restart the Legion."
+      "text": "Restart the Laptop."
     },
     {
       "text": "Before you log in, open Fleet in Cobra on your phone.",
-      "result": "The Legion shows online in less than 1 minute.",
+      "result": "The Laptop shows online in less than 1 minute.",
       "note": [
         "You do this procedure one time for each computer.",
         "The change stays after you restart."
@@ -67,7 +67,7 @@
     {
       "kind": "flowchart",
       "caption": "Boot sequence",
-      "mermaid": "flowchart TD\n  B[\"Legion starts\"] --> L{\"Lingering on?\"}"
+      "mermaid": "flowchart TD\n  B[\"Laptop starts\"] --> L{\"Lingering on?\"}"
     }
   ],
   "sources": [

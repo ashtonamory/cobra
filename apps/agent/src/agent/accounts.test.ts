@@ -116,9 +116,9 @@ test("switching Codex swaps this computer's sign-in, saving the one it replaces 
   const live = join(paths.home, ".codex", "auth.json");
   try {
     mkdirSync(join(paths.home, ".codex"));
-    writeFileSync(live, codexAuth("legion@example.com", "acct-legion"), { mode: 0o600 });
-    const legion = saveLiveCodex(paths);
-    assert.equal(legion?.email, "legion@example.com");
+    writeFileSync(live, codexAuth("laptop@example.com", "acct-laptop"), { mode: 0o600 });
+    const laptop = saveLiveCodex(paths);
+    assert.equal(laptop?.email, "laptop@example.com");
     assert.equal(accountsView(paths).computer.codex.saved, true);
 
     // A second account, signed in elsewhere and saved here.
@@ -129,25 +129,25 @@ test("switching Codex swaps this computer's sign-in, saving the one it replaces 
     writeFileSync(paths.book, JSON.stringify(book), { mode: 0o600 });
 
     await assert.rejects(useAccount({ provider: "codex", id: "codex-mbp00001" }, { ...quiet, codexRunning: async () => true }, paths), /codex is running/);
-    assert.match(readFileSync(live, "utf8"), /acct-legion/, "nothing changed while codex ran");
+    assert.match(readFileSync(live, "utf8"), /acct-laptop/, "nothing changed while codex ran");
 
     // codex refreshed the live sign-in since it was saved: switching away keeps the fresher one.
-    writeFileSync(live, codexAuth("legion@example.com", "acct-legion").replace("rt-acct-legion", "rt-fresher"), { mode: 0o600 });
+    writeFileSync(live, codexAuth("laptop@example.com", "acct-laptop").replace("rt-acct-laptop", "rt-fresher"), { mode: 0o600 });
     await useAccount({ provider: "codex", id: "codex-mbp00001" }, quiet, paths);
     assert.match(readFileSync(live, "utf8"), /acct-mbp/);
     assert.equal(statSync(live).mode & 0o777, 0o600);
-    assert.match(readFileSync(join(paths.dir, legion!.id, "codex", "auth.json"), "utf8"), /rt-fresher/);
+    assert.match(readFileSync(join(paths.dir, laptop!.id, "codex", "auth.json"), "utf8"), /rt-fresher/);
     assert.deepEqual(
       accountsView(paths).accounts.map((a) => [a.label, a.active]),
-      [["legion@example.com", false], ["MacBook's", true]],
+      [["laptop@example.com", false], ["MacBook's", true]],
     );
 
-    await useAccount({ provider: "codex", id: legion!.id }, quiet, paths);
+    await useAccount({ provider: "codex", id: laptop!.id }, quiet, paths);
     assert.match(readFileSync(live, "utf8"), /rt-fresher/);
 
     // Removing the one in use keeps this computer signed in; only the saved copy goes.
-    removeAccount({ id: legion!.id }, paths);
-    assert.match(readFileSync(live, "utf8"), /acct-legion/);
+    removeAccount({ id: laptop!.id }, paths);
+    assert.match(readFileSync(live, "utf8"), /acct-laptop/);
     assert.equal(accountsView(paths).accounts.length, 1);
   } finally {
     paths.done();

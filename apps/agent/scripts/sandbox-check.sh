@@ -13,7 +13,7 @@
 # the check would see one that the sandbox let through.
 #
 # With --install, run from your own terminal (not a Worker's), it checks the
-# agent's dependency install instead (installJail.ts, OV-SEC-VPS-001 F2): a
+# agent's dependency install instead (installJail.ts): a
 # throwaway project with a planted preinstall goes through the real contained
 # install, and the script must not run nor write outside the project. It
 # touches nothing of the agent's.
@@ -292,7 +292,7 @@ if [ "$fails" -eq "$before" ]; then
   pass "proxy bridges" "$bridges in /tmp; none lets a request through without its session's token"
 fi
 
-# --- Cobra's sandbox: hardened (OV-SEC-VPS-001 F19) and no git credentials ---------
+# --- Cobra's sandbox: hardened and no git credentials ---------
 #
 # contain.ts JAIL_HARDENING: no nested user namespace, no capability. Claude
 # Code's own sandbox (COBRA_CONTAIN off) is not hardened this way: there
@@ -364,7 +364,7 @@ if common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
     case "$other" in *'*'*) continue ;; esac
     must_refuse_append "git: $(basename "$other") commondir" "$other/commondir"
   done
-  # What the local check reads as main (OV-SEC-VPS-001 F5): only the agent's fetch writes origin's refs.
+  # What the local check reads as main: only the agent's fetch writes origin's refs.
   must_refuse_new "git: refs/remotes" "$common/refs/remotes"
   for remote in "$common"/refs/remotes/*/; do
     remote=${remote%/}

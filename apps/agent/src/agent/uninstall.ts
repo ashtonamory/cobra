@@ -2,8 +2,8 @@ import { copyFileSync, existsSync, lstatSync, readdirSync, readFileSync, readlin
 import { join, resolve } from "node:path";
 
 /**
- * `cobra-agent uninstall [--purge] [--yes]` (issue #404): what docs/install.md
- * section 7.3 used to have a person do by hand, in the same order.
+ * `cobra-agent uninstall [--purge] [--yes]`: every step of taking Cobra off
+ * this computer, in the order that leaves nothing half-removed.
  *
  *   1. Cobra's entries out of the files it shares with other tools
  *      (~/.claude/settings.json's hooks, ~/.codex/config.toml's notify line,

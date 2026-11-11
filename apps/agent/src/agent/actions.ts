@@ -27,8 +27,7 @@ import { SessionError } from "./sessions.ts";
  *
  * A Foreman proposes an action with its exact content (orchMcp.ts
  * action_propose, through /orch/action/propose). That content becomes an
- * approval (approvals.ts): the card on your phone and the desk shows it, the
- * push carries it, and Allow is behind Face ID. After Allow the agent sends
+ * approval (approvals.ts): the card in the desk shows it. After Allow the agent sends
  * exactly what you were shown, in code: no model is in the way, so nothing can
  * be reworded between the card and the wire, the card holds the whole message
  * (one that would not fit is refused, never cut), and each attachment is sent

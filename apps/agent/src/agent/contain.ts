@@ -130,7 +130,7 @@ export function containedWorker(id: string, dir = WORKERS_DIR): boolean {
  * COBRA_CONTAIN: "on" runs Workers and jobs in Cobra's sandbox wherever
  * bubblewrap works, and quietly out of it where it does not; "require" is the
  * same, but where bubblewrap does not work nothing of the workforce starts
- * (OV-SEC-VPS-001 F13: a kernel update or a hardened sysctl must not turn
+ * (a kernel update or a hardened sysctl must not turn
  * the jail off with no sound). Anything else is off.
  */
 export type ContainSetting = "require" | "on" | "off";
@@ -144,7 +144,7 @@ export function containEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
 }
 
 /**
- * The hardening every bubblewrap plan carries (OV-SEC-VPS-001 F19), after
+ * The hardening every bubblewrap plan carries, after
  * --unshare-all: a user namespace for certain (--disable-userns needs one),
  * no nested user namespace (the kernel's user namespace code is the escape
  * route left), no capability even inside the namespace, and a new session,
@@ -494,7 +494,7 @@ export function containArgs(plan: ContainPlan, files: GitFiles = liveGitFiles, k
     join(scope.gitCommon, "hooks"),
     join(scope.gitCommon, "config"),
     // What origin has, which the local check and the injection audit read as
-    // main (OV-SEC-VPS-001 F5): only the agent's own fetch writes these.
+    // main: only the agent's own fetch writes these.
     ...remoteRefs(scope),
     ...(plan.local ? [join(scope.gitCommon, "refs", "heads", "main")] : []),
   ];

@@ -285,7 +285,7 @@ export function startWatcher(deps: WatcherDeps): () => void {
       if (tokens.length === 0) continue;
       try {
         const outcome = await deps.send(tokens, message);
-        deps.log(`pushed "${message.title}" to ${tokens.length} phone(s)`);
+        deps.log(`notified "${message.title}"`);
         for (const error of outcome.errors) deps.log(`push ticket: ${error}`);
         for (const token of outcome.dead) {
           deps.log("push token no longer registered, forgetting it");

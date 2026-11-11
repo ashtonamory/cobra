@@ -108,8 +108,8 @@ test("no row reaches the floor; rows decide the rest", () => {
 
 test("the blocklist is refused before the floor, any preset, any override and the judge", () => {
   const auto = resolvePolicy(
-    parsePolicy(JSON.stringify({ version: 1, revision: 4, preset: "auto", network: { allow: ["github.com"] }, computers: { legion: { preset: "auto" } }, projects: { cobra: { preset: "auto" } } })).policy,
-    { computer: "legion", project: "cobra" },
+    parsePolicy(JSON.stringify({ version: 1, revision: 4, preset: "auto", network: { allow: ["github.com"] }, computers: { laptop: { preset: "auto" } }, projects: { cobra: { preset: "auto" } } })).policy,
+    { computer: "laptop", project: "cobra" },
   );
   assert.equal(auto.preset, "auto");
   // An override that allows every capability, and one that judges every capability.
@@ -182,7 +182,7 @@ test("fallback chains: today's models until the owner lists others, the computer
         "no-such-role": ["haiku"],
       },
     },
-    computers: { mini: { models: { fallbacks: { titles: ["local:llama3"], explainer: ["codex"] } } } },
+    computers: { office: { models: { fallbacks: { titles: ["local:llama3"], explainer: ["codex"] } } } },
   };
   const { policy, refused } = parsePolicy(JSON.stringify(file));
   assert.equal(refused, null);
@@ -192,15 +192,15 @@ test("fallback chains: today's models until the owner lists others, the computer
     "memory-ask": ["sonnet"],
     worker: ["sonnet", "local:qwen", "codex"],
   });
-  // codex cannot write an explainer: the mini's explainer chain is left out, so the fleet's (today's) stands.
-  assert.equal(policy.computers?.mini?.models?.fallbacks?.explainer, undefined);
+  // codex cannot write an explainer: the office's explainer chain is left out, so the fleet's (today's) stands.
+  assert.equal(policy.computers?.office?.models?.fallbacks?.explainer, undefined);
   const fleet = resolvePolicy(policy).fallbacks;
   assert.deepEqual(fleet.titles, ["haiku", "local:qwen-tuned:fast96k"]);
   assert.deepEqual(fleet.explainer, ["haiku"]);
   assert.deepEqual(fleet["ea-fold"], ["sonnet"]);
-  const mini = resolvePolicy(policy, { computer: "mini" }).fallbacks;
-  assert.deepEqual(mini.titles, ["local:llama3"]);
-  assert.deepEqual(mini["ea-roundup"], ["haiku", "sonnet", "local:qwen-tuned:fast96k"]);
+  const office = resolvePolicy(policy, { computer: "office" }).fallbacks;
+  assert.deepEqual(office.titles, ["local:llama3"]);
+  assert.deepEqual(office["ea-roundup"], ["haiku", "sonnet", "local:qwen-tuned:fast96k"]);
   // A refused file is today's chains, whatever it said.
   assert.deepEqual(resolvePolicy(policy, {}, "it is not valid JSON").fallbacks, locked.fallbacks);
 });
@@ -216,7 +216,7 @@ test("the judge's chain is its model and the local model it asks at HOLD; its le
   // A local judge first is asked alone.
   assert.deepEqual(read({ models: { fallbacks: { judge: ["local:qwen", "haiku"] } } }).judge, { model: "local:qwen", fallback: null });
   // The computer's own judge still wins over the fleet's chain.
-  const mixed = read({ models: { fallbacks: { judge: ["sonnet", "local:a"] } }, computers: { mini: { judge: { model: "opus" } } } }, { computer: "mini" });
+  const mixed = read({ models: { fallbacks: { judge: ["sonnet", "local:a"] } }, computers: { office: { judge: { model: "opus" } } } }, { computer: "office" });
   assert.deepEqual(mixed.judge, { model: "opus", fallback: "local:a" });
 });
 
@@ -242,15 +242,15 @@ test("the most specific level that names a preset wins: project, then computer, 
       version: 1,
       revision: 3,
       preset: "fleet-p",
-      computers: { legion: { preset: "computer-p" }, mini: {} },
+      computers: { laptop: { preset: "computer-p" }, office: {} },
       projects: { "octocat/cobra": { preset: "project-p" }, "bad name!": { preset: "x" } },
     }),
   );
   const named = (where: { computer?: string; project?: string }) => resolvePolicy(policy, where).notes[0];
   assert.match(named({}) ?? "", /fleet-p/);
-  assert.match(named({ computer: "legion" }) ?? "", /computer-p/);
-  assert.match(named({ computer: "mini" }) ?? "", /fleet-p/);
-  assert.match(named({ computer: "legion", project: "octocat/cobra" }) ?? "", /project-p/);
+  assert.match(named({ computer: "laptop" }) ?? "", /computer-p/);
+  assert.match(named({ computer: "office" }) ?? "", /fleet-p/);
+  assert.match(named({ computer: "laptop", project: "octocat/cobra" }) ?? "", /project-p/);
   assert.equal(policy.projects?.["bad name!"], undefined);
 });
 

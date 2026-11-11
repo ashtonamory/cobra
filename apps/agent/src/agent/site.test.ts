@@ -181,7 +181,7 @@ function fakeGithub(opts: GhOpts) {
       return opts.push ?? { code: 0, stdout: "", stderr: "" };
     },
     git: plainGit,
-    computer: "legion",
+    computer: "laptop",
   };
   return { github, calls };
 }
@@ -1207,7 +1207,7 @@ test("GitHub not connected: the card says nothing of it, publish says one plain 
   const { asked, approval } = await previewedAndAsked(h);
   assert.equal(approval.site?.github, undefined);
   assert.doesNotMatch(approval.body, /GitHub/);
-  assert.equal(asked.github, "Source not saved to GitHub: GitHub is not connected on legion.");
+  assert.equal(asked.github, "Source not saved to GitHub: GitHub is not connected on laptop.");
   const allowed = await allow(h, approval);
   assert.equal(allowed.approval.state, "done");
   assert.equal(allowed.approval.results?.length, 1);
@@ -1309,7 +1309,7 @@ test("GitHub disconnected between the card and the Allow: the site goes live, no
   const { approval } = await previewedAndAsked(h);
   const settled = await allow(h, approval, { github: { ...h.gh.github, connected: async () => null } });
   assert.equal(settled.approval.state, "done");
-  assert.match(settled.news, /Source not saved to GitHub: GitHub is not connected on legion any more\./);
+  assert.match(settled.news, /Source not saved to GitHub: GitHub is not connected on laptop any more\./);
   assert.deepEqual(h.gh.calls.create, []);
 });
 
@@ -1799,7 +1799,7 @@ test("site_start: the coded starter onto main and a new private repository; refu
   const off = await codedHarness({ contained: false });
   assert.match(err(await off.call("/orch/site/start", {})), /only in Cobra's sandbox, which is off on this computer \(COBRA_CONTAIN is not on/);
   const noGithub = await codedHarness({ connected: false });
-  assert.match(err(await noGithub.call("/orch/site/start", {})), /GitHub is not connected on legion[\s\S]*design mode/);
+  assert.match(err(await noGithub.call("/orch/site/start", {})), /GitHub is not connected on laptop[\s\S]*design mode/);
   const noConcept = await codedHarness({ concept: false });
   assert.match(err(await noConcept.call("/orch/site/start", {})), /No concept is picked yet/);
   const before = await codedHarness({ concept: false });

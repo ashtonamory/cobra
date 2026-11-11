@@ -25,12 +25,12 @@ const ORG = parseOrg({
 
 function root() {
   const dir = mkdtempSync(join(tmpdir(), "cobra-memory-index-root-"));
-  const state = (key: string, text: string) => memory.writeMemoryFile(dir, memory.memoryPaths.state("legion", key), text);
-  state("octo-org/cobra", "# octo-org/cobra\n\n_Updated 2026-10-24 14:00 by legion._\n\nGoal: memory\nBlocked / waiting: PR #384 waits for your merge\nNext: wave 2");
-  state("local/notes", "# local/notes\n\n_Updated 2026-10-20 end of day by legion._\n\nGoal: notes\nBlocked / waiting: none\nNext: tidy the inbox");
-  state("local/happy-tails", "# local/happy-tails\n\n_Updated 2026-10-23 by legion._\n\nBlocked / waiting: Tony's invoice MP-1004 needs your OK");
-  state("local/money-paws", "# local/money-paws\n\n_Updated 2026-10-22 by legion._\n\nNext: payroll run");
-  memory.writeMemoryFile(dir, "computers/legion/hourly/2026-10-24/14.md", "# legion · 14:00\n\n### Fleet\n- Cobra briefed the cobra Foreman.\n- Two PRs wait on you.\n\n### octo-org/cobra\n- Opened #384.");
+  const state = (key: string, text: string) => memory.writeMemoryFile(dir, memory.memoryPaths.state("laptop", key), text);
+  state("octo-org/cobra", "# octo-org/cobra\n\n_Updated 2026-10-24 14:00 by laptop._\n\nGoal: memory\nBlocked / waiting: PR #384 waits for your merge\nNext: wave 2");
+  state("local/notes", "# local/notes\n\n_Updated 2026-10-20 end of day by laptop._\n\nGoal: notes\nBlocked / waiting: none\nNext: tidy the inbox");
+  state("local/happy-tails", "# local/happy-tails\n\n_Updated 2026-10-23 by laptop._\n\nBlocked / waiting: Tony's invoice MP-1004 needs your OK");
+  state("local/money-paws", "# local/money-paws\n\n_Updated 2026-10-22 by laptop._\n\nNext: payroll run");
+  memory.writeMemoryFile(dir, "computers/laptop/hourly/2026-10-24/14.md", "# laptop · 14:00\n\n### Fleet\n- Cobra briefed the cobra Foreman.\n- Two PRs wait on you.\n\n### octo-org/cobra\n- Opened #384.");
   return dir;
 }
 
@@ -49,7 +49,7 @@ test("an index line is what waits, else what is next; 'none' waits for nothing",
 
 test("the index lists each project with its company; a sensitive company is counted, never listed", () => {
   const dir = root();
-  const built = index.buildIndex(dir, "legion", "omarchy", PROJECTS, ORG, NOW);
+  const built = index.buildIndex(dir, "laptop", "omarchy", PROJECTS, ORG, NOW);
   // This computer's own index lists everything, for its own Foremen.
   assert.equal(built.entries.length, 4);
   assert.equal(built.entries.find((entry) => entry.key === "local/happy-tails")?.company?.sensitive, true);
@@ -68,13 +68,13 @@ test("the index lists each project with its company; a sensitive company is coun
 
 test("the Lead's computer reads its own index and the others' it collected, its own first; junk is dropped", () => {
   const dir = root();
-  index.writeIndex(dir, index.buildIndex(dir, "legion", "omarchy", PROJECTS, ORG, NOW));
-  index.saveFleetIndex(dir, { computer: "mini", host: "mini", at: new Date(NOW).toISOString(), entries: [{ key: "octo-org/example.com", day: "2026-10-24", line: "Next: deploy" }], sensitive: [], headlines: [] });
+  index.writeIndex(dir, index.buildIndex(dir, "laptop", "omarchy", PROJECTS, ORG, NOW));
+  index.saveFleetIndex(dir, { computer: "office", host: "office", at: new Date(NOW).toISOString(), entries: [{ key: "octo-org/example.com", day: "2026-10-24", line: "Next: deploy" }], sensitive: [], headlines: [] });
   writeFileSync(join(dir, index.FLEET_INDEX, "junk.json"), "{nope");
-  const all = index.readIndexes(dir, "legion");
+  const all = index.readIndexes(dir, "laptop");
   assert.deepEqual(
     all.map((one) => one.computer),
-    ["legion", "mini"],
+    ["laptop", "office"],
   );
   assert.equal(index.parseIndex({ computer: "x" }), null);
   assert.deepEqual(index.parseIndex({ computer: "x", host: "x", at: "t", entries: [{ key: "../etc", day: "", line: "" }, { key: "a/b", day: "bad", line: "Next: y" }] })?.entries, [{ key: "a/b", day: "", line: "Next: y" }]);
@@ -97,7 +97,7 @@ test("projectSensitive: a seat's company marked sensitive, on this computer's ho
   const org = parseOrg({ ...ORG, companies: ORG.companies.map((company) => (company.id === "happy-tails" ? { ...company, sensitive: true } : company)) });
   assert.equal(index.projectSensitive(org, "omarchy", "money-paws"), true);
   assert.equal(index.projectSensitive(org, "omarchy", "cobra"), false);
-  assert.equal(index.projectSensitive(org, "mini", "money-paws"), false, "another computer's seat");
+  assert.equal(index.projectSensitive(org, "office", "money-paws"), false, "another computer's seat");
   assert.equal(index.projectSensitive(org, "omarchy", "unseated"), false);
   assert.equal(index.projectSensitive(null, "omarchy", "money-paws"), false);
 });

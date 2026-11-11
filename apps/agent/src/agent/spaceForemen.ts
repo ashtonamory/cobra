@@ -93,7 +93,7 @@ const PERSON_KINDS: ReadonlySet<string> = new Set(["desk"]);
 
 type Reply = { status: number; body: unknown };
 
-/** GET or POST /spaces/<id>/foremen, for the person's phone or desk. */
+/** GET or POST /spaces/<id>/foremen, for the person's desk. */
 export function handleSpaceForemen(id: string, method: string | undefined, bodyText: string, caller: { kind: string; name?: string }, log: (line: string) => void, root = SPACES_DIR): Reply {
   if (!PERSON_KINDS.has(caller.kind)) return { status: 403, body: { error: "only the desk app you linked reads or sets how a Space's Foremen work" } };
   try {

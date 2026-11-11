@@ -9,8 +9,8 @@ test("lid state reads the last word of the acpi line", () => {
   assert.equal(parseLidState("state: weird"), null);
 });
 
-test("the Legion's supplies: AC online, one battery", () => {
-  // Verbatim shape of /sys/class/power_supply on the Legion, 2026-09-26.
+test("the Laptop's supplies: AC online, one battery", () => {
+  // Verbatim shape of /sys/class/power_supply on the Laptop, 2026-09-26.
   assert.deepEqual(
     summariseSupplies([
       { type: "Mains", online: "1", capacity: null },

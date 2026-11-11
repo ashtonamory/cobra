@@ -24,7 +24,7 @@ const { GOOGLE_READS } = await import("./connectors.ts");
 
 const TOKEN = "github_pat_11FAKE0123456789_abcdefghijklmnopqrstuvwxyz";
 const LAUNCHER = join(import.meta.dirname, "githubMcp.ts");
-const project: Project = { id: "cobra", name: "Cobra", machine: "legion", path: "/p/cobra", session: "cobra" };
+const project: Project = { id: "cobra", name: "Cobra", machine: "laptop", path: "/p/cobra", session: "cobra" };
 
 let count = 0;
 

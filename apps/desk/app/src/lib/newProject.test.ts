@@ -47,9 +47,9 @@ group("Request", () => {
 
 group("Roots", () => {
   it("home and labels", () => {
-    const roots = ["/home/mini/Projects", "/home/mini"];
+    const roots = ["/home/office/Projects", "/home/office"];
     const home = newproject.homeFrom(roots);
-    expect(home).toBe("/home/mini");
+    expect(home).toBe("/home/office");
     expect(roots.map((r) => newproject.rootLabel(r, home))).toEqual(["~/Projects", "~"]);
     expect(newproject.rootLabel("/srv/x", home)).toBe("/srv/x");
     expect(newproject.rootLabel("/home/minimal", home)).toBe("/home/minimal");
@@ -86,14 +86,14 @@ group("Lists", () => {
 
 group("Words", () => {
   it("errors read as sentences", () => {
-    expect(newproject.describe(new ApiError(0, "unreachable: x"), "mini")).toBe("mini is not reachable.");
-    expect(newproject.describe(new ApiError(401, "no"), "mini")).toContain("Link the agent");
-    expect(newproject.describe(new ApiError(409, "already a project"), "mini")).toBe("already a project");
+    expect(newproject.describe(new ApiError(0, "unreachable: x"), "office")).toBe("office is not reachable.");
+    expect(newproject.describe(new ApiError(401, "no"), "office")).toContain("Link the agent");
+    expect(newproject.describe(new ApiError(409, "already a project"), "office")).toBe("already a project");
   });
 
   it("outcome and verbs", () => {
-    expect(newproject.outcome({ project: { name: "x" }, trusted: true }, "mini")).toBe("x added on mini, not started");
-    expect(newproject.outcome({ project: { name: "x" }, trusted: false }, "mini")).toContain("trusting");
+    expect(newproject.outcome({ project: { name: "x" }, trusted: true }, "office")).toBe("x added on office, not started");
+    expect(newproject.outcome({ project: { name: "x" }, trusted: false }, "office")).toContain("trusting");
     expect(["adopt", "clone", "init"].map((m) => newproject.busyWord(m))).toEqual(["Adding…", "Cloning…", "Creating…"]);
     expect(["adopt", "clone", "init"].map((m) => newproject.doneWord(m))).toEqual(["Added", "Cloned", "Created"]);
   });

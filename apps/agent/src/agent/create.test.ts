@@ -176,13 +176,13 @@ test("an id or path already registered is refused, naming the conflict", async (
   assert.match(byId.message, /already exists/);
 
   // An id derived from the directory name need not match the entry's own id —
-  // the real config has "control-plane-macbook" at ~/dev-control-plane — so the
+  // the real config has "plant-nursery-macbook" at ~/dev-plant-nursery — so the
   // path check is a separate guard, not a restatement of the id one.
   const byPath = await failure(
-    { mode: "adopt", path: "/home/me/dev-control-plane" },
+    { mode: "adopt", path: "/home/me/dev-plant-nursery" },
     {
       registered: [
-        registered({ id: "control-plane-macbook", path: "/home/me/dev-control-plane" }),
+        registered({ id: "plant-nursery-macbook", path: "/home/me/dev-plant-nursery" }),
       ],
     },
   );
@@ -325,9 +325,9 @@ test("withinRoots does not match a sibling by prefix", () => {
 });
 
 test("the same repository on a second machine is suffixed, not refused", async () => {
-  // The case this was written for: plant-shop is the Legion's, and the MacBook
+  // The case this was written for: plant-shop is the Laptop's, and the MacBook
   // wants its own checkout of it while travelling. The registry is deployed
-  // whole, so before this the Legion's entry occupied the name here too and
+  // whole, so before this the Laptop's entry occupied the name here too and
   // the create 409'd against a card this machine does not even serve.
   const log: Log = [];
   const result = await createProject(
@@ -336,8 +336,8 @@ test("the same repository on a second machine is suffixed, not refused", async (
   );
 
   assert.equal(result.project.id, "plant-shop-macbook");
-  // The path is identical to the Legion's on purpose: a directory should never
-  // have to be renamed to dodge a collision, the way ~/dev-control-plane was.
+  // The path is identical to the Laptop's on purpose: a directory should never
+  // have to be renamed to dodge a collision, the way ~/dev-plant-nursery was.
   assert.equal(result.project.path, "/home/me/Projects/plant-shop");
   // And the session keeps the bare name, because tmux is per machine — so the
   // same `tmux a -t plant-shop` works wherever you are sitting.

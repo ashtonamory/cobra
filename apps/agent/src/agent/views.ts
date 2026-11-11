@@ -1,6 +1,6 @@
 // Views: a trade's records as dashboards. A trade ships ViewSpecs (viewSpecs/*.ts: the SQL and which
 // column fills which part of a row); this file runs one against the project's
-// database, as the phone and the desk ask for it (personRoutes.ts), and lists
+// database, as the desk ask for it (personRoutes.ts), and lists
 // them for the apps without their SQL (packages/contracts/src/views.ts).
 //
 // Every read goes through ProjectDb.query, so a sensitive column is masked as
@@ -375,7 +375,7 @@ function runKanban(db: ProjectDb, spec: ViewSpec, input: ViewInput, now: Date): 
 export type RevealRequest = { view: string; field: string; id?: string; /** the block's position on a page */ block?: number; /** the row whose cell it is, in a list */ row?: string };
 
 /**
- * One real value, for the Show button (the phone asks Face ID first). It
+ * One real value, for the Show button (the desk asks its passcode first). It
  * re-runs the view with real values and returns only the one cell asked for,
  * and only when that column is one the masked run masked: a column nobody
  * masked is not this route's to serve twice. Never logged by value.

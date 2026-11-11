@@ -44,10 +44,9 @@ function sign(payload: string, key: string): string {
  * session that socket is already attached to — so this grants nothing the
  * holder does not already have.
  *
- * It exists because the phone's Tailscale tunnel restarts on its own every few
- * minutes. Without a ticket held ready, every restart drops the terminal and
- * needs a trip back through the app to mint a new one, which is what made
- * losing the tunnel cost a whole session rather than a couple of seconds.
+ * It exists so a dropped socket costs a couple of seconds: with a ticket
+ * held ready the page reattaches by itself, with no trip back through the
+ * app to mint a new one.
  */
 const RECONNECT_TTL_SECONDS = 600;
 

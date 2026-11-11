@@ -10,20 +10,20 @@ const reply = (machine: string, currency: string, spaces: SpaceMoney[]): AllMone
 describe("All money on the desk", () => {
   it("shows everything in the household's currency and asks again the computers that answered in another", () => {
     const replies = [
-      reply("legion", "USD", [space({ space: "paws", name: "Happy Tails" })]),
-      reply("mini", "XCD", [space({ space: "personal", name: "Personal", kind: "family", home: "XCD" })]),
+      reply("laptop", "USD", [space({ space: "paws", name: "Happy Tails" })]),
+      reply("office", "XCD", [space({ space: "personal", name: "Personal", kind: "family", home: "XCD" })]),
       reply("pi", "CAD", []),
     ];
     expect(chosenCurrency(replies)).toBe("XCD");
-    expect(toAskAgain(replies, "XCD")).toEqual(["legion"]);
+    expect(toAskAgain(replies, "XCD")).toEqual(["laptop"]);
   });
 
   it("lists households first, then businesses set up, then the ones to set up, each with its computer", () => {
     const rows = placed([
-      reply("legion", "XCD", [space({ space: "skn", name: "SKN Villa", setUp: false }), space({ space: "paws", name: "Happy Tails" })]),
-      reply("mini", "XCD", [space({ space: "personal", name: "Personal", kind: "family" }), space({ space: "acme", name: "Acme.dev" })]),
+      reply("laptop", "XCD", [space({ space: "skn", name: "SKN Villa", setUp: false }), space({ space: "paws", name: "Happy Tails" })]),
+      reply("office", "XCD", [space({ space: "personal", name: "Personal", kind: "family" }), space({ space: "acme", name: "Acme.dev" })]),
     ]);
-    expect(rows.map((r) => [r.name, r.machine])).toEqual([["Personal", "mini"], ["Acme.dev", "mini"], ["Happy Tails", "legion"], ["SKN Villa", "legion"]]);
+    expect(rows.map((r) => [r.name, r.machine])).toEqual([["Personal", "office"], ["Acme.dev", "office"], ["Happy Tails", "laptop"], ["SKN Villa", "laptop"]]);
   });
 
   it("stacks gains up from zero and losses down from it", () => {

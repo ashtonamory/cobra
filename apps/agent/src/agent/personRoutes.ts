@@ -9,7 +9,7 @@
 //   GET  /views?project=                 the trade's dashboards without their SQL, and the form of each button's write (ViewList)
 //   GET  /view?project=&view=&id=&q=&range=&key=&month=&filter=   one dashboard, run, sensitive values masked (ViewResult); a chart's range and drilled-from key
 //   POST /view/write  {project, mutation, args}   a button's change, one of the trade's named writes a view names, journaled as "person"
-//   POST /view/reveal {project, view, field, id?, block?, row?}   one hidden value, for the Show button (the phone asks Face ID first)
+//   POST /view/reveal {project, view, field, id?, block?, row?}   one hidden value, for the Show button (the desk asks its passcode first)
 //
 // A phone's or a desk's key only: a Lead or Foreman key reaches /orch/* and
 // nothing else (auth.ts), and is refused here too, so an orchestrator never

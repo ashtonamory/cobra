@@ -256,7 +256,7 @@ export function headlessCommand(settingsPath: string, branch: string, model: Wor
  * The repository's own frozen install, from the lockfile at its root, or null
  * when it has none. Frozen, so it installs what main pinned and nothing else.
  * No lifecycle scripts and no .pnpmfile.cjs: the install runs no code from
- * the repository (installJail.ts, OV-SEC-VPS-001 F2).
+ * the repository (installJail.ts).
  */
 export function installCommand(files: ReadonlySet<string>): string[] | null {
   if (files.has("pnpm-lock.yaml")) return ["pnpm", "install", "--frozen-lockfile", "--prefer-offline", "--ignore-scripts", "--ignore-pnpmfile"];
@@ -505,7 +505,7 @@ export async function spawnWorker(
   input: SpawnInput,
 ): Promise<{ extra: Extra; project: Project; background: Promise<void> }> {
   const task = sanitisePrompt(input.task);
-  // A spawn, a wake and a handoff all start here: with COBRA_CONTAIN=require none starts out of the jail (OV-SEC-VPS-001 F13).
+  // A spawn, a wake and a handoff all start here: with COBRA_CONTAIN=require none starts out of the jail.
   const refused = deps.jailRefusal?.() ?? null;
   if (refused) throw new SessionError(refused, 409);
   // No model named: the Workers' engine from Settings (engines.ts), Codex only
@@ -686,7 +686,7 @@ export async function spawnWorker(
     try {
       let installs = installCommands(await deps.list(extra.path));
       // A wake or a handoff installs over the worktree as the Worker left it: only
-      // when every file the install reads is still main's (OV-SEC-VPS-001 F2).
+      // when every file the install reads is still main's.
       if (input.reuse && installs.length) {
         const changed = await deps.installInputs(extra.path).catch((caught: unknown) => [`(${caught instanceof Error ? caught.message : String(caught)})`]);
         if (changed.length) {

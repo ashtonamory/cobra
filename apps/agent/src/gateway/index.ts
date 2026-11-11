@@ -14,14 +14,12 @@ import { ensureTmuxConf, tmuxArgs } from "../agent/tmuxHost.ts";
 /**
  * The terminal gateway.
  *
- * `tailscale serve` routes the whole /term/ prefix here, so every path under it
- * belongs to this service. The agent mints tickets at /ticket, deliberately
- * outside that prefix — putting it at /term/ticket made serve hand it to this
- * process, which does not implement it.
+ * Every path under /term/ belongs to this service. The agent mints tickets
+ * at /ticket, outside that prefix.
  *
- * This process spawns interactive shells on request, which makes it remote code
+ * This process spawns interactive shells on request, which makes it code
  * execution by design. It therefore:
- *   - binds loopback only, behind `tailscale serve`
+ *   - binds loopback only
  *   - accepts single-use HMAC tickets, never a caller's key
  *   - runs tmux rather than a bare shell, so a dropped socket does not kill work
  */
@@ -161,9 +159,8 @@ function attach(ws: WebSocket, session: string, cwd: string, cols: number, rows:
     // tmux's history, which is the only place the output actually lives — the
     // outer terminal's scrollback only ever holds the last repaint.
     //
-    // The Legion's tmux.conf already sets this globally, but the Mini runs
-    // as a different user with its own config, so the gateway sets it
-    // per-session rather than assuming. `set -t` keeps it scoped to
+    // A person's own tmux.conf may or may not set this, so the gateway sets
+    // it per session rather than assuming. `set -t` keeps it scoped to
     // sessions we opened.
     pty = spawn(
       "tmux",

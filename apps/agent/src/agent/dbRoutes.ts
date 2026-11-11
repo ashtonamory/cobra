@@ -85,7 +85,7 @@ export function holdsOutsideText(db: Pick<ProjectDb, "query">, sql: string): boo
 /** Who a Foreman's writes are journaled as (JournalEntry.by); a Worker's Space tools write as `worker:<id>` (workerSpace.ts). */
 export const BY_FOREMAN = "foreman";
 
-/** Who the person's own changes from the phone or the desk are journaled as (personRoutes.ts): an undo, so far. */
+/** Who the person's own changes from the desk are journaled as (personRoutes.ts): an undo, so far. */
 export const BY_PERSON = "person";
 
 /** The largest journal page a Foreman reads at once. */
@@ -218,7 +218,7 @@ function renderRequest(body: Record<string, unknown>): { request: RenderRequest 
  * and closes it after: cheap with SQLite, and nothing is left open across
  * the engine's migrations or an agent restart. `by` is who a write, an undo
  * or an import is journaled as: the Foreman, unless personRoutes.ts calls
- * this for the person's Undo on the phone or the desk (BY_PERSON).
+ * this for the person's Undo on the desk (BY_PERSON).
  */
 export async function handleDb(route: string, url: URL, body: Record<string, unknown>, project: Project, deps: DbDeps, log: (line: string) => void, by: string = BY_FOREMAN): Promise<Reply> {
   const schema = deps.schemaFor(project.foremanTemplate);

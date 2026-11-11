@@ -53,8 +53,8 @@ function world(options: { pat?: string | null; login?: TokenLogin; candidate?: b
       calls.verify += 1;
       return { path: candidate, sha256: await mcp.sha256File(candidate), version: "0.20.1", release: options.release === undefined ? "v0.20.1" : options.release, verifiedAt: new Date(NOW).toISOString() };
     },
-    machine: "legion",
-    label: "Legion",
+    machine: "laptop",
+    label: "Laptop",
   };
   return { dir, binary, registryPath, patPath, deps, calls };
 }
@@ -72,7 +72,7 @@ const pinOf = (path: string): McpPin | undefined => mcp.readRegistry(path).entri
 // --- who may call ---------------------------------------------------------------------
 
 test("a Lead key and a Foreman key get 403 on every /mcp route; a desk key is let in", () => {
-  const lead = mintLead("legion", NOW);
+  const lead = mintLead("laptop", NOW);
   const fm = mintForeman("cobra", NOW);
   const desk = mintDesk("omarchy", NOW);
   const callers = [lead.caller, fm.caller, desk.caller];
@@ -98,7 +98,7 @@ test("v1 has presets only: no /mcp/add or /mcp/remove route, no mcp-add approval
 test("GET /mcp: a fresh computer shows the github preset off, with the candidate to verify", async () => {
   const w = world();
   const status = McpStatus.parse(await routes.mcpStatus(w.deps));
-  assert.equal(status.machine, "legion");
+  assert.equal(status.machine, "laptop");
   // gh is no longer asked: the old field is filled from the token, for older apps.
   assert.deepEqual(status.gh, { installed: true, authed: true, user: "octocat" });
   assert.deepEqual(status.github, { binary: w.binary, pin: null, token: { present: true, login: "octocat" } });
@@ -347,8 +347,8 @@ test("verify: makes one pending mcp-verify approval with the proposed pin, and w
   assert.equal(created, true);
   assert.equal(approval.kind, "mcp-verify");
   assert.equal(approval.state, "pending");
-  assert.equal(approval.title, "Pin github-mcp-server on Legion?");
-  assert.equal(approval.machine, "legion");
+  assert.equal(approval.title, "Pin github-mcp-server on Laptop?");
+  assert.equal(approval.machine, "laptop");
   assert.equal(approval.requestedBy, "desk_1");
   assert.equal(approval.expiresAt, new Date(NOW + 30 * 60_000).toISOString());
   assert.equal(approval.mcpPin?.path, w.binary);
@@ -486,7 +486,7 @@ function slow(w: ReturnType<typeof world>) {
   return { deps, release };
 }
 
-const other = (id: string, kind = "merge") => makeApproval({ kind, title: id, body: "b", requestedBy: "lead" }, NOW, "legion", () => new Uint8Array(12).fill(id.length));
+const other = (id: string, kind = "merge") => makeApproval({ kind, title: id, body: "b", requestedBy: "lead" }, NOW, "laptop", () => new Uint8Array(12).fill(id.length));
 
 test("verify: an approval added or answered while it runs survives the save", async () => {
   const w = world();

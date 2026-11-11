@@ -9,11 +9,11 @@ import { join } from "node:path";
  * opens a directory, and that dialog is the single most dangerous screen in this
  * whole system: it is a perfectly recognisable Claude Code screen, so a
  * readiness check passes, a prompt gets typed into it, and Enter then selects
- * the highlighted row — which is "No, exit". That is gotcha 19, and it killed a
- * real session the first time dispatch ran.
+ * the highlighted row — which is "No, exit". It killed a real session the
+ * first time dispatch ran.
  *
  * Dispatch handles it by refusing: a trust dialog is a 409 telling you to open
- * the folder once at a keyboard, because answering it from a phone would mean
+ * the folder once yourself, because answering it for you would mean
  * trusting a directory sight unseen. Creation is the one case where that
  * argument does not hold — you asked for this directory to exist seconds ago,
  * and on `init` the agent made it — so the honest thing is to record the trust

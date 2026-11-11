@@ -56,7 +56,7 @@ export const ThermalStats = z.object({
 export const PowerStats = z.object({
   ac: z.boolean().nullable(),
   battery: z.number().nullable(),
-  /** "open" | "closed" — a string, not an enum (gotcha 18). */
+  /** "open" | "closed" — a string, not an enum. */
   lid: z.string().nullable(),
   lidAwake: z.object({ available: z.boolean(), on: z.boolean() }),
 });

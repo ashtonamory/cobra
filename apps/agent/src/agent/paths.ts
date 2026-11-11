@@ -5,12 +5,6 @@ import { join, relative } from "node:path";
 /**
  * Where the agent keeps its files, in the user's own XDG folders.
  *
- * In the personal Control Plane these lived under ~/control-plane/config (the
- * rsync deploy target) and ~/.config/cp-agent. A product agent has no deploy
- * folder, and its names must not collide with a Control Plane agent running
- * on the same machine — the first demo runs both side by side until the old
- * one is removed.
- *
  *   config  token, projects.json, projects.local.json, exposure.json,
  *           files.json, push-tokens.json   (mode 600 files, 700 folder)
  *   state   history.db

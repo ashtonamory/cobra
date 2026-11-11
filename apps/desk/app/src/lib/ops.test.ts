@@ -44,10 +44,10 @@ describe("Lanes", () => {
       lane("q1", "queued", "docs", [seg("queue", at(14), null)]),
       lane("old_3", "worker", "old", []),
     ] };
-    const [lanes, more] = ops.projectLanes([["legion", h]], 8, TODAY_NOW);
+    const [lanes, more] = ops.projectLanes([["laptop", h]], 8, TODAY_NOW);
     expect(lanes.map((x) => [x.label, x.agents])).toEqual([["game", 3], ["blog", 1], ["docs", 1]]);
     expect(more).toBe(0);
-    expect(lanes[0].machine).toBe("legion");
+    expect(lanes[0].machine).toBe("laptop");
     // Its segments in time order, whatever lane they came from.
     expect(lanes[0].segments.map((s: Dict) => s.from)).toEqual([at(10), at(11), at(11, 30)]);
   });
@@ -58,7 +58,7 @@ describe("Lanes", () => {
       lane("b", "session", "asks", [seg("wait", at(14), null)]),
       lane("c", "session", "done", [seg("work", at(8), at(13))]),
     ] };
-    const [lanes, more] = ops.projectLanes([["legion", h]], 2, TODAY_NOW);
+    const [lanes, more] = ops.projectLanes([["laptop", h]], 2, TODAY_NOW);
     expect(lanes.map((x) => x.label)).toEqual(["asks", "busy"]);
     expect(more).toBe(1);
   });
@@ -108,7 +108,7 @@ describe("DoneToday", () => {
         { at: at(13, 30), kind: "answered", detail: "game_16" },
       ],
     };
-    const [rs, more, counts] = ops.doneToday([["legion", h]], TODAY_NOW);
+    const [rs, more, counts] = ops.doneToday([["laptop", h]], TODAY_NOW);
     expect(rs.map((r) => [r.word, r.title, r.detail])).toEqual([
       ["LANDED", "notes @ abc1234", null],
       ["MERGED", "Add the bayou map", "game #31"],
@@ -122,14 +122,14 @@ describe("DoneToday", () => {
 
   it("test_an_older_agent_sends_no_done_and_still_gets_its_counts", () => {
     const h = { today: "2026-10-12", days: [{ date: "2026-10-12", started: 1, opened: 0, merged: 0, answered: 0 }] };
-    expect(ops.doneToday([["legion", h]], TODAY_NOW)).toEqual([[], 0, "1 Worker started"]);
+    expect(ops.doneToday([["laptop", h]], TODAY_NOW)).toEqual([[], 0, "1 Worker started"]);
     expect(ops.doneToday([], TODAY_NOW)).toEqual([[], 0, ""]);
   });
 
   it("test_a_line_with_no_title_takes_its_open_prs", () => {
     const h = { done: [{ at: at(11), kind: "pr-opened", detail: "https://github.com/o/blog/pull/7", project: "blog" }] };
     const prs = [{ repos: [{ prs: [{ number: 7, title: "Tighten the copy", url: "https://github.com/o/blog/pull/7" }] }] }];
-    const [[row]] = ops.doneToday([["legion", h]], TODAY_NOW, 8, prs);
+    const [[row]] = ops.doneToday([["laptop", h]], TODAY_NOW, 8, prs);
     expect(row.title).toBe("Tighten the copy");
   });
 });

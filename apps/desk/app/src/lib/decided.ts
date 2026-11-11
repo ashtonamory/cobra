@@ -1,8 +1,7 @@
 /**
  * What Cobra did: what Instinct decided
  * without you, on every computer, with its Undo, and Pause, which turns Instinct back to Balanced
- * everywhere it is set. A port of the phone's `src/decidedRules.ts`; the GTK desk's
- * `cobradesk/decided.py` says the same: change all three together.
+ * everywhere it is set.
  */
 import * as api from "./api.ts";
 import * as config from "./config.ts";

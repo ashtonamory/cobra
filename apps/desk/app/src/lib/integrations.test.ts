@@ -117,7 +117,7 @@ describe("Words", () => {
   });
 
   it("the notes", () => {
-    expect(ints.askedText("legion")).toBe("Asked for your Allow on legion");
+    expect(ints.askedText("laptop")).toBe("Asked for your Allow on laptop");
     expect(ints.APPLIES_NOTE).toBe("Applies when the Lead or a Foreman next starts, or at its New conversation.");
   });
 });
@@ -167,6 +167,6 @@ describe("Controller", () => {
     expect(ints.githubIntegration(after)!.state).toBe("signing-in");
     expect(ints.withIntegration(before, null)).toBe(before);
     expect(ints.githubIntegration({ machine: "m" }), "an agent from before the controller").toBeNull();
-    expect(ints.updateAgentLine("legion")).toContain("Update the agent on legion");
+    expect(ints.updateAgentLine("laptop")).toContain("Update the agent on laptop");
   });
 });

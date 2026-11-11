@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * Settings → Permissions (agent permissions.ts and policyEdit.ts): the owner's policy, fleet-wide, with computer
- * and project levels, as the phone and the desk read and change it.
+ * and project levels, as the desk read and change it.
  *
  * Strings where a list of values would be tempting (preset, verdict,
  * capability): an enum here could never grow while an older app is in the
@@ -72,14 +72,14 @@ export const PolicyFile = PolicyLevel.extend({
 });
 export type PolicyFile = z.infer<typeof PolicyFile>;
 
-/** One line of a change, in words, and whether it grants more (which needs your Face ID or the desk's second press). */
+/** One line of a change, in words, and whether it grants more (which needs the desk's second press). */
 export const PolicyChangeLine = z.object({ text: z.string(), widens: z.boolean() });
 export type PolicyChangeLine = z.infer<typeof PolicyChangeLine>;
 
 export const PolicyChange = z.object({
   at: z.number(),
   revision: z.number(),
-  /** Which phone or desk made it. */
+  /** Which desk made it. */
   by: z.string(),
   lines: z.array(PolicyChangeLine),
 });

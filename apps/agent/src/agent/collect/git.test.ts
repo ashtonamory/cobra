@@ -55,21 +55,21 @@ test("origin URLs of every shape in the fleet reduce to owner/name", () => {
   assert.equal(parseRemote("https://github.com/octocat/plant-shop.git\n"), "octocat/plant-shop");
   assert.equal(parseRemote("https://github.com/octocat/plant-shop"), "octocat/plant-shop");
   // The MacBook pushes through a repo-scoped ssh alias, not github.com.
-  assert.equal(parseRemote("github-control-plane:octocat/control-plane"), "octocat/control-plane");
+  assert.equal(parseRemote("github-plant-nursery:octocat/plant-nursery"), "octocat/plant-nursery");
   assert.equal(parseRemote(null), null);
   assert.equal(parseRemote(""), null);
 });
 
 test("refs: by full name, origin's prefix stripped, origin/HEAD skipped, gone upstreams flagged", () => {
-  const refs = parseRefs(`refs/heads/main\t${unix(1)}\t\nrefs/heads/feat/x\t${unix(2)}\t[gone]\nrefs/remotes/origin/HEAD\t${unix(1)}\t\nrefs/remotes/origin/main\t${unix(1)}\t\nrefs/remotes/origin/wip/legion/2026-09-20\t${unix(0)}\t\n`);
+  const refs = parseRefs(`refs/heads/main\t${unix(1)}\t\nrefs/heads/feat/x\t${unix(2)}\t[gone]\nrefs/remotes/origin/HEAD\t${unix(1)}\t\nrefs/remotes/origin/main\t${unix(1)}\t\nrefs/remotes/origin/wip/laptop/2026-09-20\t${unix(0)}\t\n`);
   assert.deepEqual(
     refs.map((r) => [r.name, r.remote, r.gone]),
-    [["main", false, false], ["feat/x", false, true], ["main", true, false], ["wip/legion/2026-09-20", true, false]],
+    [["main", false, false], ["feat/x", false, true], ["main", true, false], ["wip/laptop/2026-09-20", true, false]],
   );
   // A local branch a Worker named origin/... is local, not a branch parked on origin.
-  const planted = parseRefs(`refs/heads/origin/wip/legion/2026-09-21\t${unix(0)}\t\n`);
-  assert.deepEqual(planted.map((r) => [r.name, r.remote]), [["origin/wip/legion/2026-09-21", false]]);
-  assert.equal(parseRepo(raw({ refs: `refs/heads/main\t${unix(1)}\t\nrefs/heads/origin/wip/legion/2026-09-21\t${unix(0)}\t\n` }), NOW)?.parked, null);
+  const planted = parseRefs(`refs/heads/origin/wip/laptop/2026-09-21\t${unix(0)}\t\n`);
+  assert.deepEqual(planted.map((r) => [r.name, r.remote]), [["origin/wip/laptop/2026-09-21", false]]);
+  assert.equal(parseRepo(raw({ refs: `refs/heads/main\t${unix(1)}\t\nrefs/heads/origin/wip/laptop/2026-09-21\t${unix(0)}\t\n` }), NOW)?.parked, null);
 });
 
 test("a clean main on the standard has nothing to report", () => {
@@ -109,7 +109,7 @@ test("off-standard: a master default, and a local branch with no known prefix", 
 });
 
 test("the newest wip/ branch on origin is the parked one", () => {
-  const refs = `refs/heads/main\t${unix(1)}\t\nrefs/remotes/origin/main\t${unix(1)}\t\nrefs/remotes/origin/wip/legion/2026-09-18\t${unix(3)}\t\nrefs/remotes/origin/wip/macbook/2026-09-20\t${unix(1)}\t\n`;
+  const refs = `refs/heads/main\t${unix(1)}\t\nrefs/remotes/origin/main\t${unix(1)}\t\nrefs/remotes/origin/wip/laptop/2026-09-18\t${unix(3)}\t\nrefs/remotes/origin/wip/macbook/2026-09-20\t${unix(1)}\t\n`;
   assert.equal(parseRepo(raw({ refs }), NOW)?.parked, "wip/macbook/2026-09-20");
 });
 

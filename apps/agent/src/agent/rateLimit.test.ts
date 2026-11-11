@@ -5,7 +5,7 @@ import { createRateLimiter, isLongPoll, limitsFor, ORCH_LIMITS, PERSON_LIMITS, t
 
 const desk = { id: "desk_aaaaaaaaaaaaaaaaa", kind: "desk" as const };
 const other = { id: "desk_bbbbbbbbbbbbbbbbb", kind: "desk" as const };
-const lead = { id: "lead_legion_________", kind: "lead" as const };
+const lead = { id: "lead_laptop_________", kind: "lead" as const };
 
 function limiter() {
   let clock = 1_800_000_000_000;

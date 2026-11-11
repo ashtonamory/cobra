@@ -6,7 +6,7 @@ import { checkDraft } from "./check.ts";
 import { reportToHtml } from "./html.ts";
 import { parseDraft } from "./prompt.ts";
 
-const parsed = parseDraft(readFileSync(new URL("./fixtures/legion-linger.json", import.meta.url), "utf8"));
+const parsed = parseDraft(readFileSync(new URL("./fixtures/laptop-linger.json", import.meta.url), "utf8"));
 if (!parsed.ok) throw new Error(parsed.error);
 const report = { ...parsed.draft, check: checkDraft(parsed.draft), revised: false };
 
@@ -22,5 +22,5 @@ test("the printable page escapes text, keeps code, and puts a CAUTION before its
 test("a diagram that could not be drawn prints its source", () => {
   const html = reportToHtml(report, { svgs: [null] });
   assert.match(html, /<pre>flowchart TD/);
-  assert.match(html, /&quot;Legion starts&quot;/);
+  assert.match(html, /&quot;Laptop starts&quot;/);
 });

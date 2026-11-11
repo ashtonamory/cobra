@@ -98,7 +98,7 @@ export function requireOrchFence(): void {
 
 /**
  * With COBRA_CONTAIN=require and no jail, the Lead and the Foremen do not
- * start either (OV-SEC-VPS-001 F13): the workforce stops as a whole, and the
+ * start either: the workforce stops as a whole, and the
  * audit says why, rather than half of it running.
  */
 export function requireJail(refusal: string | null = jailRefusal()): void {

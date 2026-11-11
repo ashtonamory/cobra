@@ -198,9 +198,9 @@ test("moving to Instinct and every house-rule change grant more; an app that lea
   );
   assert.ok(describeChange(after, { ...after, rules: [] }).every((line) => line.widens));
   // A project's preset moves no Lead: the Lead belongs to a computer (manual test 3a's review said it did).
-  const computers = { ...before, revision: 7, preset: "balanced", computers: { legion: { preset: "instinct" } } };
+  const computers = { ...before, revision: 7, preset: "balanced", computers: { laptop: { preset: "instinct" } } };
   const apart = describeChange(computers, { ...computers, revision: 8, projects: { "local/inbox-manager": { preset: "balanced" } } });
-  assert.deepEqual(apart.map((line) => line.text), ["local/inbox-manager on legion: Instinct → Balanced"]);
+  assert.deepEqual(apart.map((line) => line.text), ["local/inbox-manager on laptop: Instinct → Balanced"]);
   const current = file({ rules: ["No spending."] });
   const fromOldApp = acceptable({ version: 1, revision: 6, preset: "instinct" }, current);
   assert.ok("policy" in fromOldApp);

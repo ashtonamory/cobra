@@ -5,46 +5,46 @@ const base = { scopes: [], connectedAt: null, problem: null, clientId: "c", redi
 
 describe("cloudflareView", () => {
   it("not connected offers Connect", () => {
-    const v = cloudflare.cloudflareView({ ...base, state: "not-connected", account: null, accounts: [] }, "Legion");
+    const v = cloudflare.cloudflareView({ ...base, state: "not-connected", account: null, accounts: [] }, "Laptop");
     expect([v.word, v.tone, v.fix, v.waiting]).toEqual(["not connected", "signal", "connect", false]);
-    expect(v.detail).toContain("Legion");
+    expect(v.detail).toContain("Laptop");
   });
 
   it("a sign-in under way waits for its code and still offers Connect", () => {
-    const v = cloudflare.cloudflareView({ ...base, state: "connecting", account: null, accounts: [] }, "Legion");
+    const v = cloudflare.cloudflareView({ ...base, state: "connecting", account: null, accounts: [] }, "Laptop");
     expect([v.word, v.fix, v.waiting]).toEqual(["signing in", "connect", true]);
   });
 
   it("several accounts and none chosen asks to choose", () => {
-    const v = cloudflare.cloudflareView({ ...base, state: "choose-account", account: null, accounts: [{ id: "a", name: "Home" }, { id: "b", name: "Studio" }] }, "Mini");
+    const v = cloudflare.cloudflareView({ ...base, state: "choose-account", account: null, accounts: [{ id: "a", name: "Home" }, { id: "b", name: "Studio" }] }, "Office");
     expect([v.word, v.fix]).toEqual(["choose an account", "choose"]);
   });
 
   it("connected names the account, with nothing to fix", () => {
-    const v = cloudflare.cloudflareView({ ...base, state: "connected", account: { id: "a", name: "Pine Yoga" }, accounts: [{ id: "a", name: "Pine Yoga" }] }, "Mini");
+    const v = cloudflare.cloudflareView({ ...base, state: "connected", account: { id: "a", name: "Pine Yoga" }, accounts: [{ id: "a", name: "Pine Yoga" }] }, "Office");
     expect([v.word, v.tone, v.fix, v.detail]).toEqual(["connected to Pine Yoga", "ink", "none", ""]);
   });
 
   it("connected without the optional permissions says how to add the spam check and email, and nothing else changes", () => {
     const account = { id: "a", name: "Pine Yoga" };
-    const without = cloudflare.cloudflareView({ ...base, state: "connected", account, accounts: [account], features: { spamCheck: false, email: true } }, "Mini");
+    const without = cloudflare.cloudflareView({ ...base, state: "connected", account, accounts: [account], features: { spamCheck: false, email: true } }, "Office");
     expect([without.word, without.fix, without.detail]).toEqual(["connected to Pine Yoga", "none", cloudflare.FEATURES_NOTE]);
-    const all = cloudflare.cloudflareView({ ...base, state: "connected", account, accounts: [account], features: { spamCheck: true, email: true } }, "Mini");
+    const all = cloudflare.cloudflareView({ ...base, state: "connected", account, accounts: [account], features: { spamCheck: true, email: true } }, "Office");
     expect(all.detail).toBe("");
   });
 
   it("attention shows the agent's problem and offers Connect again", () => {
-    const v = cloudflare.cloudflareView({ ...base, state: "attention", account: null, accounts: [], problem: "Cloudflare did not grant d1.write. Connect again and allow every permission." }, "Mini");
+    const v = cloudflare.cloudflareView({ ...base, state: "attention", account: null, accounts: [], problem: "Cloudflare did not grant d1.write. Connect again and allow every permission." }, "Office");
     expect([v.word, v.fix]).toEqual(["connect again", "connect"]);
     expect(v.detail).toContain("did not grant d1.write");
-    expect(cloudflare.cloudflareView({ state: "attention" }, "Mini").detail).toContain("Connect again");
+    expect(cloudflare.cloudflareView({ state: "attention" }, "Office").detail).toContain("Connect again");
   });
 
   it("a state from a newer agent, or no answer at all, reads as needing attention with Refresh", () => {
-    const v = cloudflare.cloudflareView({ state: "paused-by-cloudflare" }, "Mini");
-    expect([v.word, v.fix, v.detail]).toEqual(["needs attention", "retry", "Mini said: paused by cloudflare."]);
-    expect(cloudflare.cloudflareView(null, "Mini").fix).toBe("retry");
-    expect(cloudflare.cloudflareView("junk", "Mini").fix).toBe("retry");
+    const v = cloudflare.cloudflareView({ state: "paused-by-cloudflare" }, "Office");
+    expect([v.word, v.fix, v.detail]).toEqual(["needs attention", "retry", "Office said: paused by cloudflare."]);
+    expect(cloudflare.cloudflareView(null, "Office").fix).toBe("retry");
+    expect(cloudflare.cloudflareView("junk", "Office").fix).toBe("retry");
   });
 });
 
@@ -60,9 +60,9 @@ describe("accounts", () => {
 
 describe("failureLine", () => {
   it("an agent from before Cloudflare is asked to update", () => {
-    expect(cloudflare.failureLine(404, "no such route", "Mini")).toBe("Update the agent on Mini to connect Cloudflare from here.");
-    expect(cloudflare.failureLine(0, "timed out", "Mini")).toBe("timed out");
-    expect(cloudflare.failureLine(0, "", "Mini")).toBe("Mini did not answer.");
+    expect(cloudflare.failureLine(404, "no such route", "Office")).toBe("Update the agent on Office to connect Cloudflare from here.");
+    expect(cloudflare.failureLine(0, "timed out", "Office")).toBe("timed out");
+    expect(cloudflare.failureLine(0, "", "Office")).toBe("Office did not answer.");
   });
 });
 

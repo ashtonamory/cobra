@@ -367,7 +367,7 @@ const verifyDeps: VerifyDeps = {
   findMise: () => findTool("mise"),
   shims: MISE_SHIMS,
   exec: async (file, args, options) => (await run(file, args, { ...options, maxBuffer: 1024 * 1024 })).stdout,
-  // Each hop's name resolved once, checked public and pinned (publicFetch.ts, OV-SEC-VPS-001 F8).
+  // Each hop's name resolved once, checked public and pinned (publicFetch.ts).
   fetch: (url, init) => publicFetch(url, init),
   tmp: tmpdir(),
   asset: releaseAsset(),

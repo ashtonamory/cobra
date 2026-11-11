@@ -16,7 +16,7 @@ const foremen = await import("./spaceForemen.ts");
 const { openSpace, readSpace, SpaceError } = await import("./spaces.ts");
 
 const SPACES = join(ROOT, "Spaces");
-openSpace({ id: "northwind", name: "Northwind", kind: "own", home: "legion", sensitive: false }, "legion");
+openSpace({ id: "northwind", name: "Northwind", kind: "own", home: "laptop", sensitive: false }, "laptop");
 
 test("a Space is standing until set; on-call is kept in its space.json, and opening it again keeps it", () => {
   assert.equal(foremen.spaceForemen("northwind"), "standing");
@@ -25,7 +25,7 @@ test("a Space is standing until set; on-call is kept in its space.json, and open
   assert.equal(JSON.parse(readFileSync(join(SPACES, "northwind", "space.json"), "utf8")).foremen, "on-call");
   assert.equal(foremen.spaceForemen("northwind"), "on-call");
   assert.deepEqual(foremen.onCallSpaces().map((space) => space.id), ["northwind"]);
-  openSpace({ id: "northwind", name: "Northwind", kind: "own", home: "legion", sensitive: true }, "legion");
+  openSpace({ id: "northwind", name: "Northwind", kind: "own", home: "laptop", sensitive: true }, "laptop");
   assert.equal(readSpace("northwind")?.foremen, "on-call", "a re-open (adoption, a sensitive change) keeps the setting");
   foremen.setSpaceForemen("northwind", "standing");
   assert.equal("foremen" in JSON.parse(readFileSync(join(SPACES, "northwind", "space.json"), "utf8")), false, "standing is the absent default");

@@ -4,7 +4,7 @@ import * as p from "./permissions.ts";
 
 function status(revision: number, preset = "locked", refused: string | null = null): Dict {
   return {
-    computer: "legion",
+    computer: "laptop",
     policy: { version: 1, revision, preset },
     refused,
     resolved: { preset, network: [], judge: { model: "claude-haiku-5-5", fallback: "local:qwen-tuned:fast96k" }, notes: [] },
@@ -17,14 +17,14 @@ function status(revision: number, preset = "locked", refused: string | null = nu
 
 describe("Fleet", () => {
   it("the newest revision is the fleet's and older is behind", () => {
-    const reads = { legion: status(3, "balanced"), mini: status(2), macbook: null };
-    expect(p.newest(reads)![0]).toBe("legion");
+    const reads = { laptop: status(3, "balanced"), office: status(2), macbook: null };
+    expect(p.newest(reads)![0]).toBe("laptop");
     expect(p.nextRevision(reads)).toBe(4);
     expect(p.nextRevision({})).toBe(1);
-    expect(p.computerLine(reads.legion, 3)).toBe("Balanced");
-    expect(p.computerLine(reads.mini, 3)).toBe("Locked · behind");
+    expect(p.computerLine(reads.laptop, 3)).toBe("Balanced");
+    expect(p.computerLine(reads.office, 3)).toBe("Locked · behind");
     expect(p.computerLine(status(3, "locked", "it is mode 644"), 3)).toBe("Locked · its file was refused");
-    expect(p.isBehind(reads.mini, 3)).toBe(true);
+    expect(p.isBehind(reads.office, 3)).toBe(true);
     expect(p.isBehind(null, 3)).toBe(false);
   });
 });
@@ -40,10 +40,10 @@ describe("Hosts", () => {
 
 describe("Projects", () => {
   it("offers what the computers run, by name, less those set apart", () => {
-    const legion = { ...status(3), projects: [{ key: "local/inbox-manager", name: "inbox-manager", preset: "instinct" }, { key: "example/web-app", name: "web-app", preset: "instinct" }] };
-    const mini = { ...status(3), computer: "mini", projects: [{ key: "example/web-app", name: "web-app", preset: "balanced" }, { key: "example/plant-shop", name: "plant-shop", preset: "instinct" }] };
+    const laptop = { ...status(3), projects: [{ key: "local/inbox-manager", name: "inbox-manager", preset: "instinct" }, { key: "example/web-app", name: "web-app", preset: "instinct" }] };
+    const office = { ...status(3), computer: "office", projects: [{ key: "example/web-app", name: "web-app", preset: "balanced" }, { key: "example/plant-shop", name: "plant-shop", preset: "instinct" }] };
     const policy = { version: 1, revision: 3, preset: "balanced", projects: { "example/plant-shop": { preset: "locked" } } };
-    const choices = p.projectChoices({ legion, mini, mbp: null, old: status(2) }, policy);
+    const choices = p.projectChoices({ laptop, office, mbp: null, old: status(2) }, policy);
     expect(choices.map((choice) => choice.key)).toEqual(["local/inbox-manager", "example/web-app"]);
     expect(choices[1]!.runs).toEqual(["instinct", "balanced"]);
     expect(p.startingPreset(choices[0]!)).toBe("instinct");
@@ -66,9 +66,9 @@ describe("Edits", () => {
   it("edits leave no empty levels", () => {
     const base = { version: 1, revision: 3, preset: "locked" };
     expect(p.setFleetPreset(base, "balanced").preset).toBe("balanced");
-    const legion = p.setComputerPreset(base, "legion", "auto");
-    expect(legion.computers).toEqual({ legion: { preset: "auto" } });
-    expect(p.setComputerPreset(legion, "legion", null).computers).toEqual({});
+    const laptop = p.setComputerPreset(base, "laptop", "auto");
+    expect(laptop.computers).toEqual({ laptop: { preset: "auto" } });
+    expect(p.setComputerPreset(laptop, "laptop", null).computers).toEqual({});
     // A preset edit keeps the level's other settings, such as merge on green.
     const merging = { ...base, projects: { "a/b": { preset: "auto", foreman: { mergeOnGreen: true } } } };
     expect(p.setProjectPreset(merging, "a/b", null).projects).toEqual({ "a/b": { foreman: { mergeOnGreen: true } } });
@@ -86,13 +86,13 @@ describe("Refused", () => {
     const now = 1_800_000_000.0;
     const rows = p.refusedRows(
       [
-        ["legion", [{ at: (now - 60) * 1000, worker: "lookfocus_3", rule: "judge:outside-read", reason: "saved logins do not serve the task" }]],
-        ["mini", [{ at: (now - 30) * 1000, worker: "app_2", rule: "judge:network", reason: "could leak data" },
+        ["laptop", [{ at: (now - 60) * 1000, worker: "lookfocus_3", rule: "judge:outside-read", reason: "saved logins do not serve the task" }]],
+        ["office", [{ at: (now - 30) * 1000, worker: "app_2", rule: "judge:network", reason: "could leak data" },
           { at: (now - 2 * 86400) * 1000, worker: "old", rule: "never:mcp" }]],
       ],
       now,
     );
-    expect(rows.map((r) => [r.computer, r.worker])).toEqual([["mini", "app_2"], ["legion", "lookfocus_3"]]);
+    expect(rows.map((r) => [r.computer, r.worker])).toEqual([["office", "app_2"], ["laptop", "lookfocus_3"]]);
     expect(p.refusedLine(rows[0])).toBe("app_2 · reach a website: could leak data");
   });
 });
@@ -150,10 +150,10 @@ describe("ApiCredits", () => {
     const report = (since: string, worker: number, lead: number, until?: string) => ({
       test: { since, ...(until ? { until } : {}), spentUsd: worker + lead, requests: 2, byRole: [{ role: "worker", spentUsd: worker }, { role: "lead", spentUsd: lead }] },
     });
-    expect(p.testLine({ legion: report("2026-10-24T10:00:00.000Z", 3, 1), mini: report("2026-10-24T09:00:00.000Z", 2, 0), mbp: null })).toBe(
+    expect(p.testLine({ laptop: report("2026-10-24T10:00:00.000Z", 3, 1), office: report("2026-10-24T09:00:00.000Z", 2, 0), mbp: null })).toBe(
       "spent $6.00 since 2026-10-24 09:00 · Workers $5.00 · Cobra $1.00",
     );
-    expect(p.testLine({ legion: { key: true } })).toBeNull();
+    expect(p.testLine({ laptop: { key: true } })).toBeNull();
   });
 
   it("the fleet spend is the highest any computer reports", () => {

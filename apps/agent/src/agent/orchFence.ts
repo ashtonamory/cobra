@@ -89,7 +89,7 @@ export function fenceArgs(fence: OrchFence, command: readonly string[], kind: (p
     "--ro-bind-try", "/run/systemd/resolve", "/run/systemd/resolve",
     "--tmpfs", fence.home,
     "--unshare-user", "--unshare-pid", "--unshare-ipc", "--unshare-uts",
-    // No capability, even in its own namespace (OV-SEC-VPS-001 F19). Not the
+    // No capability, even in its own namespace. Not the
     // rest of contain.ts JAIL_HARDENING: Codex's read-only sandbox nests a
     // user namespace of its own (bubblewrap, codex 0.167), which
     // --disable-userns refuses, and the TUI in its tmux pane needs the pane as

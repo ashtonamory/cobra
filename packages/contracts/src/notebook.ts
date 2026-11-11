@@ -7,7 +7,7 @@ import { z } from "zod";
  * weekly and monthly reviews are bound volumes, company brains a ring binder.
  *
  * Memory stays on each computer, so each computer's agent
- * serves its own notes (agent notebook.ts, GET /notebook/*) and the phone and the desk ask
+ * serves its own notes (agent notebook.ts, GET /notebook/*) and the desk ask
  * every computer and merge here (`mergeDay`, `mergeShelf`, `mergeHits`). A Sensitive
  * company's notes are only ever read from the computer that holds them, straight to the
  * person's own app; nothing here keeps them.
@@ -30,7 +30,7 @@ export const NotebookLine = z.object({
 });
 export type NotebookLine = z.infer<typeof NotebookLine>;
 
-/** One `### ` section of a note: a project's (key), the Fleet's (key "fleet"), with its company when the org knows it. */
+/** One `### ` section of a note: a project's (key), or what belongs to no one project (key "fleet"), with its company when the org knows it. */
 export const NotebookSection = z.object({
   key: z.string(),
   title: z.string(),

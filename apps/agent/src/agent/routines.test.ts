@@ -372,7 +372,7 @@ test("Run now types the brief with no late note; busy changes nothing", async ()
 function routineApproval(state: string, requestedBy: string, over: Partial<NonNullable<StoredApproval["routine"]>> = {}): StoredApproval {
   return {
     id: "ap_routine",
-    machine: "legion",
+    machine: "laptop",
     kind: "routine",
     title: "Run “Fortnightly payroll” every other Friday at 09:00?",
     body: "…",
@@ -406,7 +406,7 @@ test("answerRoutine: Allow writes exactly the routine shown and tells the Forema
   );
   assert.match(allowed.news, /^The person allowed routine “Fortnightly payroll” \(rt_\S+\): every other Friday at 09:00, first on Fri 30 Oct 09:00 GMT\./);
 
-  const denied = r.answerRoutine([], routineApproval("denied", "lead_legion"), now, LONDON);
+  const denied = r.answerRoutine([], routineApproval("denied", "lead_laptop"), now, LONDON);
   assert.equal(denied.owner, "lead");
   assert.equal(denied.list.length, 0);
   assert.equal(denied.written, null);
@@ -414,13 +414,13 @@ test("answerRoutine: Allow writes exactly the routine shown and tells the Forema
 
   // Replacing keeps the id (and its last run); one whose routine went is failed, not added.
   const old = routine({ id: "rt_old", name: "Payroll", lastRun: { due: "x", at: "x", outcome: "started" } });
-  const replaced = r.answerRoutine([old], routineApproval("allowed", "lead_legion", { replaces: "rt_old" }), now, LONDON);
+  const replaced = r.answerRoutine([old], routineApproval("allowed", "lead_laptop", { replaces: "rt_old" }), now, LONDON);
   assert.deepEqual(replaced.list.map((x) => [x.id, x.name, x.createdBy]), [["rt_old", "Fortnightly payroll", "lead"]]);
   assert.equal(replaced.list[0]!.lastRun?.outcome, "started");
-  const gone = r.answerRoutine([], routineApproval("allowed", "lead_legion", { replaces: "rt_old" }), now, LONDON);
+  const gone = r.answerRoutine([], routineApproval("allowed", "lead_laptop", { replaces: "rt_old" }), now, LONDON);
   assert.equal(gone.approval.state, "failed");
   assert.equal(gone.list.length, 0);
   // A first run that passed while the card waited: the next one from the Allow.
-  const late = r.answerRoutine([], routineApproval("allowed", "lead_legion"), at("2026-10-31T11:00:00Z"), LONDON);
+  const late = r.answerRoutine([], routineApproval("allowed", "lead_laptop"), at("2026-10-31T11:00:00Z"), LONDON);
   assert.equal(late.list[0]!.nextRun, "2026-11-13T09:00:00.000Z");
 });

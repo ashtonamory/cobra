@@ -38,11 +38,11 @@ function quiet(over: Partial<GatherDeps> = {}): GatherDeps {
 const commit = (sha: string, ref: string, h: number, subject = "work"): WorkCommit => ({ sha, subject, author: "a", at: iso(h), ref });
 
 test("an hour with no work, finish, event or commit is idle; an idle lane change is not work", async () => {
-  const idle = await ea.gather(quiet({ timeline: () => [{ at: iso(14, 5), id: "lead", kind: "lead", label: "Lead", state: "idle" }] }), at(14), at(15), "legion");
+  const idle = await ea.gather(quiet({ timeline: () => [{ at: iso(14, 5), id: "lead", kind: "lead", label: "Lead", state: "idle" }] }), at(14), at(15), "laptop");
   assert.equal(ea.isIdle(idle), true);
-  const working = await ea.gather(quiet({ timeline: () => [{ at: iso(14, 5), id: "lead", kind: "lead", label: "Lead", state: "work" }] }), at(14), at(15), "legion");
+  const working = await ea.gather(quiet({ timeline: () => [{ at: iso(14, 5), id: "lead", kind: "lead", label: "Lead", state: "work" }] }), at(14), at(15), "laptop");
   assert.equal(ea.isIdle(working), false);
-  const finished = await ea.gather(quiet({ feed: () => [{ at: iso(14, 30), role: "worker", id: "w1", project: "cobra", settled: "idle" }] }), at(14), at(15), "legion");
+  const finished = await ea.gather(quiet({ feed: () => [{ at: iso(14, 30), role: "worker", id: "w1", project: "cobra", settled: "idle" }] }), at(14), at(15), "laptop");
   assert.equal(ea.isIdle(finished), false);
 });
 
@@ -60,7 +60,7 @@ test("only commits that landed on main get diffs, within the budget; merged PRs 
     }),
     at(14),
     at(15),
-    "legion",
+    "laptop",
   );
   assert.deepEqual(asked, ["octocat/cobra"]);
   const [activity] = g.projects;
@@ -83,7 +83,7 @@ test("a commit outside the window is left out, and a project with no remote is n
     }),
     at(14),
     at(15),
-    "legion",
+    "laptop",
   );
   assert.deepEqual(asked, []);
   assert.deepEqual(g.projects[0]?.commits.map((c) => c.sha), ["n1"]);
@@ -123,7 +123,7 @@ test("a secret written into an ordinary file is redacted in the diff, the line k
     }),
     at(14),
     at(15),
-    "legion",
+    "laptop",
   );
   assert.doesNotMatch(g.projects[0]!.diffs.join(""), /AbCdEf0123456789/);
   const input = ea.renderInput(g, ea.touchedProjects(g, g.known), () => `Note: token ${key}`);
@@ -132,7 +132,7 @@ test("a secret written into an ordinary file is redacted in the diff, the line k
 });
 
 test("touched projects come from work lanes, counts, events, finishes and commits", async () => {
-  const g = await ea.gather(quiet({ feed: () => [{ at: iso(14, 30), role: "foreman", id: "notes", project: "notes", settled: "idle" }] }), at(14), at(15), "legion");
+  const g = await ea.gather(quiet({ feed: () => [{ at: iso(14, 30), role: "foreman", id: "notes", project: "notes", settled: "idle" }] }), at(14), at(15), "laptop");
   assert.deepEqual(ea.touchedProjects(g, g.known).map((p) => p.key), ["local/notes"]);
 });
 
@@ -148,7 +148,7 @@ test("the input tags the record as data and carries each touched project's curre
     }),
     at(14),
     at(15),
-    "legion",
+    "laptop",
   );
   const input = ea.renderInput(g, ea.touchedProjects(g, g.known), (key) => (key === "octocat/cobra" ? "Goal: ship login" : null));
   assert.match(input, /<touched>\n- octocat\/cobra \(Cobra, id cobra\)\n<\/touched>/);
@@ -160,12 +160,12 @@ test("the input tags the record as data and carries each touched project's curre
 
 test("the reply is read by its sections; a project or state we did not ask about is ignored", () => {
   const reply =
-    "## Fleet\n- Cobra briefed two Foremen.\n\n## Project octocat/cobra\n- Merged #12 (login fix).\n## Project someone/else\n- not ours\n## State octocat/cobra\nGoal: ship login\nNext: release\n## State someone/else\nGoal: nope\n";
+    "## This computer\n- Cobra briefed two Foremen.\n\n## Project octocat/cobra\n- Merged #12 (login fix).\n## Project someone/else\n- not ours\n## State octocat/cobra\nGoal: ship login\nNext: release\n## State someone/else\nGoal: nope\n";
   const parsed = ea.parseRoundup(reply, new Set(["octocat/cobra"]));
   assert.equal(parsed?.fleet, "- Cobra briefed two Foremen.");
   assert.deepEqual([...(parsed?.projects ?? new Map())], [["octocat/cobra", "- Merged #12 (login fix)."]]);
   assert.deepEqual([...(parsed?.states ?? new Map()).keys()], ["octocat/cobra"]);
-  assert.equal(ea.sectionedNote(parsed!.fleet, parsed!.projects), "### Fleet\n- Cobra briefed two Foremen.\n\n### octocat/cobra\n- Merged #12 (login fix).");
+  assert.equal(ea.sectionedNote(parsed!.fleet, parsed!.projects), "### This computer\n- Cobra briefed two Foremen.\n\n### octocat/cobra\n- Merged #12 (login fix).");
   // A model that kept the old one-list format is read as fleet lines; a reply with neither is none.
   assert.equal(ea.parseRoundup("## Briefing\n- old style\n", new Set())?.fleet, "- old style");
   assert.equal(ea.parseRoundup("Sorry, I can't.", new Set()), null);
@@ -200,7 +200,7 @@ function roundupDeps(over: { gather?: Partial<GatherDeps>; reply?: string | Erro
     },
     held: async () => over.held ?? false,
     dir,
-    computer: "legion",
+    computer: "laptop",
     sync: { pull: async () => undefined, push: async (message) => void pushes.push(message) },
     log: () => undefined,
     now: () => at(15, 0),
@@ -225,14 +225,14 @@ test("a busy hour writes the briefing and the touched project's state, moves the
   const { deps, dir, runs, pushes, cursor } = roundupDeps({ gather: busy, cursor: at(14) });
   const result = await ea.roundup(deps);
   assert.equal(result.outcome, "written");
-  assert.deepEqual(result.files, ["computers/legion/hourly/2026-10-11/14.md", "computers/legion/projects/octocat/cobra/state.md"]);
+  assert.deepEqual(result.files, ["computers/laptop/hourly/2026-10-11/14.md", "computers/laptop/projects/octocat/cobra/state.md"]);
   assert.equal(runs.length, 1);
   assert.match(runs[0]!.input, /Fixed login\./);
-  const hourly = readFileSync(join(dir, "computers/legion/hourly/2026-10-11/14.md"), "utf8");
-  assert.equal(hourly, "# legion · 2026-10-11 14:00 – 15:00\n\n### octocat/cobra\n- Worker w1 fixed login.\n");
-  assert.match(readFileSync(join(dir, "computers/legion/projects/octocat/cobra/state.md"), "utf8"), /^# octocat\/cobra\n\n_Updated 2026-10-11 15:00 by legion\._\n\nGoal: ship login\n$/);
+  const hourly = readFileSync(join(dir, "computers/laptop/hourly/2026-10-11/14.md"), "utf8");
+  assert.equal(hourly, "# laptop · 2026-10-11 14:00 – 15:00\n\n### octocat/cobra\n- Worker w1 fixed login.\n");
+  assert.match(readFileSync(join(dir, "computers/laptop/projects/octocat/cobra/state.md"), "utf8"), /^# octocat\/cobra\n\n_Updated 2026-10-11 15:00 by laptop\._\n\nGoal: ship login\n$/);
   assert.equal(cursor(), at(15));
-  assert.deepEqual(pushes, ["memory: legion 2026-10-11 14:00 briefing"]);
+  assert.deepEqual(pushes, ["memory: laptop 2026-10-11 14:00 briefing"]);
 });
 
 test("a second round-up in the same hour adds its window below the first", async () => {
@@ -242,8 +242,8 @@ test("a second round-up in the same hour adds its window below the first", async
   const second = { ...first.deps, now: () => at(15, 0) };
   await ea.roundup(second);
   assert.equal(
-    readFileSync(join(first.dir, "computers/legion/hourly/2026-10-11/14.md"), "utf8"),
-    "# legion · 2026-10-11 13:54 – 14:54\n\n### octocat/cobra\n- Worker w1 fixed login.\n\n# legion · 2026-10-11 14:54 – 15:00\n\n### octocat/cobra\n- Worker w1 fixed login.\n",
+    readFileSync(join(first.dir, "computers/laptop/hourly/2026-10-11/14.md"), "utf8"),
+    "# laptop · 2026-10-11 13:54 – 14:54\n\n### octocat/cobra\n- Worker w1 fixed login.\n\n# laptop · 2026-10-11 14:54 – 15:00\n\n### octocat/cobra\n- Worker w1 fixed login.\n",
   );
 });
 
@@ -275,7 +275,7 @@ test("a failed model run or a reply with no briefing writes nothing and keeps th
   for (const reply of [new Error("claude exited 1"), "no sections here"]) {
     const { deps, dir, cursor } = roundupDeps({ gather: busy, reply, cursor: at(14) });
     assert.equal((await ea.roundup(deps)).outcome, "failed");
-    assert.equal(existsSync(join(dir, "computers/legion/hourly")), false);
+    assert.equal(existsSync(join(dir, "computers/laptop/hourly")), false);
     assert.equal(cursor(), at(14));
   }
 });
@@ -326,15 +326,15 @@ function foldDeps(over: { replies?: Record<string, string | Error>; held?: () =>
     },
     held: async () => over.held?.() ?? false,
     dir,
-    computer: "legion",
+    computer: "laptop",
     sync: { pull: async () => undefined, push: async (message) => void pushes.push(message) },
     log: () => undefined,
     now: () => over.now ?? new Date(2026, 9, 12, 4, 1).getTime(),
     touched: () => over.touched ?? ["octocat/cobra"],
     folded: { load: () => folded, save: (day) => void (folded = day) },
   };
-  const hourly = (day: string, hour: string, text: string) => memory.writeMemoryFile(dir, `computers/legion/hourly/${day}/${hour}.md`, text);
-  const daily = (day: string, text: string) => memory.writeMemoryFile(dir, memory.memoryPaths.daily("legion", day), text);
+  const hourly = (day: string, hour: string, text: string) => memory.writeMemoryFile(dir, `computers/laptop/hourly/${day}/${hour}.md`, text);
+  const daily = (day: string, text: string) => memory.writeMemoryFile(dir, memory.memoryPaths.daily("laptop", day), text);
   return { deps, dir, runs, pushes, hourly, daily, folded: () => folded };
 }
 
@@ -348,39 +348,39 @@ test("a day with no hourlies folds to nothing and runs no model", async () => {
 
 test("the daily fold: Sonnet reads the hourlies, state and every computer's lessons; writes the note, new lessons and state", async () => {
   const f = foldDeps();
-  f.hourly("2026-10-11", "09", "# legion · 09\n- merged #12");
-  f.hourly("2026-10-11", "01", "# legion · 01\n- late fix");
-  memory.writeMemoryFile(f.dir, memory.memoryPaths.lessons("mini", "octocat/cobra"), "# x\n\n## Active\n- 2026-10-01 · decision · Squash merges (from: daily 2026-10-01)\n");
+  f.hourly("2026-10-11", "09", "# laptop · 09\n- merged #12");
+  f.hourly("2026-10-11", "01", "# laptop · 01\n- late fix");
+  memory.writeMemoryFile(f.dir, memory.memoryPaths.lessons("office", "octocat/cobra"), "# x\n\n## Active\n- 2026-10-01 · decision · Squash merges (from: daily 2026-10-01)\n");
   const result = await ea.foldDay(f.deps, "2026-10-11");
   assert.equal(result.outcome, "written");
   assert.deepEqual(result.files, [
-    "computers/legion/daily/2026-10-11.md",
-    "computers/legion/projects/octocat/cobra/lessons.md",
-    "computers/legion/projects/octocat/cobra/state.md",
+    "computers/laptop/daily/2026-10-11.md",
+    "computers/laptop/projects/octocat/cobra/lessons.md",
+    "computers/laptop/projects/octocat/cobra/state.md",
   ]);
   const [run] = f.runs;
   assert.equal(run?.model, "sonnet");
   assert.ok(run!.input.indexOf('<hourly hour="09">') < run!.input.indexOf('<hourly hour="01">'), "the small hours come last");
   // Another computer's lessons are context only: this computer cannot retire them.
   assert.match(run!.input, /<other-lessons key="octocat\/cobra">\n- 2026-10-01 · decision · Squash merges/);
-  assert.equal(read(f.dir, "computers/legion/daily/2026-10-11.md"), "# legion · daily · 2026-10-11\n\nShipped login.\n### By project\n- cobra: merged #12\n");
-  assert.deepEqual(memory.activeLessons(read(f.dir, "computers/legion/projects/octocat/cobra/lessons.md")), [
+  assert.equal(read(f.dir, "computers/laptop/daily/2026-10-11.md"), "# laptop · daily · 2026-10-11\n\nShipped login.\n### By project\n- cobra: merged #12\n");
+  assert.deepEqual(memory.activeLessons(read(f.dir, "computers/laptop/projects/octocat/cobra/lessons.md")), [
     "- 2026-10-11 · gotcha · OTA before merge breaks the build (from: daily 2026-10-11)",
   ]);
-  assert.match(read(f.dir, "computers/legion/projects/octocat/cobra/state.md"), /end of day by legion\._\n\nGoal: ship\n$/);
+  assert.match(read(f.dir, "computers/laptop/projects/octocat/cobra/state.md"), /end of day by laptop\._\n\nGoal: ship\n$/);
 });
 
 test("a lesson another computer already has is not added again; a lessons section for a project not asked about is ignored", async () => {
   const f = foldDeps({ replies: { daily: "## Daily\nx\n## Lessons octocat/cobra\n- decision · Squash merges.\n## Lessons someone/else\n- gotcha · nope\n" } });
   f.hourly("2026-10-11", "09", "h");
-  memory.writeMemoryFile(f.dir, memory.memoryPaths.lessons("mini", "octocat/cobra"), "## Active\n- 2026-10-01 · decision · Squash merges (from: daily 2026-10-01)\n");
+  memory.writeMemoryFile(f.dir, memory.memoryPaths.lessons("office", "octocat/cobra"), "## Active\n- 2026-10-01 · decision · Squash merges (from: daily 2026-10-01)\n");
   const result = await ea.foldDay(f.deps, "2026-10-11");
-  assert.deepEqual(result.files, ["computers/legion/daily/2026-10-11.md"]);
+  assert.deepEqual(result.files, ["computers/laptop/daily/2026-10-11.md"]);
 });
 
 test("the folds run down the owner's ea-fold chain", async () => {
   const f = foldDeps();
-  f.hourly("2026-10-11", "09", "# legion · 09\n- merged #12");
+  f.hourly("2026-10-11", "09", "# laptop · 09\n- merged #12");
   f.deps.models = async (role) => (role === "ea-fold" ? ["opus", "sonnet"] : []);
   assert.equal((await ea.foldDay(f.deps, "2026-10-11")).outcome, "written");
   assert.deepEqual(
@@ -394,7 +394,7 @@ test("a failed daily run or a reply without the note writes nothing", async () =
     const f = foldDeps({ replies: { daily } });
     f.hourly("2026-10-11", "09", "h");
     assert.equal((await ea.foldDay(f.deps, "2026-10-11")).outcome, "failed");
-    assert.equal(existsSync(join(f.dir, "computers/legion/daily")), false);
+    assert.equal(existsSync(join(f.dir, "computers/laptop/daily")), false);
   }
 });
 
@@ -404,15 +404,15 @@ test("the daily fold retires this computer's lessons the day replaced, by number
       daily: "## Daily\nx\n## Retire octocat/cobra\n- L2 — the payment link was dropped for invoices\n- L7 — no such lesson\n## Lessons octocat/cobra\n- decision · Card payments go on the invoice, no payment link\n",
     },
   });
-  f.hourly("2026-10-11", "09", "# legion · 09\n- dropped the payment link");
-  const path = memory.memoryPaths.lessons("legion", "octocat/cobra");
+  f.hourly("2026-10-11", "09", "# laptop · 09\n- dropped the payment link");
+  const path = memory.memoryPaths.lessons("laptop", "octocat/cobra");
   memory.writeMemoryFile(f.dir, path, "## Active\n- 2026-10-01 · decision · Squash merges (from: lead)\n- 2026-10-02 · decision · Card payments use a payment link (from: lead)\n\n## Retired\n");
-  memory.writeMemoryFile(f.dir, memory.memoryPaths.lessons("mini", "octocat/cobra"), "## Active\n- 2026-10-01 · gotcha · From the mini (from: lead)\n");
+  memory.writeMemoryFile(f.dir, memory.memoryPaths.lessons("office", "octocat/cobra"), "## Active\n- 2026-10-01 · gotcha · From the office (from: lead)\n");
   const result = await ea.foldDay(f.deps, "2026-10-11");
   assert.equal(result.outcome, "written");
   const input = f.runs[0]!.input;
   assert.match(input, /<lessons key="octocat\/cobra">\nL1 2026-10-01 · decision · Squash merges \(from: lead\)\nL2 2026-10-02 · decision · Card payments use a payment link/);
-  assert.match(input, /<other-lessons key="octocat\/cobra">\n- 2026-10-01 · gotcha · From the mini/);
+  assert.match(input, /<other-lessons key="octocat\/cobra">\n- 2026-10-01 · gotcha · From the office/);
   const text = read(f.dir, path);
   assert.deepEqual(memory.activeLessons(text), [
     "- 2026-10-01 · decision · Squash merges (from: lead)",
@@ -425,24 +425,24 @@ test("the daily fold retires this computer's lessons the day replaced, by number
 });
 
 test("a state is written with one header, whatever the model copies in, and the model sees the body only", async () => {
-  const f = foldDeps({ replies: { daily: "## Daily\nx\n## State octocat/cobra\n# octocat/cobra\n\n_Updated 2026-10-10 end of day by legion._\n\nGoal: ship\n" } });
-  f.hourly("2026-10-11", "09", "# legion · 09\n- work");
-  const path = memory.memoryPaths.state("legion", "octocat/cobra");
-  memory.writeMemoryFile(f.dir, path, "# octocat/cobra\n\n_Updated 2026-10-10 end of day by legion._\n\nGoal: before\n");
+  const f = foldDeps({ replies: { daily: "## Daily\nx\n## State octocat/cobra\n# octocat/cobra\n\n_Updated 2026-10-10 end of day by laptop._\n\nGoal: ship\n" } });
+  f.hourly("2026-10-11", "09", "# laptop · 09\n- work");
+  const path = memory.memoryPaths.state("laptop", "octocat/cobra");
+  memory.writeMemoryFile(f.dir, path, "# octocat/cobra\n\n_Updated 2026-10-10 end of day by laptop._\n\nGoal: before\n");
   await ea.foldDay(f.deps, "2026-10-11");
   assert.match(f.runs[0]!.input, /<current-state key="octocat\/cobra">\nGoal: before\n<\/current-state>/);
-  assert.equal(read(f.dir, path), "# octocat/cobra\n\n_Updated 2026-10-11 end of day by legion._\n\nGoal: ship\n");
+  assert.equal(read(f.dir, path), "# octocat/cobra\n\n_Updated 2026-10-11 end of day by laptop._\n\nGoal: ship\n");
 });
 
 test("tidying merges a renamed repository's memory into its new key and gives doubled state headers one", async () => {
   const dir = mkdtempSync(join(tmpdir(), "cobra-ea-tidy-"));
   const renames = join(dir, "renames.json");
-  const w = (key: string, file: "state" | "lessons", text: string) => memory.writeMemoryFile(dir, memory.memoryPaths[file]("legion", key), text);
+  const w = (key: string, file: "state" | "lessons", text: string) => memory.writeMemoryFile(dir, memory.memoryPaths[file]("laptop", key), text);
   w("octocat/cobra", "lessons", "## Active\n- 2026-10-01 · decision · Old owner lesson (from: lead)\n- 2026-10-02 · gotcha · Same in both (from: lead)\n\n## Retired\n- 2026-09-01 · decision · Long gone (from: lead) — retired 2026-09-02: x\n");
   w("octo-org/cobra", "lessons", "## Active\n- 2026-10-20 · gotcha · Same in both (from: lead)\n");
-  w("octocat/cobra", "state", "# octocat/cobra\n\n_Updated 2026-10-10 by legion._\n\nGoal: old\n");
-  w("octo-org/cobra", "state", "# octo-org/cobra\n\n_Updated 2026-10-20 by legion._\n\nGoal: new\n");
-  w("octocat/scanner", "state", "# octocat/scanner\n\n_Updated 2026-10-09 end of day by legion._\n\n# octocat/scanner\n\n_Updated 2026-10-09 end of day by legion._\n\nGoal: scan\n");
+  w("octocat/cobra", "state", "# octocat/cobra\n\n_Updated 2026-10-10 by laptop._\n\nGoal: old\n");
+  w("octo-org/cobra", "state", "# octo-org/cobra\n\n_Updated 2026-10-20 by laptop._\n\nGoal: new\n");
+  w("octocat/scanner", "state", "# octocat/scanner\n\n_Updated 2026-10-09 end of day by laptop._\n\n# octocat/scanner\n\n_Updated 2026-10-09 end of day by laptop._\n\nGoal: scan\n");
   w("octocat/gone", "state", "# octocat/gone\n\nGoal: gone\n");
   w("local/notes", "state", "# local/notes\n\nGoal: notes\n");
   const asked: string[] = [];
@@ -451,27 +451,27 @@ test("tidying merges a renamed repository's memory into its new key and gives do
     const renamed: Record<string, string | null> = { "octocat/cobra": "octo-org/cobra", "octocat/scanner": "octo-org/scanner", "octocat/gone": null };
     return key in renamed ? renamed[key] : key;
   };
-  const files = await ea.tidyMemory(dir, "legion", resolve, () => undefined, renames, Date.parse("2026-10-24T10:00:00Z"));
+  const files = await ea.tidyMemory(dir, "laptop", resolve, () => undefined, renames, Date.parse("2026-10-24T10:00:00Z"));
   assert.deepEqual(asked.sort(), ["octo-org/cobra", "octocat/cobra", "octocat/gone", "octocat/scanner"], "local keys are never asked");
-  const lessons = read(dir, memory.memoryPaths.lessons("legion", "octo-org/cobra"));
+  const lessons = read(dir, memory.memoryPaths.lessons("laptop", "octo-org/cobra"));
   assert.deepEqual(memory.activeLessons(lessons), ["- 2026-10-20 · gotcha · Same in both (from: lead)", "- 2026-10-01 · decision · Old owner lesson (from: lead)"]);
   assert.deepEqual(memory.retiredLessons(lessons), ["- 2026-09-01 · decision · Long gone (from: lead) — retired 2026-09-02: x"]);
-  assert.match(read(dir, memory.memoryPaths.state("legion", "octo-org/cobra")), /Goal: new/, "the newer state wins");
-  assert.equal(read(dir, memory.memoryPaths.state("legion", "octo-org/scanner")), "# octo-org/scanner\n\n_Updated 2026-10-09 end of day by legion._\n\nGoal: scan\n", "moved, with one header");
-  assert.equal(existsSync(join(dir, "computers/legion/projects/octocat/cobra")), false);
-  assert.equal(existsSync(join(dir, "computers/legion/projects/octocat/gone/state.md")), true, "a repository GitHub no longer has stays where it is");
-  assert.ok(files.includes("computers/legion/projects/octo-org/cobra/lessons.md"));
+  assert.match(read(dir, memory.memoryPaths.state("laptop", "octo-org/cobra")), /Goal: new/, "the newer state wins");
+  assert.equal(read(dir, memory.memoryPaths.state("laptop", "octo-org/scanner")), "# octo-org/scanner\n\n_Updated 2026-10-09 end of day by laptop._\n\nGoal: scan\n", "moved, with one header");
+  assert.equal(existsSync(join(dir, "computers/laptop/projects/octocat/cobra")), false);
+  assert.equal(existsSync(join(dir, "computers/laptop/projects/octocat/gone/state.md")), true, "a repository GitHub no longer has stays where it is");
+  assert.ok(files.includes("computers/laptop/projects/octo-org/cobra/lessons.md"));
   // GitHub is asked again only after a week: the next day, only the key the merge made is new.
   asked.length = 0;
-  await ea.tidyMemory(dir, "legion", resolve, () => undefined, renames, Date.parse("2026-10-25T10:00:00Z"));
+  await ea.tidyMemory(dir, "laptop", resolve, () => undefined, renames, Date.parse("2026-10-25T10:00:00Z"));
   assert.deepEqual(asked, ["octo-org/scanner"]);
 });
 
 test("tidying leaves a key alone when GitHub cannot be asked, and asks again next time", async () => {
   const dir = mkdtempSync(join(tmpdir(), "cobra-ea-tidy-"));
   const renames = join(dir, "renames.json");
-  memory.writeMemoryFile(dir, memory.memoryPaths.state("legion", "octocat/cobra"), "# octocat/cobra\n\nGoal: x\n");
-  assert.deepEqual(await ea.tidyMemory(dir, "legion", async () => undefined, () => undefined, renames), []);
+  memory.writeMemoryFile(dir, memory.memoryPaths.state("laptop", "octocat/cobra"), "# octocat/cobra\n\nGoal: x\n");
+  assert.deepEqual(await ea.tidyMemory(dir, "laptop", async () => undefined, () => undefined, renames), []);
   assert.deepEqual(JSON.parse(readFileSync(renames, "utf8")), {});
 });
 
@@ -480,14 +480,14 @@ test("the weekly fold: Monday to Sunday's daily notes, and lessons it shows stal
   f.daily("2026-10-05", "# monday");
   f.daily("2026-10-11", "# sunday");
   f.daily("2026-10-04", "# the Sunday before: not this week");
-  const lessons = memory.memoryPaths.lessons("legion", "octocat/cobra");
-  memory.writeMemoryFile(f.dir, lessons, memory.addLessons(null, "octocat/cobra", "legion", ["- 2026-10-06 · decision · Use SDK 54 (from: daily 2026-10-06)", "- 2026-10-07 · gotcha · B (from: daily 2026-10-07)"]).text);
+  const lessons = memory.memoryPaths.lessons("laptop", "octocat/cobra");
+  memory.writeMemoryFile(f.dir, lessons, memory.addLessons(null, "octocat/cobra", "laptop", ["- 2026-10-06 · decision · Use SDK 54 (from: daily 2026-10-06)", "- 2026-10-07 · gotcha · B (from: daily 2026-10-07)"]).text);
   const result = await ea.foldWeek(f.deps, "2026-10-11");
-  assert.deepEqual(result.files, ["computers/legion/weekly/2026-W41.md", lessons]);
+  assert.deepEqual(result.files, ["computers/laptop/weekly/2026-W41.md", lessons]);
   assert.match(f.runs[0]!.input, /<daily day="2026-10-05">[\s\S]*<daily day="2026-10-11">/);
   assert.doesNotMatch(f.runs[0]!.input, /not this week/);
   assert.match(f.runs[0]!.input, /<lessons key="octocat\/cobra">\nL1 2026-10-06 · decision · Use SDK 54/);
-  assert.equal(read(f.dir, "computers/legion/weekly/2026-W41.md"), "# legion · weekly · 2026-W41 (2026-10-05 – 2026-10-11)\n\nA good week.\n");
+  assert.equal(read(f.dir, "computers/laptop/weekly/2026-W41.md"), "# laptop · weekly · 2026-W41 (2026-10-05 – 2026-10-11)\n\nA good week.\n");
   const after = read(f.dir, lessons);
   assert.deepEqual(memory.activeLessons(after), ["- 2026-10-07 · gotcha · B (from: daily 2026-10-07)"]);
   assert.match(after, /Use SDK 54 \(from: daily 2026-10-06\) — retired 2026-10-11: reversed on Friday/);
@@ -499,7 +499,7 @@ test("the monthly fold reads the month's own daily notes, exactly", async () => 
   f.daily("2026-05-31", "# may 31");
   f.daily("2026-06-01", "# june 1");
   const result = await ea.foldMonth(f.deps, "2026-05");
-  assert.deepEqual(result.files, ["computers/legion/monthly/2026-05.md"]);
+  assert.deepEqual(result.files, ["computers/laptop/monthly/2026-05.md"]);
   assert.match(f.runs[0]!.input, /may 1[\s\S]*may 31/);
   assert.doesNotMatch(f.runs[0]!.input, /june/);
 });
@@ -510,8 +510,8 @@ test("a day that ends a week and a month gets all three folds, in order", async 
   const result = await ea.foldAll(f.deps, "2026-05-31");
   assert.equal(result.outcome, "written");
   assert.deepEqual(f.runs.map((run) => (run.system.includes("## Daily") ? "daily" : run.system.includes("## Weekly") ? "weekly" : "monthly")), ["daily", "weekly", "monthly"]);
-  assert.ok(existsSync(join(f.dir, "computers/legion/weekly/2026-W22.md")));
-  assert.ok(existsSync(join(f.dir, "computers/legion/monthly/2026-05.md")));
+  assert.ok(existsSync(join(f.dir, "computers/laptop/weekly/2026-W22.md")));
+  assert.ok(existsSync(join(f.dir, "computers/laptop/monthly/2026-05.md")));
 });
 
 test("a fold is due once a memory day has ended since the last; the day ends at 4 AM", () => {
@@ -529,7 +529,7 @@ test("folds catch up day by day after time off, at most a week, and push each da
   assert.equal(result.outcome, "written");
   assert.equal(f.folded(), "2026-10-11");
   // 2026-10-05 … 2026-10-11 were looked at; only 10-10 had hourlies, and Sunday 10-11 had a week of notes.
-  assert.deepEqual(f.pushes, ["memory: legion folds 2026-10-10", "memory: legion folds 2026-10-11"]);
+  assert.deepEqual(f.pushes, ["memory: laptop folds 2026-10-10", "memory: laptop folds 2026-10-11"]);
 });
 
 test("a first fold starts at the last ended day, not at the beginning of time", async () => {

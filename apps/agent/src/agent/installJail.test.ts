@@ -20,7 +20,7 @@ test("the install's sandbox: a check's, with the network shared, the environment
   const env = jail.containedInstallEnv(view, "/home/u/.local/share/mise/shims:/usr/bin:/home/u/secret/bin");
   const args = jail.installArgs({ worktree: "/home/u/p", gitCommon: "/home/u/q/.git", argv: ["/usr/bin/pnpm", "install"], view, env, resolver: "/run/systemd/resolve", exists: () => "dir" });
   assert.deepEqual(args.slice(args.indexOf("--unshare-all"), args.indexOf("--unshare-all") + 2), ["--unshare-all", "--share-net"]);
-  // OV-SEC-VPS-001 F19: an install runs a project's code too.
+  // an install runs a project's code too.
   assert.ok(args.join(" ").includes("--unshare-user --disable-userns --cap-drop ALL --new-session"));
   assert.ok(args.includes("--clearenv"));
   const at = (flag: string, path: string) => args.findIndex((arg, i) => arg === flag && args[i + 1] === path && args[i + 2] === path);
@@ -43,7 +43,7 @@ test("the install's sandbox: a check's, with the network shared, the environment
   assert.ok(cargo.findIndex((arg, i) => arg === "--bind" && cargo[i + 1] === "/home/u/.cargo/registry") > 0);
 });
 
-test("with COBRA_CONTAIN=require no install runs out of the sandbox (OV-SEC-VPS-001 F13)", () => {
+test("with COBRA_CONTAIN=require no install runs out of the sandbox", () => {
   assert.match(jail.uncontainedInstallRefusal({ COBRA_CONTAIN: "require" }) ?? "", /install only in Cobra's sandbox/);
   assert.equal(jail.uncontainedInstallRefusal({ COBRA_CONTAIN: "on" }), null);
   assert.equal(jail.uncontainedInstallRefusal({}), null);

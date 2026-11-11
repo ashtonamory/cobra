@@ -8,7 +8,7 @@ import { formatBytes, streamToFile, TooLarge } from "./files.ts";
 import { SessionError } from "./sessions.ts";
 
 /**
- * Images sent into a Claude Code or Codex session from the phone or the desk
+ * Images sent into a Claude Code or Codex session from the desk
  * (POST /session/attach). The app uploads the image here, then says
  * "<text> [Image: <path>]", and the agent in the session reads the file.
  *
@@ -31,7 +31,7 @@ export const ATTACHMENTS_DIR = ".cobra-attachments";
 /** Under the files limit too (files.json maxBytes): an image bigger than this is not a screenshot. */
 export const ATTACH_MAX_BYTES = 20 * 1024 * 1024;
 
-/** Names the phone or desk may send; HEIC is named so it can be refused clearly. */
+/** Names the desk may send; HEIC is named so it can be refused clearly. */
 const ACCEPTED = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
 const HEIC = new Set([".heic", ".heif"]);
 const HEIC_REFUSAL = "HEIC images cannot be read by Cobra; send a JPEG or PNG";

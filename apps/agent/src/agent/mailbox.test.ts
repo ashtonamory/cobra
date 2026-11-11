@@ -216,7 +216,7 @@ test("the Foreman of an organizing trade is told mail_organize is the one except
 
 type Caller = { id: string; kind: string; name: string; remote?: boolean; project?: string };
 const caller = (project: string): Caller => ({ id: `foreman_${project}`.padEnd(16, "_"), kind: "lead", name: `Foreman for ${project}`, project });
-const LEAD: Caller = { id: "lead_legion_____", kind: "lead", name: "Lead on legion" };
+const LEAD: Caller = { id: "lead_laptop_____", kind: "lead", name: "Lead on laptop" };
 
 async function routes(resolve?: (request: MailboxRequest, remaining: number) => Promise<Batch>) {
   const { handleOrch } = await import("./orch.ts");
@@ -235,7 +235,7 @@ async function routes(resolve?: (request: MailboxRequest, remaining: number) => 
       log: () => undefined,
       caller: who,
       notify: async (approval: { title: string }) => void notified.push(approval.title),
-      machineLabel: "legion",
+      machineLabel: "laptop",
       port: 8797,
       mailbox: async (request: MailboxRequest, remaining: number) => {
         asked.push({ request, remaining });

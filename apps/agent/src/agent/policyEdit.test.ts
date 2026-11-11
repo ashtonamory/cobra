@@ -35,14 +35,14 @@ test("another helper model grants nothing; a judge chain counts as another judge
 });
 
 test("a computer or project level counts where it applies; removing a stricter one grants more there", () => {
-  const legionLocked: PolicyFile = { ...base, preset: "balanced", computers: { legion: { preset: "locked" } } };
-  // Dropping legion's own Locked lets the fleet's Balanced reach it.
-  assert.deepEqual(texts(widens(legionLocked, { ...legionLocked, computers: {} })), ["+ legion: Locked → Balanced"]);
+  const laptopLocked: PolicyFile = { ...base, preset: "balanced", computers: { laptop: { preset: "locked" } } };
+  // Dropping laptop's own Locked lets the fleet's Balanced reach it.
+  assert.deepEqual(texts(widens(laptopLocked, { ...laptopLocked, computers: {} })), ["+ laptop: Locked → Balanced"]);
   const project: PolicyFile = { ...base, projects: { "octocat/lookfocus": { preset: "auto" } } };
   assert.deepEqual(texts(describeChange(base, project)), ["+ octocat/lookfocus: Locked → Auto"]);
   // A computer's change is listed once, not again for each project on it.
-  const both: PolicyFile = { ...base, computers: { mini: {} }, projects: { "a/b": {} } };
-  assert.deepEqual(texts(describeChange(both, { ...both, computers: { mini: { preset: "balanced" } } })), ["+ mini: Locked → Balanced"]);
+  const both: PolicyFile = { ...base, computers: { office: {} }, projects: { "a/b": {} } };
+  assert.deepEqual(texts(describeChange(both, { ...both, computers: { office: { preset: "balanced" } } })), ["+ office: Locked → Balanced"]);
 });
 
 test("a change is taken only as a newer revision, with presets this agent has, at every level", () => {

@@ -28,7 +28,7 @@ test("the catalog: the Claude models always; each GPT-6 model the Codex account 
     catalog({ codexModels: ACCOUNT }).map((c) => c.model),
     ["opus", "sonnet", "haiku", "fable", "codex:gpt-6.1-sol", "codex:gpt-6-astra", "codex:gpt-6-sol", "codex:gpt-6-luna"],
   );
-  // The mini's older CLI lists no GPT-6.1 Sol, so none is offered there.
+  // The office's older CLI lists no GPT-6.1 Sol, so none is offered there.
   assert.equal(catalog({ codexModels: ["gpt-6-astra"] }).some((c) => c.model === "codex:gpt-6.1-sol"), false);
 });
 

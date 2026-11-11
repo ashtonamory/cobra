@@ -185,7 +185,7 @@ export function screenQuestion(call: PermissionCall, answers: Record<string, str
 }
 
 /**
- * Your answer to what the Worker asks, from the phone or the desk (the
+ * Your answer to what the Worker asks, from the desk (the
  * `/session` actions approve, deny and answer). An Allow must name the call
  * it was shown (dialogKey), as on a screen.
  */

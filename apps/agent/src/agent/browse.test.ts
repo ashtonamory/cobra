@@ -79,7 +79,7 @@ test("isSecret: keys, credentials, history and the agent's own folders", () => {
     "Projects/app/certs/server.PEM",
     "backup/id_rsa",
     "vault.kdbx",
-    // OV-SEC-VPS-001 F20: direnv files, git's credential store, wrangler's login.
+    // direnv files, git's credential store, wrangler's login.
     ".envrc",
     "Projects/app/.envrc",
     ".git-credentials",

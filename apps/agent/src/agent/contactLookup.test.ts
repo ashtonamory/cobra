@@ -154,7 +154,7 @@ async function route(caller: Caller, deps: ReturnType<typeof setup>["deps"], bod
     log: () => undefined,
     caller,
     notify: async () => undefined,
-    machineLabel: "legion",
+    machineLabel: "laptop",
     port: 8797,
     contacts: deps,
   } as never);
@@ -166,7 +166,7 @@ test("POST /orch/contacts/lookup: Cobra only; a Foreman's key and a Worker's too
   assert.equal(FOREMAN_ONLY.has(contacts.CONTACT_LOOKUP_ROUTE), false, "the Lead's fence lets her through");
   const { deps } = setup();
   const body = { space: SPACE, query: ["Dana Reyes"] };
-  const ok = await route({ id: "lead_legion", kind: "lead", name: "Lead on legion" }, deps, body);
+  const ok = await route({ id: "lead_laptop", kind: "lead", name: "Lead on laptop" }, deps, body);
   assert.equal(ok.status, 200);
   assert.deepEqual(answers(ok)[0]!.matches.map((m) => m.name), ["Dana Reyes"]);
   assert.equal((await route({ id: foremanCallerId(CRM), kind: "lead", name: "Foreman", project: CRM }, deps, body)).status, 403);
@@ -178,9 +178,9 @@ test("POST /orch/contacts/lookup: Cobra only; a Foreman's key and a Worker's too
     readBody: async () => "",
     configPath: join(ROOT, "config", "projects.json"),
     log: () => undefined,
-    caller: { id: "lead_legion", kind: "lead", name: "Lead" },
+    caller: { id: "lead_laptop", kind: "lead", name: "Lead" },
     notify: async () => undefined,
-    machineLabel: "legion",
+    machineLabel: "laptop",
     port: 8797,
     contacts: deps,
   } as never);
@@ -212,7 +212,7 @@ test("the tool posts the list to the agent and reads the answer back in lines", 
       { status: 200 },
     );
   }) as typeof fetch;
-  const computer = { name: "legion", url: "http://127.0.0.1:8797", key: "k".repeat(43), local: true };
+  const computer = { name: "laptop", url: "http://127.0.0.1:8797", key: "k".repeat(43), local: true };
   const text = await mcp.runTool("contact_lookup", { space: SPACE, query: ["Dana Reyes", "nobody@x.example", 7] }, [computer], fetcher);
   assert.equal(new URL(seen[0]!.url).pathname, "/orch/contacts/lookup");
   assert.deepEqual(seen[0]!.body, { space: SPACE, query: ["Dana Reyes", "nobody@x.example"] });

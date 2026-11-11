@@ -29,9 +29,9 @@ export const TYPE_ROW = "Type something.";
 /**
  * For the Lead's and a Foreman's prompts on Codex. Told only to use ask_person
  * for an unclear brief, Codex typed "Do you prefer Alpha or Beta?" into its
- * reply when asked to ask, which reaches no phone or desk as a question.
+ * reply when asked to ask, which reaches no desk as a question.
  */
-export const CODEX_ASK_NOTE = `Questions: you run on Codex, which has no question dialog of its own, so every question for the person goes through ask_person: whenever you need them to choose, confirm or answer anything, and whenever they ask you to ask them something. Give two to six short choices; the card also has a box for their own words. Never write a question for the person in your reply: there it reaches no phone or desk as a question, and nobody may be watching this terminal.`;
+export const CODEX_ASK_NOTE = `Questions: you run on Codex, which has no question dialog of its own, so every question for the person goes through ask_person: whenever you need them to choose, confirm or answer anything, and whenever they ask you to ask them something. Give two to six short choices; the card also has a box for their own words. Never write a question for the person in your reply: there it reaches no desk as a question, and nobody may be watching this terminal.`;
 
 export type AskInput = { question: string; header?: string; multiSelect?: boolean; options: { label: string; description?: string }[] };
 export type StoredAsk = AskInput & {

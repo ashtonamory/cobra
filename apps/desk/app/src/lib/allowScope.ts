@@ -3,8 +3,7 @@
  * once, for the rest of its task, for this project or always. The agent offers the scopes on the
  * request (`allow`, agent allowScopes.ts) and keeps once and task itself; for this project and
  * always the desk also writes the hosts to the policy's allowlist, as Settings → Permissions does,
- * on every computer. A port of the phone's `src/allowScopeRules.ts`; the GTK desk's
- * `cobradesk/allow_scope.py` says the same: change all three together.
+ * on every computer.
  */
 import * as api from "./api.ts";
 import * as config from "./config.ts";
@@ -79,7 +78,7 @@ export function scopeChoices(offer: AllowOffer | null): ScopeChoice[] {
     if (scope === "task") choices.push({ scope, label: "For this task", detail: `${what} until this Worker is done`, suggested: false, writes: null });
     if (scope === "project" && offer.project)
       choices.push({ scope, label: `Always in ${projectName(offer.project)}`, detail: `${what} for every Worker in ${projectName(offer.project)}`, suggested: offer.suggest === "project", writes: "project" });
-    if (scope === "always") choices.push({ scope, label: "Always", detail: `${what} for every Worker on every computer`, suggested: offer.suggest === "always", writes: "fleet" });
+    if (scope === "always") choices.push({ scope, label: "Always", detail: `${what} for every Worker`, suggested: offer.suggest === "always", writes: "fleet" });
   }
   return choices;
 }

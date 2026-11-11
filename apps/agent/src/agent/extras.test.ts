@@ -49,7 +49,7 @@ function fixture() {
   sh(repo, "commit", "-q", "-m", "init");
   sh(repo, "push", "-q", "-u", "origin", "main");
   sh(repo, "remote", "set-head", "origin", "main");
-  const parent: Project = { id: "cobra", name: "Cobra", machine: "legion", path: repo, session: "cobra" };
+  const parent: Project = { id: "cobra", name: "Cobra", machine: "laptop", path: repo, session: "cobra" };
   return { root, origin, repo, parent };
 }
 
@@ -66,7 +66,7 @@ function deps(over: Partial<NewSessionDeps> = {}) {
   const calls: string[] = [];
   const envs: Array<Record<string, string> | undefined> = [];
   const base: NewSessionDeps = {
-    hostname: "legion",
+    hostname: "laptop",
     loadExtras: async () => stored,
     saveExtras: async (extras) => {
       stored = extras;
@@ -186,14 +186,14 @@ test("a session asked for on the key is refused before anything is made: the key
 test("without a prompt Claude just starts, on a wip/ branch; a taken name counts up", async () => {
   const { parent } = fixture();
   const { deps: d, calls } = deps();
-  process.env.COBRA_MACHINE_NAME = "legion";
+  process.env.COBRA_MACHINE_NAME = "laptop";
   try {
     const first = await startExtra(d, parent, [parent], {});
     assert.equal(first.dispatched, false);
-    assert.equal(first.project.branch, "wip/legion/2026-10-05");
+    assert.equal(first.project.branch, "wip/laptop/2026-10-05");
     assert.equal(calls.at(-1), `start cobra_2 ${first.project.path}`);
     const second = await startExtra(d, parent, [parent], {});
-    assert.equal(second.project.branch, "wip/legion/2026-10-05-2");
+    assert.equal(second.project.branch, "wip/laptop/2026-10-05-2");
     assert.equal(second.project.session, "cobra_3");
   } finally {
     delete process.env.COBRA_MACHINE_NAME;
@@ -236,7 +236,7 @@ test("the soft cap asks before a fifth running session, and overCap starts it", 
 
 test("a sibling skips a name another project's session already has, running or not", async () => {
   const { parent } = fixture();
-  const other: Project = { id: "other", name: "Other", machine: "legion", path: "/elsewhere", session: "cobra_2" };
+  const other: Project = { id: "other", name: "Other", machine: "laptop", path: "/elsewhere", session: "cobra_2" };
   const { deps: d } = deps();
   const { project } = await startExtra(d, parent, [parent, other], {});
   assert.equal(project.session, "cobra_3");
@@ -284,7 +284,7 @@ test("a local model the computer does not serve is refused before anything is ma
 
 test("a folder that is not a repository gets no second session", async () => {
   const root = mkdtempSync(join(tmpdir(), "cobra-extras-plain-"));
-  const parent: Project = { id: "notes", name: "Notes", machine: "legion", path: root, session: "notes" };
+  const parent: Project = { id: "notes", name: "Notes", machine: "laptop", path: root, session: "notes" };
   const { deps: d } = deps();
   await assert.rejects(startExtra(d, parent, [parent], {}), /not a git repository/);
 });
@@ -414,7 +414,7 @@ test("an extra session's grade is about its own branch, not the repository's", a
     ahead: null,
     defaultBranch: "main",
     mainAhead: 2,
-    parked: "wip/legion/2026-10-01",
+    parked: "wip/laptop/2026-10-01",
     staleBranches: 40,
     oldestPrDays: 90,
     offStandard: ["on master"],
@@ -458,7 +458,7 @@ test("a session with a prompt is named after it starts, and a failing name never
 test("a title is kept with the session record and listed in /projects; a record without one still loads", async () => {
   const dir = mkdtempSync(join(tmpdir(), "cobra-titles-"));
   const path = join(dir, "sessions.json");
-  const parent: Project = { id: "cobra", name: "Cobra", machine: "legion", path: "/p/cobra", session: "cobra" };
+  const parent: Project = { id: "cobra", name: "Cobra", machine: "laptop", path: "/p/cobra", session: "cobra" };
   const plain: Extra = { parent: "cobra", id: "cobra_2", session: "cobra_2", path: "/p/cobra.worktrees/a", branch: "feat/a", createdAt: "2026-10-09T00:00:00Z" };
   const named: Extra = { ...plain, id: "cobra_3", session: "cobra_3", branch: "docs/lab-ste-guide-setup", title: "Lab STE Setup Guide" };
   await saveExtras([plain, named], path);
@@ -530,7 +530,7 @@ test("the mark is seeded from the extras, registered projects and running sessio
   assert.equal((await startExtra(running.deps, fixture().parent, [parent], { prompt: "from running" })).project.id, "cobra_10");
 
   // And so does a project the registry lists.
-  const listed: Project = { id: "cobra_12", name: "Listed", machine: "legion", path: "/elsewhere", session: "listed" };
+  const listed: Project = { id: "cobra_12", name: "Listed", machine: "laptop", path: "/elsewhere", session: "listed" };
   const registered = deps();
   assert.equal((await startExtra(registered.deps, fixture().parent, [parent, listed], { prompt: "from registry" })).project.id, "cobra_13");
 });

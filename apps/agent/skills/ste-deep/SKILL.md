@@ -7,8 +7,8 @@ description: Deep answers in ASD-STE100 Simplified Technical English, with Merma
 
 Cobra's deep answers, on a computer. The phone and the desktop show your
 question to the user as a needs-you, and show the finished report as markdown.
-The rules and the report format come from `ste-check`, so this skill and the
-phone always write the same thing.
+The rules and the report format come from `ste-check`, so this skill and
+`ste-check` always write the same thing.
 
 ## 1. Answer briefly, then offer
 

@@ -47,9 +47,8 @@ export type Registry = {
 };
 
 /**
- * Roots differ per machine because the homes do — /home/me on the Legion,
- * /home/mini on the Mini — so the tracked config stores them ~-relative and
- * each agent resolves its own.
+ * Roots are stored ~-relative, so the config does not hold the name of the
+ * person's home folder; the agent resolves them when it reads it.
  */
 export const DEFAULT_ROOTS = ["~", "~/Projects"];
 
@@ -71,9 +70,8 @@ const MAX_ID = 64;
  * merge in loadRegistry dedupes by bare id and tracked wins: a second entry
  * reusing an id would be silently dropped on read rather than refused on write,
  * and the card would simply never appear. So the id is the thing that has to
- * differ, and the *path* is free to be identical — ~/Projects/plant-shop on
- * every machine, so that a directory never has to be renamed to dodge a
- * collision the way ~/dev-control-plane once was.
+ * differ, and the *path* is free to be identical, so that a directory never
+ * has to be renamed to dodge a collision.
  *
  * The session name is left out of this deliberately: tmux is per machine, so
  * both checkouts answer to `plant-shop` and muscle memory survives the move.
@@ -114,7 +112,7 @@ export function samePath(a: string, b: string): boolean {
 }
 
 /**
- * Hand-rolled because the agent runs with no node_modules at all (gotcha 16),
+ * Hand-rolled because the agent runs with no node_modules at all,
  * so the zod schema in @cobra/contracts can only ever be imported as a type. The
  * local file is now the one agent input a human might plausibly hand-edit
  * badly, which makes a bad entry worth dropping rather than crashing on.

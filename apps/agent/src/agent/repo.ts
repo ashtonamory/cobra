@@ -386,7 +386,7 @@ export async function deleteBranch(
 }
 
 export async function closePr(gh: string, remote: string, number: number): Promise<{ did: "closed" }> {
-  await ghOrThrow(gh, ["pr", "close", String(number), "-R", remote, "--comment", "Closed from Control Plane's Tidy list."], 30_000, `could not close #${number}`);
+  await ghOrThrow(gh, ["pr", "close", String(number), "-R", remote, "--comment", "Closed from Cobra's Tidy list."], 30_000, `could not close #${number}`);
   return { did: "closed" };
 }
 
@@ -396,7 +396,7 @@ export const HEAD_SHA = /^[0-9a-f]{40}$/;
 /**
  * Squash-merge a PR that is green right now, per the standard; the branch
  * goes with it. Every caller names the commit: the Foreman's merge approval
- * the head you allowed (approvals.ts), the phone and desk the head they
+ * the head you allowed (approvals.ts), the desk the head they
  * showed (/git merge-pr). The merge is refused if the PR has moved on since,
  * here and again by GitHub (--match-head-commit), so a push after your tap is
  * never merged on it, and the checks read are that commit's.

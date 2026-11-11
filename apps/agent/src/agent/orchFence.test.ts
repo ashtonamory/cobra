@@ -24,7 +24,7 @@ test("the fence: home empty, the work read-only, its own folders writable, the n
   assert.equal(args.includes("/missing"), false, "a path that is not there is left out, not a failed start");
   assert.equal(args.includes("--unshare-net"), false, "Codex reaches the agent's broker on loopback");
   assert.equal(args.includes("--unshare-all"), false);
-  // OV-SEC-VPS-001 F19: no capability; but Codex's own sandbox nests a user namespace, and its TUI needs the pane's terminal.
+  // no capability; but Codex's own sandbox nests a user namespace, and its TUI needs the pane's terminal.
   assert.equal(args[args.indexOf("--cap-drop") + 1], "ALL");
   assert.ok(args.indexOf("--cap-drop") < args.indexOf("--"));
   assert.equal(args.includes("--disable-userns"), false);

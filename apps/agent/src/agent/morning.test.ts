@@ -17,7 +17,7 @@ import type { Brief, MorningDeps, MorningFacts } from "./morning.ts";
 const at = (hours: number, minutes = 0, day = 24) => new Date(2026, 9, day, hours, minutes);
 const quietFacts = (computer: string): MorningFacts => ({ computer, day: "2026-10-23", landed: [], counts: { merged: 0, actions: 0, routines: 0 }, today: [], waiting: [] });
 const busyFacts: MorningFacts = {
-  computer: "legion",
+  computer: "laptop",
   day: "2026-10-23",
   landed: [{ project: "payroll", report: "Pay stubs for 4 people sent." }],
   counts: { merged: 2, actions: 1, routines: 1 },
@@ -60,7 +60,7 @@ test("facts: each project's last report yesterday, yesterday's counts, today's r
   const now = at(8);
   const yesterday = at(15, 0, 23).toISOString();
   const facts = m.gatherFacts({
-    computer: "legion",
+    computer: "laptop",
     now,
     feed: (since, until) => {
       assert.equal(since, at(0, 0, 23).getTime());
@@ -90,15 +90,15 @@ test("facts: each project's last report yesterday, yesterday's counts, today's r
 
 test("another computer's facts are read as data, and anything else is none", () => {
   assert.equal(m.parseFacts(null), null);
-  assert.equal(m.parseFacts({ computer: "mini" }), null);
-  const read = m.parseFacts({ ...quietFacts("mini"), landed: [{ project: "a", report: "ok" }, { project: 3 }], counts: { merged: "2" } });
+  assert.equal(m.parseFacts({ computer: "office" }), null);
+  const read = m.parseFacts({ ...quietFacts("office"), landed: [{ project: "a", report: "ok" }, { project: 3 }], counts: { merged: "2" } });
   assert.deepEqual(read?.landed, [{ project: "a", report: "ok" }]);
   assert.deepEqual(read?.counts, { merged: 2, actions: 0, routines: 0 });
 });
 
 test("the plain brief: a quiet night said plainly, else three lines", () => {
-  assert.match(m.plainBrief([quietFacts("legion"), quietFacts("mini")]), /^Quiet night/);
-  const text = m.plainBrief([busyFacts, quietFacts("mini")]);
+  assert.match(m.plainBrief([quietFacts("laptop"), quietFacts("office")]), /^Quiet night/);
+  const text = m.plainBrief([busyFacts, quietFacts("office")]);
   assert.equal(text.split("\n").length, 3);
   assert.match(text, /^Yesterday: payroll reported; 2 updates went live; 1 action carried out\./);
   assert.match(text, /Today: Monday invoices at 10:00 AM \(Billing\)\./);
@@ -118,20 +118,20 @@ test("a card that lapsed unanswered in the last day is a fourth line, and read f
     now,
   );
   assert.deepEqual(titles, ["Merge #41 (deploys on merge)?"]);
-  const text = m.plainBrief([{ ...quietFacts("legion"), lapsed: titles }]);
+  const text = m.plainBrief([{ ...quietFacts("laptop"), lapsed: titles }]);
   assert.doesNotMatch(text, /^Quiet night/);
   assert.match(text, /Lapsed unanswered: 1 \(Merge #41 \(deploys on merge\)\?\); ask again/);
-  assert.deepEqual(m.parseFacts({ ...quietFacts("mini"), lapsed: ["A", 3] })?.lapsed, ["A"]);
-  assert.equal(m.parseFacts(quietFacts("mini"))?.lapsed, undefined, "an older agent says nothing of it");
+  assert.deepEqual(m.parseFacts({ ...quietFacts("office"), lapsed: ["A", 3] })?.lapsed, ["A"]);
+  assert.equal(m.parseFacts(quietFacts("office"))?.lapsed, undefined, "an older agent says nothing of it");
 });
 
 test("the brief says what each email sequence sent, and a night of only sequences is not quiet", () => {
   const email = [{ space: "Happy Tails", name: "Welcome series", sent: 3, running: 5, paused: false }, { space: "Happy Tails", name: "Renewal", sent: 0, running: 2, paused: true }];
-  const text = m.plainBrief([{ ...quietFacts("legion"), email }]);
+  const text = m.plainBrief([{ ...quietFacts("laptop"), email }]);
   assert.doesNotMatch(text, /^Quiet night/);
   assert.match(text, /Email sequences: Welcome series: 3 emails sent, 5 part way; Renewal \(paused\): 0 emails sent, 2 part way\. Pause one in People's Email sequences\./);
-  assert.deepEqual(m.parseFacts({ ...quietFacts("mini"), email: [...email, { name: 4 }] })?.email, email);
-  assert.equal(m.parseFacts(quietFacts("mini"))?.email, undefined, "an older agent says nothing of it");
+  assert.deepEqual(m.parseFacts({ ...quietFacts("office"), email: [...email, { name: 4 }] })?.email, email);
+  assert.equal(m.parseFacts(quietFacts("office"))?.email, undefined, "an older agent says nothing of it");
 });
 
 test("the model's reply is cut to four plain lines", () => {
@@ -148,7 +148,7 @@ function deps(over: Partial<MorningDeps> = {}) {
     settings: () => ({ enabled: true, at: "08:00" }),
     latest: { load: () => latest, save: (brief) => (latest = brief) },
     own: () => busyFacts,
-    peers: async () => [quietFacts("mini"), null],
+    peers: async () => [quietFacts("office"), null],
     models: async () => ["haiku"],
     run: async (model) => {
       runs.push(model);
@@ -174,7 +174,7 @@ test("the tick writes the day's brief once, from every computer's facts", async 
 });
 
 test("a quiet day asks no model; at HOLD or a failed run the plain words go", async () => {
-  const quiet = deps({ own: () => quietFacts("legion") });
+  const quiet = deps({ own: () => quietFacts("laptop") });
   assert.equal((await m.morningTick(quiet.d))?.by, "plain");
   assert.deepEqual(quiet.runs, []);
   assert.match(quiet.sent[0]!.text, /^Quiet night/);
@@ -219,15 +219,15 @@ test("GET /orch/morning: this computer's facts for a Lead's key, local or remote
       log: () => undefined,
       caller,
       notify: async () => undefined,
-      machineLabel: "legion",
+      machineLabel: "laptop",
       port: 8797,
     } as never);
     return reply;
   };
-  const local = await call({ id: "lead_legion", kind: "lead", name: "Lead on legion" });
+  const local = await call({ id: "lead_laptop", kind: "lead", name: "Lead on laptop" });
   assert.equal(local.status, 200);
   assert.ok(m.parseFacts(local.body));
-  assert.equal((await call({ id: "lead_mini", kind: "lead", name: "Lead on mini", remote: true })).status, 200);
+  assert.equal((await call({ id: "lead_office", kind: "lead", name: "Lead on office", remote: true })).status, 200);
   assert.equal((await call({ id: foremanCallerId("payroll"), kind: "lead", name: "Foreman", project: "payroll" })).status, 403);
 });
 

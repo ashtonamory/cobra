@@ -1,11 +1,9 @@
 import { gzipSync } from "node:zlib";
 
 /**
- * JSON replies gzipped for a caller that asks (the phone's URLSession always
- * does, and unpacks them itself). The phone polls /orch/status (91 KB on the
- * Legion) and /projects (57 KB) all day through its Tailscale tunnel, which
- * on 2026-10-18 froze sooner the more it carried; as gzip they are a fraction
- * of that. The desk (urllib) and curl ask for nothing and get plain JSON.
+ * JSON replies gzipped for a caller that asks. /orch/status and /projects
+ * run to tens of kilobytes and are polled all day; as gzip they are a
+ * fraction of that. A caller that asks for nothing gets plain JSON.
  */
 
 /** Replies smaller than this are sent as they are: gzip would save less than its own cost. */

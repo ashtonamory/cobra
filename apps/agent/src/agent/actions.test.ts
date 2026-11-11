@@ -248,7 +248,7 @@ function deps(overrides: Partial<ActionDeps> = {}, inFolder: Record<string, stri
 
 function approvalFor(path: string, body: Record<string, unknown>): StoredApproval {
   const action = parseAction(body, project(path), EXPORTS);
-  return makeApproval({ kind: "action", ...actionText(action), requestedBy: "foreman_payroll", action }, NOW, "legion", random);
+  return makeApproval({ kind: "action", ...actionText(action), requestedBy: "foreman_payroll", action }, NOW, "laptop", random);
 }
 
 test("an action approval waits a day, and Allow sends exactly what it holds, attachments read now", async () => {
@@ -270,7 +270,7 @@ test("an email frozen with its Space's mailbox shows From on the card and goes f
   const action = { ...parsed, email: { ...parsed.email!, from: { box: "box_1", address: "owner@example.com", mailbox: "Zoho Mail" } } };
   const words = actionText(action);
   assert.match(words.body, /^From: owner@example\.com \(Zoho Mail\)\nTo: ana@example\.com\n/);
-  const approval = makeApproval({ kind: "action", ...words, requestedBy: "foreman_payroll", action }, NOW, "legion", random);
+  const approval = makeApproval({ kind: "action", ...words, requestedBy: "foreman_payroll", action }, NOW, "laptop", random);
   const boxSends: Array<{ box: string; address: string; to: string[] }> = [];
   const d = deps({
     projectPath: async () => path,

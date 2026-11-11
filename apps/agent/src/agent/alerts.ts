@@ -8,9 +8,8 @@ import { writePrivateFile } from "./private.ts";
 import type { PushMessage } from "./push.ts";
 
 /**
- * Machine-health alerting, on the same "each agent watches itself" principle as
- * the session watcher: no machine polls another, so nothing here depends on the
- * Legion being awake.
+ * Health alerts for this computer: the agent watches the machine it runs on,
+ * as the session watcher does.
  *
  * Two things separate this from a threshold check.
  *
@@ -23,11 +22,6 @@ import type { PushMessage } from "./push.ts";
  * can require that it stay over the line for a while before it counts, which
  * is the difference between "this machine is in trouble" and "this machine is
  * doing something".
- *
- * Note what is deliberately absent: there is no alert for Tailscale being down.
- * The only route a notification has off the machine is the tailnet, so that
- * alert could never be delivered — a rule that can only fire when it cannot be
- * sent is decoration.
  */
 
 export type Level = "warn" | "critical";
@@ -91,7 +85,7 @@ export function evaluate(facts: Facts): Condition[] {
   }
 
   // Swap in use is normal with zram; swap *filling* means the machine is about
-  // to start thrashing, which on the Mini is indistinguishable from a hang.
+  // to start thrashing, which on a small computer looks the same as a hang.
   if (stats.memory.swapTotalBytes > 0) {
     const used = stats.memory.swapUsedBytes / stats.memory.swapTotalBytes;
     conditions.push({
@@ -134,8 +128,8 @@ export function evaluate(facts: Facts): Condition[] {
   });
 
   for (const unit of facts.units) {
-    // Only units actually installed here are considered, so cp-home being
-    // absent on the Legion is silence rather than a permanent alert.
+    // Only units installed here are considered, so one this computer never
+    // had is silence rather than a permanent alert.
     if (!unit.enabled) continue;
     conditions.push({
       id: `unit:${unit.unit}`,

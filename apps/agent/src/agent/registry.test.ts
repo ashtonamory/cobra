@@ -160,7 +160,7 @@ test("an id another machine holds is suffixed; one this machine holds is not", (
   // Free everywhere: nothing to work around.
   assert.equal(resolveId("cobra", "macbook", fleet), "cobra");
 
-  // Held by the Legion, so the MacBook's checkout gets a name of its own
+  // Held by the Laptop, so the MacBook's checkout gets a name of its own
   // rather than being refused for clashing with a card it never serves.
   assert.equal(resolveId("plant-shop", "macbook", fleet), "plant-shop-macbook");
 
@@ -172,16 +172,16 @@ test("an id another machine holds is suffixed; one this machine holds is not", (
 
 test("a suffixed id stays inside the 64 characters an id is allowed", () => {
   const base = "a".repeat(64);
-  const id = suffixId(base, "mini");
+  const id = suffixId(base, "office");
   assert.equal(id.length, 64);
-  assert.ok(id.endsWith("-mini"));
+  assert.ok(id.endsWith("-office"));
   // Still a valid id, which is the only thing the trimming has to protect.
   assert.ok(
     isProject({
       id,
       name: "x",
-      machine: "mini",
-      path: "/home/mini/x",
+      machine: "office",
+      path: "/home/office/x",
       session: "x",
     }),
   );

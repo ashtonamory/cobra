@@ -67,7 +67,7 @@ test("Undo runs once, by kind, and says how it went", async () => {
   const path = join(STATE, "undo.json");
   saveDecided([], NOW, path);
   const plan = recordDecided({ kind: "plan", title: "p", body: "", undo: { kind: "plan", approval: "ap_7" } }, NOW, path);
-  const org = recordDecided({ kind: "org", title: "o", body: "", undo: { kind: "org", seat: "legion/stable", company: null } }, NOW, path);
+  const org = recordDecided({ kind: "org", title: "o", body: "", undo: { kind: "org", seat: "laptop/stable", company: null } }, NOW, path);
   const merge = recordDecided({ kind: "merge", title: "m", body: "", undo: { kind: "merge", prs: [{ repo: "a/b", number: 3 }, { repo: "a/b", number: 4 }] } }, NOW, path);
   const sent = recordDecided({ kind: "action", title: "s", body: "", undo: { kind: "none", why: "It was sent." } }, NOW, path);
   const calls: string[] = [];
@@ -75,11 +75,11 @@ test("Undo runs once, by kind, and says how it went", async () => {
   assert.equal(done.status, 200);
   assert.equal(done.entry?.undoNote, "stop ap_7 done");
   assert.equal((await undoDecided(plan.id, deps(calls), NOW + 2, path)).status, 409, "never twice");
-  assert.equal((await undoDecided(org.id, deps(calls), NOW + 3, path)).entry?.undoNote, "move legion/stable new done");
+  assert.equal((await undoDecided(org.id, deps(calls), NOW + 3, path)).entry?.undoNote, "move laptop/stable new done");
   assert.equal((await undoDecided(merge.id, deps(calls), NOW + 4, path)).entry?.undoNote, "revert a/b#3 done; revert a/b#4 done");
   assert.deepEqual(await undoDecided(sent.id, deps(calls), NOW + 5, path), { status: 409, error: "It was sent." });
   assert.equal((await undoDecided("jd_nope", deps(calls), NOW, path)).status, 404);
-  assert.deepEqual(calls, ["stop ap_7", "move legion/stable new", "revert a/b#3", "revert a/b#4"]);
+  assert.deepEqual(calls, ["stop ap_7", "move laptop/stable new", "revert a/b#3", "revert a/b#4"]);
   assert.ok(loadDecided(path).find((entry) => entry.id === plan.id)?.undone);
 });
 

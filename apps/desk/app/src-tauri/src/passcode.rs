@@ -1,9 +1,8 @@
 //! The desk's own passcode: the check before a hidden value is shown (Show on a dashboard) and before a
-//! write that is the person's alone (an expense or a bank file Allowed from its To allow list), the desk's
-//! counterpart of the phone's Face ID (apps/mobile confirmOwner.ts). The desk has no biometric to ask,
+//! write that is the person's alone (an expense or a bank file Allowed from its To allow list). The desk has no biometric to ask,
 //! so it keeps a passcode of its own: at least 8 characters, kept only as a salted PBKDF2-HMAC-SHA256
 //! hash in `passcode.json` (0600) in this app's config folder, never the passcode itself. A right one
-//! unlocks the desk for five minutes (the phone's relock time for its Ledger), five wrong ones in a row
+//! unlocks the desk for five minutes, five wrong ones in a row
 //! lock it out for a minute. The unlock lives here in Rust, so the web side cannot claim to be unlocked:
 //! `require` is what `/view/reveal` and the person-only writes pass through (lib.rs `api`, `api_owner`).
 //! Forgotten: delete `passcode.json` and set a new one; hidden values stay hidden until then.

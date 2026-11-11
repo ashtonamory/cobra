@@ -169,7 +169,7 @@ export const GitState = z.object({
   offStandard: z.array(z.string()).optional(),
   /** Commits on local main that origin/main lacks. Anything but zero is the Diverged grade. */
   mainAhead: z.number().int().optional(),
-  /** The newest wip/ branch on origin, e.g. "wip/legion/2026-09-20"; null when none. */
+  /** The newest wip/ branch on origin, e.g. "wip/laptop/2026-09-20"; null when none. */
   parked: z.string().nullable().optional(),
   /** Open pull requests on the remote, from gh; null when gh is missing or has not run yet. */
   openPrs: z.number().int().nullable().optional(),
@@ -183,7 +183,7 @@ export const GitState = z.object({
    * One word from the standard, worst condition wins: Diverged, Unpushed,
    * Parked, Off-standard, Cluttered, Behind, Working, Clean. A string rather
    * than an enum so a grade added later does not make an older app reject
-   * the whole response (gotcha 18).
+   * the whole response.
    */
   grade: z.string().optional(),
 });
@@ -251,7 +251,7 @@ export const DiscoveredRepo = z.object({
 
 export const DiscoveredList = z.object({
   machine: z.string(),
-  /** Absolute, with this machine's homedir resolved — the Mini's is /home/mini. */
+  /** Absolute, with this computer's home folder resolved. */
   roots: z.array(z.string()),
   discovered: z.array(DiscoveredRepo),
 });
@@ -294,9 +294,9 @@ export type Engines = z.infer<typeof Engines>;
  * offering one that fails halfway through a clone.
  *
  * `gh` is reported as a resolved path rather than a boolean because it is found
- * in three different places across the fleet — a mise shim on the Legion and
- * the Mini, /usr/bin/gh on a plain Linux install — and because "installed" and "logged
- * in" fail separately and want telling apart.
+ * in different places from one computer to the next (a mise shim, /usr/bin/gh
+ * on a plain Linux install), and because "installed" and "logged in" fail
+ * separately and want telling apart.
  */
 export const Capabilities = z.object({
   machine: z.string(),
@@ -402,7 +402,7 @@ export const CreateProjectResponse = z.object({
   did: CreateMode,
   /** A tmux session was created and Claude started in it. */
   started: z.boolean(),
-  /** The path was marked trusted, so Claude will not ask (gotcha 19). */
+  /** The path was marked trusted, so Claude will not ask. */
   trusted: z.boolean(),
   /** A saved-template project starts its specialist Foreman instead of a generic session. */
   foreman: z.object({ session: z.string(), path: z.string() }).optional(),

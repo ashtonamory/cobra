@@ -289,7 +289,7 @@ async fn desk_name() -> String {
 }
 
 /// Ask the agent what it goes by (/health) and keep a new name as its label, so an agent
-/// installed with `--name legion` reads "legion", not its hostname. Whether it was renamed.
+/// installed with `--name laptop` reads "laptop", not its hostname. Whether it was renamed.
 #[tauri::command]
 async fn learn_names(app: State<'_, App>) -> Result<usize, String> {
     let Some(m) = app.store.agent() else { return Ok(0) };

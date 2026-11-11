@@ -96,7 +96,7 @@ function fixture(options: { linkedProject?: boolean } = {}) {
   g(root, "init", "-q", "--bare", "-b", "main", origin);
   let project: string;
   if (options.linkedProject) {
-    // As on Legion: the project folder is itself a linked worktree of a checkout elsewhere.
+    // As on Laptop: the project folder is itself a linked worktree of a checkout elsewhere.
     const home = join(root, "home", "cobra");
     mkdirSync(join(root, "home"), { recursive: true });
     g(root, "clone", "-q", origin, home);
@@ -129,7 +129,7 @@ function fixture(options: { linkedProject?: boolean } = {}) {
   mkdirSync(policy.WORKERS_DIR, { recursive: true });
   writeFileSync(policy.scopePath(id), JSON.stringify({ id, worktree, gitCommon, gitPrivate, branch }));
   const extra: Extra = { parent: "cobra", id, session: id, path: worktree, branch, createdAt: "2026-01-01T00:00:00Z", worker: { owner: "lead", task: "fix the badge", model: "claude" } };
-  const parent: Project = { id: "cobra", name: "Cobra", machine: "legion", path: project, session: "cobra" };
+  const parent: Project = { id: "cobra", name: "Cobra", machine: "laptop", path: project, session: "cobra" };
   return { root, origin, project, worktree, gitCommon, gitPrivate, branch, id, extra, parent };
 }
 
@@ -710,7 +710,7 @@ for (const linkedProject of [false, true]) {
       ["its gitdir", `echo /tmp/evil > '${join(f.gitPrivate, "gitdir")}'`],
       ["its commondir", `echo /tmp/evil > '${join(f.gitPrivate, "commondir")}'`],
       ["its config.worktree", `echo evil > '${join(f.gitPrivate, "config.worktree")}'`],
-      // What the local check reads as main (OV-SEC-VPS-001 F5).
+      // What the local check reads as main.
       ["origin/HEAD", `echo 'ref: refs/remotes/origin/evil' > '${join(root, "refs", "remotes", "origin", "HEAD")}'`],
       ["a new remote-tracking ref", `"$GIT" update-ref refs/remotes/origin/evil HEAD`],
       ["origin/main", `"$GIT" update-ref refs/remotes/origin/main HEAD`],

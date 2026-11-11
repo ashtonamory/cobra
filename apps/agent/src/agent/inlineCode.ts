@@ -4,7 +4,7 @@
  * `python3 -c "…"`, `node -e "…"`, `ruby -e`, `perl -e` and `bash -c` run a
  * program that is one shell word, and a word in quotes is not a command to
  * the hard stops: `python3 -c "import urllib.request; urllib.request.urlopen(…)"`
- * read as plain sandboxed bash (OV-SEC-VPS-001 F12). This finds those words so
+ * read as plain sandboxed bash. This finds those words so
  * policy.ts judges each as it judges a heredoc body the same program reads.
  *
  * Like the heredoc splitter, it reads the shell only where it is sure:

@@ -25,7 +25,7 @@ import { decisionLine, liveActivity, liveOnCallSpace, needsOfFinish, routeEvent,
  * When a Worker or a Foreman finishes a turn, the one above it hears of it.
  *
  * The agent follows every Worker on its own tick (the watcher's pushes and
- * charts run only while a phone or desk is linked; this does not). A Worker
+ * charts run only while the desk is linked; this does not). A Worker
  * that goes from working to settled — idle after its turn, waiting for the
  * person, stopped or failed — and stays so for SETTLE_TICKS ticks, so a pause
  * between two tool calls does not count, has finished. Each finish is kept
@@ -158,7 +158,7 @@ export function noticeLine(finishes: readonly Finish[], audience?: string): stri
   return sanitisePrompt(`[cobra] ${parts.join("; ")}`);
 }
 
-/** Who a wait or a notice is for: a Foreman's project id, "lead", or a phone's or desk's own id. */
+/** Who a wait or a notice is for: a Foreman's project id, "lead", or the desk's own id. */
 export function audienceOf(caller: { id: string; kind: string; project?: string }): string {
   if (caller.kind === "lead") return caller.project ?? "lead";
   return caller.id;

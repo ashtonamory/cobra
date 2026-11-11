@@ -27,7 +27,7 @@ function project(patch: Partial<Project> = {}): Project {
 }
 
 const config: DispatchConfig = {
-  projects: [project(), project({ id: "cp-mac", machine: "macbook", session: "control-plane" })],
+  projects: [project(), project({ id: "notes-mac", machine: "macbook", session: "plant-nursery" })],
   templates: [{ id: "tests", name: "Run tests", prompt: "Run the test suite." }],
 };
 
@@ -69,7 +69,7 @@ test("an unknown template is a 404, not a silent freeform fallback", () => {
 
 test("a project on another machine is refused rather than started here", () => {
   assert.throws(
-    () => resolve(config, "omarchy", "cp-mac", "tests", undefined),
+    () => resolve(config, "omarchy", "notes-mac", "tests", undefined),
     (error: unknown) => error instanceof SessionError && error.status === 409,
   );
 });

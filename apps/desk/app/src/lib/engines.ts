@@ -1,7 +1,6 @@
 /**
  * Settings → ACCOUNTS → Engines, as words: which coding engine each role starts on, per computer
- * (the agent's engines.ts, `GET /settings/engines`). A port of the desk's engines.py (itself the
- * phone's src/enginesRules.ts): change them together. Pure.
+ * (the agent's engines.ts, `GET /settings/engines`). Pure.
  */
 import { APP_NAME, LEAD_NAME } from "./appName.ts";
 import { truthy, type Dict, type Json } from "./json.ts";

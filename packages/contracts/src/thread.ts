@@ -80,7 +80,7 @@ export type ThreadWaitPage = z.infer<typeof ThreadWaitPage>;
 /**
  * GET and POST /settings/hub (agent hub.ts): which computer is the hub, the
  * only one Cobra runs on. The phone tells every computer when the person
- * marks one (POST `{ hub: "<hostname>" | null }`, a phone's or desk's key).
+ * marks one (POST `{ hub: "<hostname>" | null }`, the desk's key).
  * Null: no hub told, and Cobra may start anywhere, as before. Missing from
  * agents before 2026-10-26 (404).
  */

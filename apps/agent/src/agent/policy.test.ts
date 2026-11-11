@@ -87,7 +87,7 @@ test("edits in the worktree are allowed; protected files and outside come to you
   for (const name of [".claude/settings.json", ".mcp.json", ".git", ".husky/pre-commit"]) {
     assert.equal(verdict(call("Write", { file_path: `${scope.worktree}/${name}` })), "ask:protected-file", name);
   }
-  // .envrc is a credential by name too (credentials.ts, OV-SEC-VPS-001 F20): it still comes to you, for that reason first.
+  // .envrc is a credential by name too (credentials.ts): it still comes to you, for that reason first.
   assert.equal(verdict(call("Write", { file_path: `${scope.worktree}/.envrc` })), "ask:credential");
   assert.equal(verdict(call("Edit", { file_path: "/home/u/Projects/cobra/src/a.ts" })), "ask:outside-worktree");
   assert.equal(verdict(call("Write", { file_path: "/home/u/.bashrc" })), "ask:outside-worktree");
@@ -508,7 +508,7 @@ test("workerSettings in a project with no remote: main and packed-refs are kept 
   assert.deepEqual(deny(true).allowWrite, deny(false).allowWrite);
   assert.ok(deny(true).allowWrite.includes(`${scope.gitCommon}/refs`));
   for (const path of fenced) assert.equal(deny(false).denyWrite.includes(path), false, path);
-  // origin's refs, which the local check reads main from, in every mode (OV-SEC-VPS-001 F5).
+  // origin's refs, which the local check reads main from, in every mode.
   for (const local of [true, false]) assert.ok(deny(local).denyWrite.includes(`${scope.gitCommon}/refs/remotes`), String(local));
 });
 
@@ -748,7 +748,7 @@ test("a contained Worker reaches its own localhost without asking; anything else
     const d = decide(call("Bash", { command }), s, paths());
     return `${d.decision}:${d.rule}`;
   };
-  // The mini's, 2026-10-27 and 10-29: its dev server, then the page saved and read back.
+  // The office's, 2026-10-27 and 10-29: its dev server, then the page saved and read back.
   const devServer = `(npx next dev -p 3123 > /tmp/cbi-dev.log 2>&1 &) ; sleep 15; curl -s -o /dev/null -w "%{http_code}\\n" --max-time 170 http://localhost:3123/cbi`;
   assert.equal(bash(devServer), "allow:loopback");
   const saved = `sleep 5; curl -s -o /tmp/menus.html -w "%{http_code}\\n" --max-time 180 http://localhost:3123/menus; grep -o 'm-foot-note[^<]*<' /tmp/menus.html | head; grep -c "m-foot-note" /tmp/menus.html`;

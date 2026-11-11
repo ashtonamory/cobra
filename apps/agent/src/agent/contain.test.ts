@@ -118,7 +118,7 @@ test("the shared .git: readable, its write roots writable, its pointers and conf
   for (const cover of [join(scope.worktree, ".git"), join(scope.gitPrivate, "gitdir"), join(scope.gitPrivate, "commondir"), join(scope.gitPrivate, "config.worktree")]) {
     assert.ok(at(args, "--ro-bind", cover) > own, cover);
   }
-  // origin's refs and packed-refs stay the agent's in every mode (OV-SEC-VPS-001 F5): the local check reads main from them.
+  // origin's refs and packed-refs stay the agent's in every mode: the local check reads main from them.
   existing.add(join(scope.gitCommon, "refs", "remotes"));
   existing.add(join(scope.gitCommon, "packed-refs"));
   const remote = containArgs({ ...plan, local: false }, files, kind);
@@ -215,12 +215,12 @@ test("the policy's network allowlist: levels add up, and only host names count",
       version: 1,
       revision: 1,
       network: { allow: ["registry.npmjs.org", "10.0.0.1", "*.evil.com", "localhost", "PyPI.org"] },
-      computers: { legion: { network: { allow: ["docs.expo.dev"] } } },
+      computers: { laptop: { network: { allow: ["docs.expo.dev"] } } },
       projects: { "a/b": { network: { allow: ["api.expo.dev", "registry.npmjs.org"] } } },
     }),
   );
   assert.deepEqual(resolvePolicy(policy).network, ["registry.npmjs.org", "pypi.org"]);
-  assert.deepEqual(resolvePolicy(policy, { computer: "legion", project: "a/b" }).network, ["registry.npmjs.org", "pypi.org", "docs.expo.dev", "api.expo.dev"]);
+  assert.deepEqual(resolvePolicy(policy, { computer: "laptop", project: "a/b" }).network, ["registry.npmjs.org", "pypi.org", "docs.expo.dev", "api.expo.dev"]);
   assert.deepEqual(resolvePolicy(policy, {}, "it is not valid JSON").network, []);
 });
 
@@ -597,7 +597,7 @@ test("harness: the version claude resolves to through mise's links, beside the p
   assert.match(containMode({ COBRA_CONTAIN: "on" }, () => false, "darwin").reason ?? "", /^sandbox-exec cannot start/);
 });
 
-test("COBRA_CONTAIN require (OV-SEC-VPS-001 F13): on as before, and a refusal whenever the jail is not available", async () => {
+test("COBRA_CONTAIN require: on as before, and a refusal whenever the jail is not available", async () => {
   const { containEnabled, containSetting, jailRefusal } = await import("./contain.ts");
   assert.equal(containSetting({}), "off");
   assert.equal(containSetting({ COBRA_CONTAIN: "off" }), "off");
@@ -636,7 +636,7 @@ test("bubblewrap is probed again after 5 minutes, and at once when the agent's t
   assert.equal(calls, 3);
 });
 
-test("every plan is hardened (OV-SEC-VPS-001 F19): its own user namespace, none nested, no capability, a new session but in a tmux pane", async () => {
+test("every plan is hardened: its own user namespace, none nested, no capability, a new session but in a tmux pane", async () => {
   const { JAIL_HARDENING } = await import("./contain.ts");
   assert.deepEqual([...JAIL_HARDENING], ["--unshare-user", "--disable-userns", "--cap-drop", "ALL", "--new-session"]);
   const headless = containArgs(plan, files, kind);

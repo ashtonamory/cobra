@@ -60,8 +60,8 @@ export type RecorderDeps = {
   /**
    * Handed the same sample the store just took. Alerting rides along here
    * rather than running its own loop, so the machine is measured once a minute
-   * and two things read the result — collecting /system twice to answer the
-   * same question would be the kind of waste that shows up on the Mini.
+   * and two things read the result, rather than collecting /system twice to
+   * answer the same question.
    */
   onSample?: (stats: SystemStats, at: number) => Promise<void> | void;
   log: (line: string) => void;

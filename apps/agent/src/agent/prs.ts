@@ -2,7 +2,7 @@ import type { PrList, PrRepo, ProjectState, RepoPr } from "@cobra/contracts";
 
 /**
  * GET /prs: every repository's open PRs on this computer, for Ops's "Pull
- * requests" on the phone and the desk. Built only from what git sync already
+ * requests" on the desk. Built only from what git sync already
  * read (gitsync.ts cachedPrs), so a request never runs gh: the phone polls
  * every computer, and gh's rate limit is the person's.
  */

@@ -140,7 +140,7 @@ export const MONEY_VIEWS: readonly ViewSpec[] = [
     params: ["today", "monthStart", "monthEnd", "monthStart", "monthEnd", "monthStart", "monthEnd"],
   },
   // What waits on the person: money in and money out, each a group card with
-  // its count and total, a peek, Review and Allow all (one Face ID for the rows shown, never more).
+  // its count and total, a peek, Review and Allow all (one Allow for the rows shown, never more).
   {
     id: "money-in",
     title: "Money in to allow",

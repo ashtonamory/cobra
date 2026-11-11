@@ -530,7 +530,7 @@ export async function checkCheckout(
   const repo = /github\.com[:/]([^/:\s]+\/[^/\s]+?)(?:\.git)?\/?$/.exec(remoteUrl)?.[1] ?? null;
   // Main as origin has it now, never as this .git's refs say: a Worker's
   // sandbox could once write those, and so name its own commit as main
-  // (OV-SEC-VPS-001 F5). Every branch fetched over what is here, what origin
+  //. Every branch fetched over what is here, what origin
   // no longer has pruned, and main's commit read from origin itself.
   const remote = remoteUrl ? await mainFromOrigin(deps, root) : null;
   const head = remote ? `origin/${remote.branch}` : "origin/main";

@@ -30,8 +30,8 @@ describe("the audit log's rows", () => {
     expect(wordOf("approval.allowed", "ok")).toBe("card");
     expect(wordOf("vault.unlock", "refused")).toBe("refused");
     expect(timeOf(NOW, NOW)).toBe("12:00");
-    expect(failureLine(404, "", "mini")).toMatch(/older than the audit log/);
-    expect(failureLine(403, "", "mini")).toMatch(/its own desk only/);
-    expect(failureLine(0, "timeout", "mini")).toBe("mini did not answer: timeout");
+    expect(failureLine(404, "", "office")).toMatch(/older than the audit log/);
+    expect(failureLine(403, "", "office")).toMatch(/its own desk only/);
+    expect(failureLine(0, "timeout", "office")).toBe("office did not answer: timeout");
   });
 });

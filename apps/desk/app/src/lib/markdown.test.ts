@@ -80,10 +80,10 @@ describe("InMessageCopy", () => {
   });
 
   it("segments cut code blocks out of the prose", () => {
-    const text = "Run this:\n```bash\nbash install.sh\nsystemctl --user status cp-desk\n```\nThen **check**.";
+    const text = "Run this:\n```bash\nbash install.sh\nsystemctl --user status cobra-desk\n```\nThen **check**.";
     expect(segments(text)).toEqual([
       ["prose", "Run this:"],
-      ["code", "bash install.sh\nsystemctl --user status cp-desk"],
+      ["code", "bash install.sh\nsystemctl --user status cobra-desk"],
       ["prose", "Then <b>check</b>."],
     ]);
   });

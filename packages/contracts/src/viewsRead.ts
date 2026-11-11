@@ -1,5 +1,5 @@
 /**
- * What the phone and the desk do with a view's reply (views.ts), in one place so
+ * What the desk do with a view's reply (views.ts), in one place so
  * the two draw the same dashboard: a tolerant reader (an agent newer than the app
  * may send what the app does not know; it is dropped, never thrown on), the words
  * a cell is shown in, and how a board's cards fall into its lanes. Pure. Not
@@ -528,7 +528,7 @@ export function argValue(kind: string, typed: string): { value: string | number 
 }
 
 // --- what a dashboard screen decides without drawing ------------------------------
-// Shared by the phone and the desk: which views are tabs, what a button's form asks for and sends, how a page is titled.
+// Shared by the desk: which views are tabs, what a button's form asks for and sends, how a page is titled.
 
 /** The views a person switches between: everything but the summary tiles (the Space page's), the pages a row opens, the charts (the board above the tabs) and the lists a chart opens. */
 /** A kanban and its band are a screen of their own (the CRM board, desk and phone alike), never a tab or a board widget. */

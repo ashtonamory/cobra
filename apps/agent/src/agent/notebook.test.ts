@@ -16,18 +16,18 @@ function fixture(): NotebookDeps & { cleanup: () => void } {
     mkdirSync(join(root, rel, ".."), { recursive: true });
     writeFileSync(join(root, rel), text);
   };
-  const c = "computers/legion";
-  at(`${c}/index.json`, JSON.stringify({ computer: "legion", host: "omarchy", at: "2026-11-07T10:00:00Z", headlines: [], sensitive: [],
+  const c = "computers/laptop";
+  at(`${c}/index.json`, JSON.stringify({ computer: "laptop", host: "omarchy", at: "2026-11-07T10:00:00Z", headlines: [], sensitive: [],
     entries: [{ key: "local/northwind-marketing", company: { id: "northwind", name: "Northwind" }, day: "2026-11-07", line: "" }, { key: "octo-org/example.com", company: { id: "example-com", name: "Example.com" }, day: "", line: "" }] }));
-  at(`${c}/hourly/2026-11-07/10.md`, "# legion · 2026-11-07 10:00 – 11:00\n\n### Fleet\n- Gmail: no replies.\n\n### local/northwind-marketing\n- Sent four outreach emails to Harbour Light and others.\n");
-  at(`${c}/hourly/2026-11-07/09.md`, "# legion · 09\n\n### octo-org/example.com\n- Pricing page started.\n");
-  at(`${c}/hourly/2026-11-08/01.md`, "# legion · 01\n\n### Fleet\n- Late night.\n");
-  at(`${c}/daily/2026-11-06.md`, "# legion · daily · 2026-11-06\n\nA steady day.\n\n### local/northwind-marketing\n- Five emails went out.\n\n### Open threads\n- Allow the Northwind realtor card.\n- Update billing.\n");
-  at(`${c}/daily/2026-10-20.md`, "# legion · daily · 2026-10-20\n\nOld day.\n\n### Fleet\n- Quiet.\n");
-  at(`${c}/weekly/2026-W44.md`, "# legion · weekly · 2026-W44\n\nThe Caribbean list went out.\n\n### local/northwind-marketing\n- Harbour Light replied.\n");
+  at(`${c}/hourly/2026-11-07/10.md`, "# laptop · 2026-11-07 10:00 – 11:00\n\n### Fleet\n- Gmail: no replies.\n\n### local/northwind-marketing\n- Sent four outreach emails to Harbour Light and others.\n");
+  at(`${c}/hourly/2026-11-07/09.md`, "# laptop · 09\n\n### octo-org/example.com\n- Pricing page started.\n");
+  at(`${c}/hourly/2026-11-08/01.md`, "# laptop · 01\n\n### Fleet\n- Late night.\n");
+  at(`${c}/daily/2026-11-06.md`, "# laptop · daily · 2026-11-06\n\nA steady day.\n\n### local/northwind-marketing\n- Five emails went out.\n\n### Open threads\n- Allow the Northwind realtor card.\n- Update billing.\n");
+  at(`${c}/daily/2026-10-20.md`, "# laptop · daily · 2026-10-20\n\nOld day.\n\n### Fleet\n- Quiet.\n");
+  at(`${c}/weekly/2026-W44.md`, "# laptop · weekly · 2026-W44\n\nThe Caribbean list went out.\n\n### local/northwind-marketing\n- Harbour Light replied.\n");
   at(`${c}/companies/northwind/brain.md`, "# Northwind\n\n_Updated 2026-11-06._\n\n## What it is\nAn AI business partner.\n\n## Decisions\n- Every email waits for Allow.\n\n## People\n");
   const ticksPath = join(root, "state", "ticks.jsonl");
-  return { root, computer: "legion", now: () => NOW, ticksPath, cleanup: () => rmSync(root, { recursive: true, force: true }) };
+  return { root, computer: "laptop", now: () => NOW, ticksPath, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
 const get = (deps: NotebookDeps, path: string) => {
@@ -43,7 +43,7 @@ test("a day: the day page with its threads, the hours in memory-day order, secti
     const part = today.body as { daily: unknown; hours: Array<{ hour: string; sections: Array<{ key: string; company: { id: string } | null; computer: string }> }>; hoursKept: boolean };
     assert.equal(part.daily, null);
     assert.deepEqual(part.hours.map((h) => h.hour), ["09", "10"]);
-    assert.deepEqual(part.hours[1]!.sections.map((s) => [s.key, s.company?.id ?? null, s.computer]), [["fleet", null, "legion"], ["local/northwind-marketing", "northwind", "legion"]]);
+    assert.deepEqual(part.hours[1]!.sections.map((s) => [s.key, s.company?.id ?? null, s.computer]), [["fleet", null, "laptop"], ["local/northwind-marketing", "northwind", "laptop"]]);
     assert.equal(part.hoursKept, true);
     const yesterday = get(deps, "/notebook/day?day=2026-11-06").body as { daily: { summary: string[]; threads: Array<{ text: string; done: boolean; company: { id: string } | null }> } };
     assert.deepEqual(yesterday.daily.summary, ["A steady day."]);

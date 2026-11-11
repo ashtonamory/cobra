@@ -6,7 +6,7 @@ const NOW = 1_800_000_000_000;
 const CHECK = { verdict: "ready", contextTokens: 98304, decodeTps: 41.5, prefillTps: 2052.8, checkedAt: NOW - 2 * 3600_000, ms: 7778 };
 
 const STATUS: Dict = {
-  computer: "legion",
+  computer: "laptop",
   ollama: { url: "http://127.0.0.1:11434", remote: false, refused: null, running: true, version: "0.33.3" },
   models: [
     { name: "qwen-tuned:fast96k", tools: true, size: 5_681_599_551, check: CHECK, checking: false },
@@ -81,28 +81,28 @@ describe("Uses", () => {
   });
 
   it("the judge gets this computer's fallback only", () => {
-    const policy: Dict = { version: 1, revision: 5, preset: "balanced", computers: { mini: { preset: "locked" } } };
-    const out = localmodels.nextPolicyWithLocal(policy, "legion", "judge", "qwen3:4b", ["claude-haiku-5-5"]);
-    expect(out.computers.legion).toEqual({ judge: { fallback: "local:qwen3:4b" } });
-    expect(out.computers.mini).toEqual({ preset: "locked" });
+    const policy: Dict = { version: 1, revision: 5, preset: "balanced", computers: { office: { preset: "locked" } } };
+    const out = localmodels.nextPolicyWithLocal(policy, "laptop", "judge", "qwen3:4b", ["claude-haiku-5-5"]);
+    expect(out.computers.laptop).toEqual({ judge: { fallback: "local:qwen3:4b" } });
+    expect(out.computers.office).toEqual({ preset: "locked" });
     expect(out.revision, "the apply flow sets the next revision").toBe(5);
-    expect(policy.computers, "the policy it started from is untouched").not.toHaveProperty("legion");
-    const off = localmodels.nextPolicyWithLocal(out, "legion", "judge", null, []);
-    expect(off.computers.legion.judge).toEqual({ fallback: null });
+    expect(policy.computers, "the policy it started from is untouched").not.toHaveProperty("laptop");
+    const off = localmodels.nextPolicyWithLocal(out, "laptop", "judge", null, []);
+    expect(off.computers.laptop.judge).toEqual({ fallback: null });
   });
 
   it("a judge chain at this computer is kept in step", () => {
-    const policy = { computers: { legion: { judge: { model: "sonnet" }, models: { fallbacks: { judge: ["sonnet", "local:old"] } } } } };
-    const out = localmodels.nextPolicyWithLocal(policy, "legion", "judge", "qwen3:4b", []);
-    expect(out.computers.legion.judge).toEqual({ model: "sonnet", fallback: "local:qwen3:4b" });
-    expect(out.computers.legion.models.fallbacks.judge).toEqual(["sonnet", "local:qwen3:4b"]);
+    const policy = { computers: { laptop: { judge: { model: "sonnet" }, models: { fallbacks: { judge: ["sonnet", "local:old"] } } } } };
+    const out = localmodels.nextPolicyWithLocal(policy, "laptop", "judge", "qwen3:4b", []);
+    expect(out.computers.laptop.judge).toEqual({ model: "sonnet", fallback: "local:qwen3:4b" });
+    expect(out.computers.laptop.models.fallbacks.judge).toEqual(["sonnet", "local:qwen3:4b"]);
   });
 
   it("another helper keeps its claude models and gets the local one last", () => {
-    const out = localmodels.nextPolicyWithLocal({}, "legion", "titles", "qwen3:4b", ["haiku", "local:old"]);
-    expect(out).toEqual({ computers: { legion: { models: { fallbacks: { titles: ["haiku", "local:qwen3:4b"] } } } } });
-    const none = localmodels.nextPolicyWithLocal(out, "legion", "titles", null, ["haiku", "local:qwen3:4b"]);
-    expect(none.computers.legion.models.fallbacks.titles).toEqual(["haiku"]);
+    const out = localmodels.nextPolicyWithLocal({}, "laptop", "titles", "qwen3:4b", ["haiku", "local:old"]);
+    expect(out).toEqual({ computers: { laptop: { models: { fallbacks: { titles: ["haiku", "local:qwen3:4b"] } } } } });
+    const none = localmodels.nextPolicyWithLocal(out, "laptop", "titles", null, ["haiku", "local:qwen3:4b"]);
+    expect(none.computers.laptop.models.fallbacks.titles).toEqual(["haiku"]);
   });
 });
 
@@ -117,14 +117,14 @@ describe("Slots", () => {
   });
 
   it("a change sets that computer's slots only, and stays in range", () => {
-    const policy: Dict = { version: 1, revision: 5, local: { slots: 2 }, computers: { mini: { preset: "auto" } } };
-    const out = localmodels.nextPolicyWithSlots(policy, "legion", 3);
-    expect(out.computers.legion).toEqual({ local: { slots: 3 } });
-    expect(out.computers.mini).toEqual({ preset: "auto" });
+    const policy: Dict = { version: 1, revision: 5, local: { slots: 2 }, computers: { office: { preset: "auto" } } };
+    const out = localmodels.nextPolicyWithSlots(policy, "laptop", 3);
+    expect(out.computers.laptop).toEqual({ local: { slots: 3 } });
+    expect(out.computers.office).toEqual({ preset: "auto" });
     expect(out.local, "the fleet's is untouched").toEqual({ slots: 2 });
     expect(out.revision).toBe(5);
-    expect(policy.computers, "the input is not changed").not.toHaveProperty("legion");
-    expect(localmodels.nextPolicyWithSlots(policy, "legion", 0).computers.legion.local.slots).toBe(1);
-    expect(localmodels.nextPolicyWithSlots(policy, "legion", 20).computers.legion.local.slots).toBe(8);
+    expect(policy.computers, "the input is not changed").not.toHaveProperty("laptop");
+    expect(localmodels.nextPolicyWithSlots(policy, "laptop", 0).computers.laptop.local.slots).toBe(1);
+    expect(localmodels.nextPolicyWithSlots(policy, "laptop", 20).computers.laptop.local.slots).toBe(8);
   });
 });

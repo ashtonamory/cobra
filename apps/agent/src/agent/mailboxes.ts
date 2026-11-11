@@ -17,7 +17,7 @@ import { smtpCheck, SmtpCutOff, SmtpRefusal, smtpSend, type SmtpServer } from ".
  * Mailboxes with an app password:
  * iCloud Mail and Zoho Mail, over SMTP to send and IMAP to read bounces and
  * replies and to file each sent copy. Outlook waits for an app registration
- * (Sam, 2026-11-02). The person adds a box on the phone or the desk;
+ * (Sam, 2026-11-02). The person adds a box on the desk;
  * the agent logs in to both servers before it keeps it. Each Space names
  * the box its email goes from; Gmail (the account's Google connection) when
  * it names none.

@@ -152,7 +152,7 @@ import { redactDeep } from "./secretValues.ts";
 /**
  * /orch/*: what an orchestrator (the Lead, a Foreman) may do on this computer.
  * The Lead reaches these through its MCP server with a Lead key (keys.ts
- * mintLead), which opens these routes and no others; a phone or desktop
+ * mintLead), which opens these routes and no others; the desk
  * reaches them with its own read and act.
  *
  *   GET  /orch/status                 projects, Workers, caps, local models
@@ -876,7 +876,7 @@ export async function handleOrch(
     /** A Designer's brand kit and designs (designer.ts); tests give fakes. */
     designer?: DesignerDeps;
     site?: SiteDeps;
-    /** Cobra's thread on this computer, for a Designer's designs: null when this is not the hub, with why. */
+    /** Cobra's thread on this computer, for a Designer's designs: null when it cannot be read, with why. */
     thread?: () => { append: (entries: readonly NewEntry[]) => unknown; current: () => string | null } | { notHub: string };
     /** My Organization (orgRoutes.ts), for tests. */
     org?: OrgDeps;
@@ -973,7 +973,7 @@ export async function handleOrch(
     return projects.filter((project) => project.id === only || (linked !== null && project.id === linked));
   };
   const scopedWorker = async (id: unknown): Promise<Extra> => {
-    // The Lead and Foremen never see your own Pi sessions; your phone and desk see every session (Tidy's Delete).
+    // The Lead and Foremen never see your own Pi sessions; the desk see every session (Tidy's Delete).
     const extra = await findWorker(id, isLead ? orchWorkerRecords : workerRecords);
     if (only !== undefined && extra.parent !== only) {
       const linked = await linkedSite();
@@ -1250,7 +1250,7 @@ export async function handleOrch(
     }
 
     if (ORCH_DESIGNER_ROUTES.has(route)) {
-      // A Designer Foreman's (designer.ts): a brand kit is an approval the person allows; designs go into Cobra's thread on the hub.
+      // A Designer Foreman's (designer.ts): a brand kit is an approval the person allows; designs go into Cobra's thread.
       const designerBody = await io.readBody(request, 20_000);
       const deps = io.designer ?? liveDesignerDeps(io);
       const reply = await handleDesignerOrch(route, designerBody, io.caller, deps);
@@ -1337,7 +1337,7 @@ export async function handleOrch(
       // A brief from a turn that read text from outside carries it: the Foreman's turn it starts is tainted (taint.ts).
       const briefTaint = isLead ? taintOf(who) : null;
       if (briefTaint) markRead(`foreman:${project.id}`, "brief", `brief from ${who}`, briefTaint.hosts);
-      // A Lead's brief, or the person's own words from the phone or the desk (wakes.ts).
+      // A Lead's brief, or the person's own words from the desk (wakes.ts).
       await typeBrief(waking(liveDispatchDeps(), session, isLead ? "brief" : "person", project.id), session, brief, started ? READY_TIMEOUT_MS : 0);
       io.log(`Foreman for ${project.id} briefed by ${io.caller.id}`);
       return send(response, 200, { foreman: await describeForeman(project, await runningSessions()), started });

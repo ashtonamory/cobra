@@ -179,7 +179,7 @@ test("Codex event streams become the phone chat, without its environment plumbin
 });
 
 test("the newest transcript in a project directory wins, and a missing one is null", async () => {
-  const home = await mkdtemp(join(tmpdir(), "cp-home-"));
+  const home = await mkdtemp(join(tmpdir(), "cobra-home-"));
   assert.equal(await findTranscript("/nowhere", home), null);
   const { mkdir, utimes } = await import("node:fs/promises");
   const dir = projectDir("/work/app", home);

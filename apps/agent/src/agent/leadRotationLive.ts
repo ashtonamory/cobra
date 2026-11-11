@@ -18,7 +18,7 @@ const working = (project: ProjectState): boolean => project.activity === "agent-
 
 export type RotationInput = {
   enabled: boolean;
-  /** She runs here and this is the hub. */
+  /** She runs here. */
   running: boolean;
   /** Her transcript now, null when this conversation has none yet. */
   sourceFile: string | null;

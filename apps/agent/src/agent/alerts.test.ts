@@ -42,7 +42,7 @@ function condition(patch: Partial<Condition>): Condition {
 
 function stats(patch: Partial<SystemStats>): SystemStats {
   return {
-    host: "mini",
+    host: "office",
     kernel: "7.2.5",
     uptimeSeconds: 1000,
     capturedAt: new Date().toISOString(),
@@ -197,27 +197,27 @@ test("evaluate skips units this machine does not install", () => {
   const conditions = evaluate({
     stats: stats({}),
     units: [
-      { unit: "cp-agent", enabled: true, active: true },
-      { unit: "cp-home", enabled: false, active: false },
+      { unit: "cobra-agent", enabled: true, active: true },
+      { unit: "cobra-home", enabled: false, active: false },
     ],
   });
   const ids = conditions.map((entry) => entry.id);
-  assert.ok(ids.includes("unit:cp-agent"), "an installed unit is watched");
-  assert.ok(!ids.includes("unit:cp-home"), "an absent unit is not");
+  assert.ok(ids.includes("unit:cobra-agent"), "an installed unit is watched");
+  assert.ok(!ids.includes("unit:cobra-home"), "an absent unit is not");
 });
 
 test("a down unit fires and a running one does not", () => {
   const down = evaluate({
     stats: stats({}),
-    units: [{ unit: "cp-term", enabled: true, active: false }],
-  }).find((entry) => entry.id === "unit:cp-term");
+    units: [{ unit: "cobra-term", enabled: true, active: false }],
+  }).find((entry) => entry.id === "unit:cobra-term");
   assert.ok(down);
   assert.equal(step(new Map(), [down], 0).length, 1);
 
   const up = evaluate({
     stats: stats({}),
-    units: [{ unit: "cp-term", enabled: true, active: true }],
-  }).find((entry) => entry.id === "unit:cp-term");
+    units: [{ unit: "cobra-term", enabled: true, active: true }],
+  }).find((entry) => entry.id === "unit:cobra-term");
   assert.ok(up);
   assert.equal(step(new Map(), [up], 0).length, 0);
 });
@@ -245,18 +245,18 @@ test("load is normalised by thread count", () => {
 });
 
 test("an alert push carries no category, so old builds show it plainly", () => {
-  const message = compose("mini", {
+  const message = compose("office", {
     kind: "fired",
     condition: condition({ value: 0.95 }),
   });
   assert.equal(message.category, undefined);
-  assert.equal(message.data.machine, "mini");
+  assert.equal(message.data.machine, "office");
 });
 
 test("a cleared alert is worded as a resolution", () => {
-  const message = compose("mini", {
+  const message = compose("office", {
     kind: "cleared",
-    condition: condition({ title: "mini: / is filling up" }),
+    condition: condition({ title: "office: / is filling up" }),
   });
   assert.match(message.title, /^Resolved: /);
 });

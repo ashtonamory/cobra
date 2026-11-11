@@ -1,7 +1,6 @@
 /**
  * Settings → Integrations: what a computer says about the GitHub MCP server (`GET /mcp`,
- * `McpStatus` in packages/contracts/src/mcp.ts), as words. A port
- * of the desk's integrations.py. Pure.
+ * `McpStatus` in packages/contracts/src/mcp.ts), as words. Pure.
  *
  * Presets only: there is no custom server here. The state is worked out from the pin and the binary
  * the agent reports plus the entry's `why`, in one function, so a structured field from the agent

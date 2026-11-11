@@ -501,7 +501,7 @@ export function localModelChoices(caps: Dict | null | undefined): (readonly [str
   return Array.isArray(found) ? found.filter((m) => truthy(m)).map((m) => [pyStr(m), pyStr(m)] as const) : [];
 }
 
-/** Substring over name and machine, so "mini" narrows to a machine and "stab" to a project. */
+/** Substring over name and machine, so "office" narrows to a machine and "stab" to a project. */
 export function filterRows(rows: Row[], text: string): Row[] {
   const q = text.trim().toLowerCase();
   if (!q) return rows;

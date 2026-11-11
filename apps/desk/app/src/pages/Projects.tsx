@@ -56,7 +56,7 @@ export function ProjectsPage({ newProjectAsk }: { newProjectAsk: number }) {
       <div className="pj-top board-page">
         <input className="entry grow" type="search" placeholder="Filter by project or machine" value={text}
           style={{ minWidth: 120 }} onChange={(e) => setText(e.target.value)} />
-        <Button kind="flat" title="Merged branches, stale branches and old PRs, on every computer" onClick={() => setDialog("tidy")}>
+        <Button kind="flat" title="Merged branches, stale branches and old PRs" onClick={() => setDialog("tidy")}>
           Tidy
         </Button>
         <Button kind="flat" title="Adopt, clone from GitHub, or start an empty repository" onClick={() => setDialog("new")}>

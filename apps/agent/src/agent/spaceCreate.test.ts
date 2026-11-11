@@ -83,7 +83,7 @@ test("a proposal is checked: kind, profile, name, a name already taken, and a Sp
   const w3 = world(space);
   openSpace({ id: "happy-tails", name: "Happy Tails", kind: "client", home: "omarchy", sensitive: false }, "omarchy", w3.spacesRoot);
   assert.equal((await proposeSpace(w3.deps, "lead", { kind: "client", adopt: "happy-tails", profile: PROFILE })).status, 409, "a Space with its folder here is open");
-  const elsewhere = applyOrg(open, { op: "space", company: "happy-tails", kind: "client", home: "mini" }).org;
+  const elsewhere = applyOrg(open, { op: "space", company: "happy-tails", kind: "client", home: "office" }).org;
   assert.equal((await proposeSpace(world(elsewhere).deps, "lead", { kind: "client", adopt: "happy-tails", profile: PROFILE })).status, 409, "a Space on another computer is not finished from here");
   assert.equal(w.approvals.length, 0, "a refused proposal leaves no card");
 });
@@ -163,12 +163,12 @@ test("seedBrainText leaves out what was not said", () => {
 test("hiring into a Space: it must be a Space, on this computer, and the Lead hires alone only up to six", () => {
   let org = applyOrg(EMPTY_ORG, { op: "company", name: "Maya's Soccer", kind: "team", home: "omarchy" }).org;
   org = applyOrg(org, { op: "company", name: "Happy Tails" }).org;
-  org = applyOrg(org, { op: "company", name: "Elsewhere", kind: "client", home: "mini" }).org;
+  org = applyOrg(org, { op: "company", name: "Elsewhere", kind: "client", home: "office" }).org;
   const seat = (n: number) => `omarchy/p${n}`;
   const fail = (result: ReturnType<typeof checkHire>) => ("error" in result ? result : assert.fail("expected a refusal"));
   assert.equal(fail(checkHire(org, "nope", "omarchy", false)).status, 404);
   assert.match(fail(checkHire(org, "happy-tails", "omarchy", false)).error, /not a Space yet/);
-  assert.match(fail(checkHire(org, "elsewhere", "omarchy", false)).error, /runs on mini, not on omarchy/);
+  assert.match(fail(checkHire(org, "elsewhere", "omarchy", false)).error, /runs on office, not on omarchy/);
   for (let n = 1; n <= 5; n++) org = applyOrg(org, { op: "assign", seat: seat(n), company: "maya-s-soccer" }).org;
   assert.ok("company" in checkHire(org, "maya-s-soccer", "omarchy", false), "five Foremen: room for a sixth");
   org = applyOrg(org, { op: "assign", seat: seat(6), company: "maya-s-soccer" }).org;

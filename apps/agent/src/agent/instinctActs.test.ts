@@ -6,7 +6,7 @@ import { actsAlone, deploysOnMerge, runsOnPushToMain, mergeDeploys, mergeOnGreen
 function card(kind: string, extra: Record<string, unknown> = {}): StoredApproval {
   return {
     id: "ap_1",
-    machine: "legion",
+    machine: "laptop",
     kind,
     title: `A ${kind}`,
     body: "What it does",
@@ -71,9 +71,9 @@ test("merge on green: a written setting wins, else Instinct unless the repo depl
   assert.equal(mergeOnGreenAt({ ...EMPTY, foreman: { mergeOnGreen: true } } as never, {}, true, quiet, true), true);
   const off = { foreman: { mergeOnGreen: false } } as never;
   assert.equal(mergeOnGreenAt(off, {}, true, quiet), false);
-  const on = { projects: { "a/b": { foreman: { mergeOnGreen: true } } }, computers: { legion: { foreman: { mergeOnGreen: false } } } } as never;
-  assert.equal(mergeOnGreenAt(on, { computer: "legion", project: "a/b" }, false, deploys), true);
-  assert.equal(mergeOnGreenAt(on, { computer: "legion", project: "c/d" }, true, quiet), false);
+  const on = { projects: { "a/b": { foreman: { mergeOnGreen: true } } }, computers: { laptop: { foreman: { mergeOnGreen: false } } } } as never;
+  assert.equal(mergeOnGreenAt(on, { computer: "laptop", project: "a/b" }, false, deploys), true);
+  assert.equal(mergeOnGreenAt(on, { computer: "laptop", project: "c/d" }, true, quiet), false);
 });
 
 test("deploy on merge: hosts that build main and workflows that deploy on a push", () => {

@@ -8,7 +8,7 @@ import { caches, containSetting, insidePath, secretFilesUnder } from "./contain.
 /**
  * A Worker's dependency install (workers.ts installCommands), which the
  * agent runs before the Worker starts because the Worker's own sandbox has
- * no network (OV-SEC-VPS-001 F2).
+ * no network.
  *
  * The install reads files the Worker may have written: on a wake or a
  * handoff the worktree is as the Worker left it. A preinstall script, a
@@ -62,7 +62,7 @@ const TOOL_ENV =
 /**
  * Why an install may not run out of the sandbox, or null: with
  * COBRA_CONTAIN=require nothing of the Worker's runs outside the jail
- * (OV-SEC-VPS-001 F13). spawnWorker refuses first; this holds the install
+ *. spawnWorker refuses first; this holds the install
  * should the jail go between the spawn and its background install.
  */
 export function uncontainedInstallRefusal(env: NodeJS.ProcessEnv = process.env): string | null {

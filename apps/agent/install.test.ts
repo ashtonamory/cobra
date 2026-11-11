@@ -10,10 +10,10 @@ import { join } from "node:path";
 // stops before it touches anything, so it runs here without a package.
 const INSTALL = new URL("./install.sh", import.meta.url).pathname;
 
-const LEGION = [
+const LAPTOP = [
   "COBRA_AGENT_PORT=8797",
   "COBRA_TERM_PORT=8798",
-  "COBRA_MACHINE_NAME=legion",
+  "COBRA_MACHINE_NAME=laptop",
   "COBRA_GIT_SYNC=off",
   "COBRA_TMUX_SOCKET=default",
   "PATH=/home/me/.local/bin:/usr/bin",
@@ -157,7 +157,7 @@ function withHome(agentEnv: string | null, fn: (run: Run, home: string) => void,
 }
 
 test("a bare re-run keeps the saved settings", () => {
-  withHome(LEGION, (run, home) => {
+  withHome(LAPTOP, (run, home) => {
     const result = run();
     assert.equal(result.status, 0, String(result.stderr));
     assert.deepEqual(result.config, {
@@ -165,7 +165,7 @@ test("a bare re-run keeps the saved settings", () => {
       AGENT_PORT: "8797",
       TERM_PORT: "8798",
       MODEL_PORT: "8799",
-      MACHINE_NAME: "legion",
+      MACHINE_NAME: "laptop",
       GIT_SYNC: "0",
       TMUX_SOCKET: "default",
       KEPT: "agent port,terminal port,name,tmux socket,git sync",
@@ -176,9 +176,9 @@ test("a bare re-run keeps the saved settings", () => {
   });
 });
 
-test("an update with only --name keeps everything else (the Legion outage)", () => {
-  withHome(LEGION, (run) => {
-    const { status, config } = run("--name", "legion");
+test("an update with only --name keeps everything else (the Laptop outage)", () => {
+  withHome(LAPTOP, (run) => {
+    const { status, config } = run("--name", "laptop");
     assert.equal(status, 0);
     assert.equal(config.AGENT_PORT, "8797");
     assert.equal(config.TERM_PORT, "8798");
@@ -189,15 +189,15 @@ test("an update with only --name keeps everything else (the Legion outage)", () 
 });
 
 test("flags win over the saved settings", () => {
-  withHome(LEGION, (run) => {
-    const { status, config } = run("--agent-port", "8787", "--term-port", "8789", "--name", "mini", "--tmux-socket", "cobra");
+  withHome(LAPTOP, (run) => {
+    const { status, config } = run("--agent-port", "8787", "--term-port", "8789", "--name", "office", "--tmux-socket", "cobra");
     assert.equal(status, 0);
     assert.deepEqual(config, {
       ...DEFAULTS,
       AGENT_PORT: "8787",
       TERM_PORT: "8789",
       MODEL_PORT: "8789",
-      MACHINE_NAME: "mini",
+      MACHINE_NAME: "office",
       GIT_SYNC: "0",
       KEPT: "git sync",
     });
@@ -205,13 +205,13 @@ test("flags win over the saved settings", () => {
 });
 
 test("--reset-config ignores agent.env and starts from the defaults", () => {
-  withHome(LEGION, (run) => {
+  withHome(LAPTOP, (run) => {
     assert.deepEqual(run("--reset-config").config, DEFAULTS);
   });
 });
 
 test("--git-sync undoes a kept switch", () => {
-  withHome(LEGION, (run) => {
+  withHome(LAPTOP, (run) => {
     assert.equal(run().config.GIT_SYNC, "0");
     const undone = run("--git-sync").config;
     assert.equal(undone.GIT_SYNC, "1");
@@ -220,16 +220,16 @@ test("--git-sync undoes a kept switch", () => {
 });
 
 test("--memory-repo and --no-memory-repo are accepted and ignored with a note, and a saved memory repo is dropped", () => {
-  withHome(LEGION, (run) => {
+  withHome(LAPTOP, (run) => {
     for (const args of [["--memory-repo", "you/cobra-memory"], ["--memory-repo", "not a repo"], ["--no-memory-repo"], ["--memory-repo"]]) {
-      const result = run(...args, "--name", "legion");
+      const result = run(...args, "--name", "laptop");
       assert.equal(result.status, 0, `${args.join(" ")}: ${String(result.stderr)}`);
       assert.match(String(result.stderr), /memory-repo is ignored; memory stays on each computer now/);
-      assert.equal(result.config.MACHINE_NAME, "legion");
+      assert.equal(result.config.MACHINE_NAME, "laptop");
       assert.equal(result.config.MEMORY_REPO, undefined);
     }
   });
-  withHome(`${LEGION}COBRA_MEMORY_REPO=you/cobra-memory\n`, (run) => {
+  withHome(`${LAPTOP}COBRA_MEMORY_REPO=you/cobra-memory\n`, (run) => {
     const kept = run().config;
     assert.doesNotMatch(kept.KEPT ?? "", /memory/);
     assert.equal(kept.EXTRA, "");
@@ -256,7 +256,7 @@ test("junk lines are skipped, other COBRA_* keys kept, and nothing in agent.env 
       "COBRA_UNKNOWN=1",
       `PATH=$(touch ${marker})`,
       "COBRA_TERM_PORT=8798\r",
-      '  COBRA_MACHINE_NAME="legion"  ',
+      '  COBRA_MACHINE_NAME="laptop"  ',
       "COBRA_GIT_SYNC=on",
       "",
     ].join("\n");
@@ -267,7 +267,7 @@ test("junk lines are skipped, other COBRA_* keys kept, and nothing in agent.env 
     assert.deepEqual(result.config, {
       ...DEFAULTS,
       TERM_PORT: "8798",
-      MACHINE_NAME: "legion",
+      MACHINE_NAME: "laptop",
       KEPT: "terminal port,name,git sync",
       EXTRA: "COBRA_AGENT_PORT_OLD,COBRA_UNKNOWN",
     });
@@ -313,39 +313,39 @@ test("an update keeps other COBRA_* lines with plain values, the last one of eac
 
 test("contain is on where bubblewrap works, kept when saved, and switched by flags", () => {
   // No key and bubblewrap works: on, and written so.
-  withHome(LEGION, (run) => {
+  withHome(LAPTOP, (run) => {
     assert.equal(run().config.CONTAIN, "1");
     assert.ok(String(run("--print-env", "--no-systemd").stdout).split("\n").includes("COBRA_CONTAIN=on"));
     assert.equal(run("--no-contain").config.CONTAIN, "0");
     assert.ok(String(run("--print-env", "--no-systemd", "--no-contain").stdout).split("\n").includes("COBRA_CONTAIN=off"));
   });
   // No key and no working bubblewrap: not written, so a later install can turn it on.
-  withHome(LEGION, (run) => {
+  withHome(LAPTOP, (run) => {
     assert.equal(run().config.CONTAIN, "");
     assert.ok(!String(run("--print-env", "--no-systemd").stdout).includes("COBRA_CONTAIN"));
     assert.equal(run("--contain").config.CONTAIN, "1");
   }, { bwrap: false });
   // Saved off stays off whatever bubblewrap can do; saved on stays on.
-  withHome(`${LEGION}COBRA_CONTAIN=off\n`, (run) => {
+  withHome(`${LAPTOP}COBRA_CONTAIN=off\n`, (run) => {
     const { config } = run();
     assert.equal(config.CONTAIN, "0");
     assert.match(config.KEPT ?? "", /contain/);
     assert.equal(run("--contain").config.CONTAIN, "1");
   });
-  withHome(`${LEGION}COBRA_CONTAIN=on\n`, (run) => {
+  withHome(`${LAPTOP}COBRA_CONTAIN=on\n`, (run) => {
     assert.equal(run().config.CONTAIN, "1");
     assert.equal(run().config.EXTRA, "");
   }, { bwrap: false });
 });
 
-test("contain require (OV-SEC-VPS-001 F13): --contain require writes it, a saved require is kept, never read back as off", () => {
-  withHome(LEGION, (run) => {
+test("contain require: --contain require writes it, a saved require is kept, never read back as off", () => {
+  withHome(LAPTOP, (run) => {
     assert.equal(run("--contain", "require").config.CONTAIN, "2");
     assert.ok(String(run("--print-env", "--no-systemd", "--contain", "require").stdout).split("\n").includes("COBRA_CONTAIN=require"));
     assert.equal(run("--contain", "on").config.CONTAIN, "1");
     assert.equal(run("--contain", "--no-systemd").config.CONTAIN, "1", "a bare --contain is on");
   });
-  withHome(`${LEGION}COBRA_CONTAIN=require\n`, (run) => {
+  withHome(`${LAPTOP}COBRA_CONTAIN=require\n`, (run) => {
     const { config } = run();
     assert.equal(config.CONTAIN, "2");
     assert.match(config.KEPT ?? "", /contain/);
@@ -356,7 +356,7 @@ test("contain require (OV-SEC-VPS-001 F13): --contain require writes it, a saved
 
 // F14: the harness was mise's `latest`, so a Claude Code update changed Workers unreviewed.
 test("agent.env pins the Claude Code version folder, never mise's latest link", () => {
-  withHome(LEGION, (run, home) => {
+  withHome(LAPTOP, (run, home) => {
     const written = run("--print-env", "--no-systemd");
     assert.equal(written.status, 0, String(written.stderr));
     const lines = String(written.stdout).trim().split("\n");
@@ -405,7 +405,7 @@ test("a bad flag is still refused", () => {
 });
 
 test("--ollama-url and --allow-remote-ollama write plain lines, kept on update and undone by their flags", () => {
-  withHome(LEGION, (run) => {
+  withHome(LAPTOP, (run) => {
     const remote = run("--print-env", "--no-systemd", "--ollama-url", "http://gpu-box:11434/", "--allow-remote-ollama");
     assert.equal(remote.status, 0, String(remote.stderr));
     const lines = String(remote.stdout).trim().split("\n");
@@ -415,7 +415,7 @@ test("--ollama-url and --allow-remote-ollama write plain lines, kept on update a
     assert.notEqual(bad.status, 0);
     assert.match(String(bad.stderr), /--ollama-url takes/);
   });
-  withHome(`${LEGION}COBRA_OLLAMA_URL=http://gpu-box:11434\nCOBRA_OLLAMA_REMOTE=on\n`, (run) => {
+  withHome(`${LAPTOP}COBRA_OLLAMA_URL=http://gpu-box:11434\nCOBRA_OLLAMA_REMOTE=on\n`, (run) => {
     assert.equal(run().config.EXTRA, "COBRA_OLLAMA_URL,COBRA_OLLAMA_REMOTE");
     const back = run("--print-env", "--no-systemd", "--ollama-url", "default", "--no-remote-ollama");
     assert.equal(back.status, 0, String(back.stderr));
@@ -425,7 +425,7 @@ test("--ollama-url and --allow-remote-ollama write plain lines, kept on update a
 });
 
 test("Pi is pinned by its real file and version, never mise's latest link; too old or none is no Pi", () => {
-  withHome(`${LEGION}COBRA_PI_BIN=/old/pi\nCOBRA_PI_VERSION=1.0.3\n`, (run, home) => {
+  withHome(`${LAPTOP}COBRA_PI_BIN=/old/pi\nCOBRA_PI_VERSION=1.0.3\n`, (run, home) => {
     const written = run("--print-env", "--no-systemd");
     assert.equal(written.status, 0, String(written.stderr));
     const lines = String(written.stdout).trim().split("\n");
@@ -433,16 +433,16 @@ test("Pi is pinned by its real file and version, never mise's latest link; too o
     assert.ok(lines.includes("COBRA_PI_VERSION=1.2.0"));
     assert.ok(!lines.some((line) => line.includes("/old/pi")), "an old pin is written fresh, not kept");
   }, { pi: "1.2.0" });
-  withHome(LEGION, (run) => {
+  withHome(LAPTOP, (run) => {
     const lines = String(run("--print-env", "--no-systemd").stdout);
     assert.ok(!/COBRA_PI_/.test(lines), "Pi 1.0.3 is too old: no Pi");
   }, { pi: "1.0.3" });
-  withHome(LEGION, (run) => {
+  withHome(LAPTOP, (run) => {
     assert.ok(!/COBRA_PI_/.test(String(run("--print-env", "--no-systemd").stdout)));
   });
 });
 
-// Issue #400: a computer where 8789 was taken and tailnet 443 already served other paths.
+// A computer where 8789 was taken and something else already served other paths on 443.
 const SS = (port: number, program: string, pid = 777) => `${port} LISTEN 0 4096 127.0.0.1:${port} 0.0.0.0:* users:(("${program}",pid=${pid},fd=7))`;
 const BUSY_443 = { TCP: { "443": { HTTPS: true } }, Web: { "box.example.ts.net:443": { Handlers: { "/grafana": { Proxy: "http://127.0.0.1:3000" } } } } };
 
@@ -457,7 +457,7 @@ test("a first install takes the next free set of ports and says why; flags and s
     // Explicit ports are used as given (the install itself then refuses a taken one).
     assert.equal(run("--agent-port", "8787", "--term-port", "8788").config.AGENT_PORT, "8787");
   }, { ss: [SS(8789, "searxng")] });
-  withHome(LEGION, (run) => {
+  withHome(LAPTOP, (run) => {
     const { config } = run();
     assert.equal(config.AGENT_PORT, "8797", "a re-run keeps agent.env's ports");
     assert.equal(config.PORTS_WHY, "");
@@ -525,7 +525,7 @@ function install(home: string, ...args: string[]) {
 
 test("a first install listens on loopback only, never publishes anything, and says the next steps, numbered", () => {
   withHome(null, (_run, home) => {
-    const { status, out, stderr, calls } = install(home, "--name", "legion");
+    const { status, out, stderr, calls } = install(home, "--name", "laptop");
     assert.equal(status, 0, `${out}\n${String(stderr)}`);
     assert.deepEqual(calls.filter((call) => call.startsWith("tailscale")), [], "Tailscale is never called");
     assert.doesNotMatch(out, /tailscale|tailnet|exposure/i);

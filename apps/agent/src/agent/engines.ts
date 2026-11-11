@@ -4,8 +4,8 @@ import { CONFIG_DIR, STATE_DIR } from "./paths.ts";
 import { readPrivateFile, writePrivateFile } from "./private.ts";
 
 /**
- * Which coding engine each role runs on this computer: Settings → Computers
- * → Engines on the phone, ENGINES on the desk. A change applies to the next conversation of that role; a session
+ * Which engine each role runs on this computer: Settings → Engines in the
+ * desk. A change applies to the next conversation of that role; a session
  * already running keeps the engine it started on (recordSessionEngine), so its
  * chat and finishes are still read the right way.
  *

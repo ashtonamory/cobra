@@ -276,7 +276,7 @@ type OrchCaller = { id: string; kind: string; name: string; remote?: boolean; pr
 const FOREMAN_PAYROLL: OrchCaller = { id: "foreman_payroll__", kind: "lead", name: "Foreman for payroll", project: "payroll" };
 const FOREMAN_SITE: OrchCaller = { id: "foreman_site_____", kind: "lead", name: "Foreman for site", project: "site" };
 const FOREMAN_GONE: OrchCaller = { id: "foreman_gone_____", kind: "lead", name: "Foreman for gone", project: "gone" };
-const LEAD_CALLER: OrchCaller = { id: "lead_legion_____", kind: "lead", name: "Lead on legion" };
+const LEAD_CALLER: OrchCaller = { id: "lead_laptop_____", kind: "lead", name: "Lead on laptop" };
 const PHONE: OrchCaller = { id: "phone_1", kind: "desk", name: "Sam's phone" };
 
 /** /orch/db/* through handleOrch, the way index.ts routes it, over a registry with a payroll and a site project. */
@@ -295,7 +295,7 @@ async function routes() {
       log,
       caller,
       notify: async () => undefined,
-      machineLabel: "legion",
+      machineLabel: "laptop",
       port: 8797,
     });
     return reply;
@@ -331,7 +331,7 @@ test("through the routes: the Lead's key is refused with the usual message, a ph
     log,
     caller: FOREMAN_PAYROLL,
     notify: async () => undefined,
-    machineLabel: "legion",
+    machineLabel: "laptop",
     port: 8797,
   });
   assert.equal(wrongMethod.status, 405);

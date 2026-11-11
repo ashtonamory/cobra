@@ -1,6 +1,5 @@
 /**
- * Settings → Permissions in words and edits. A port of the
- * desk's permissions.py (itself the phone's `src/permissionsRules.ts`): change them together. Pure.
+ * Settings → Permissions in words and edits. Pure.
  *
  * The policy is fleet-wide: every computer keeps the same file, and the newest revision any computer
  * has is the fleet's. A change goes out as the next revision; one that grants more needs the second
@@ -19,7 +18,7 @@ export const PRESET_BLURB: Readonly<Record<string, string>> = {
   instinct: "The judge also decides adding packages to a project, and passes to you only what you should decide; if it cannot answer, it asks you. Closest to Grok Bot and Meta Muse.",
 };
 
-export const BLURB = "What Workers may do without asking you, on every computer. Some things always come to you, whatever you choose here.";
+export const BLURB = "What Workers may do without asking you. Some things always come to you, whatever you choose here.";
 
 export const VERDICT_WORD: Readonly<Record<string, string>> = {
   allow: "allowed",
@@ -318,7 +317,7 @@ export const API_BLURB =
   `${APP_NAME} uses your Claude subscription first. With API credits on, work moves to your Anthropic API key ` +
   "when the subscription is at its limit, or when a session is started on it, until this month's cap is used. " +
   "Chats and your own sessions keep your sign-in and its connectors; they use the key only at the limit or when you pick it.";
-export const KEY_HOWTO = "Set the key on each computer: cobra-agent api-key (a key made outside a workspace also needs --workspace wrkspc_…).";
+export const KEY_HOWTO = "Set the key with: cobra-agent api-key (a key made outside a workspace also needs --workspace wrkspc_…).";
 
 export function money(value: number): string {
   return `$${pyFixed(value, 2)}`;

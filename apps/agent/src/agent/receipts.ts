@@ -1,6 +1,6 @@
 /**
- * Receipts scanned on the phone:
- * each photo is sent to the Space's own computer (`POST /receipts/add`, kept in
+ * Receipts as photos, from the desk or a file:
+ * each photo is sent to the agent (`POST /receipts/add`, kept in
  * `~/Spaces/<id>/receipts/` by its hash), then `POST /receipts/read` reads each
  * with Claude on this computer's sign-in (one `claude -p` with only Read, in a
  * throwaway folder holding just that image; a local model reads no images),

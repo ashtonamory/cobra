@@ -109,7 +109,7 @@ export function runningLine(cards: ReadonlyArray<Pick<SpaceCard, "timeline">>): 
 
 // -- the header -----------------------------------------------------------------------
 
-/** Under the Space's name: "Web studio · 3 skills · on legion", with Sensitive when it is. */
+/** Under the Space's name: "Web studio · 3 skills · on laptop", with Sensitive when it is. */
 export function headLine(space: Pick<ChartSpace, "kindWords" | "seats" | "sensitive">, labelOf: (machine: string) => string): string {
   const n = space.seats.length;
   const skills = n === 0 ? "No skills yet" : `${n} skill${n === 1 ? "" : "s"}`;
@@ -335,7 +335,7 @@ export function routineCards(routines: readonly MachineRoutine[], seats: readonl
   return cards.sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)).map(({ sort: _sort, ...card }) => card);
 }
 
-/** All routines' subtitle: "Happy Tails · 3 routines · times are legion's". */
+/** All routines' subtitle: "Happy Tails · 3 routines · times are laptop's". */
 export function routinesSubtitle(name: string, count: number, machines: readonly string[]): string {
   const where = machines.length === 1 ? `times are ${machines[0]}'s` : machines.length > 1 ? "times are each computer's" : "";
   return [name, `${count} routine${count === 1 ? "" : "s"}`, where].filter(Boolean).join(" · ");

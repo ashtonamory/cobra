@@ -394,7 +394,7 @@ export function secretPaths(status: string | null): string[] {
 
 /**
  * The short machine name a wip/ branch carries. Each computer may set its own
- * (`install.sh --name legion` writes COBRA_MACHINE_NAME); otherwise it is
+ * (`install.sh --name laptop` writes COBRA_MACHINE_NAME); otherwise it is
  * the hostname, made safe for a branch name.
  */
 export function machineSlug(hostname: string, configured = process.env.COBRA_MACHINE_NAME): string {

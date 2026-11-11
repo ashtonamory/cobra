@@ -39,7 +39,7 @@ test("every branch a prompt makes is one the agent accepts", () => {
 
 test("only the standard's prefixes and git-safe names are session branches", () => {
   assert.ok(isSessionBranch("feat/multi-session"));
-  assert.ok(isSessionBranch("wip/legion/2026-10-05-2"));
+  assert.ok(isSessionBranch("wip/laptop/2026-10-05-2"));
   assert.ok(!isSessionBranch("main"));
   assert.ok(!isSessionBranch("feature/x"));
   assert.ok(!isSessionBranch("feat/../x"));
@@ -56,7 +56,7 @@ test("sibling sessions and worktrees are named from the project", () => {
 
 test("a branch splits into its type and its slug", () => {
   assert.deepEqual(branchParts("docs/lab-ste-guide-setup"), { kind: "docs", slug: "lab-ste-guide-setup" });
-  assert.deepEqual(branchParts("wip/legion/2026-10-05"), { kind: "wip", slug: "legion/2026-10-05" });
+  assert.deepEqual(branchParts("wip/laptop/2026-10-05"), { kind: "wip", slug: "laptop/2026-10-05" });
   assert.deepEqual(branchParts("feature/x"), { kind: null, slug: "feature/x" });
   assert.deepEqual(branchParts("constructor/x"), { kind: null, slug: "constructor/x" });
   assert.deepEqual(branchParts("main"), { kind: null, slug: "main" });
@@ -67,7 +67,7 @@ test("the fallback title drops the prefix and humanizes the slug", () => {
   assert.equal(humanizeSlug("push_badge.fix"), "Push badge fix");
   assert.equal(fallbackTitle("docs/lab-ste-guide-setup"), "Lab ste guide setup");
   assert.equal(fallbackTitle("fix/push-badge-2"), "Push badge 2");
-  assert.equal(fallbackTitle("wip/legion/2026-10-05"), "Legion 2026 10 05");
+  assert.equal(fallbackTitle("wip/laptop/2026-10-05"), "Laptop 2026 10 05");
   // No known prefix: the whole name, made readable.
   assert.equal(fallbackTitle("main"), "Main");
   assert.equal(fallbackTitle("wip/"), "wip/");

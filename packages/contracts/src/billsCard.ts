@@ -1,5 +1,5 @@
 // The bills card's words, shared by the
-// agent (billsCard.ts writes the card's body), the phone and the desk (which
+// agent (billsCard.ts writes the card's body), the desk (which
 // draw each bill as a row to tick). Plain functions, no zod, so the agent
 // imports it by path.
 import type { ApprovalBills } from "./approvals.ts";

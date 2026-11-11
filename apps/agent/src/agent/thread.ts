@@ -11,8 +11,8 @@ import { redactDeep } from "./secretValues.ts";
 
 /**
  * Cobra's thread: the conversation
- * between the person and Cobra, kept on the hub apart from her Claude
- * session, so a new conversation of hers no longer wipes what the phone shows.
+ * between the person and Cobra, kept apart from her Claude
+ * session, so a new conversation of hers no longer wipes what the desk shows.
  *
  * It is copied from her transcript as it is written (`ingest`, on the finish
  * tick), whatever she runs on: Claude Code in tmux, Codex, or headless in API

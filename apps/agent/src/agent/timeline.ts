@@ -8,7 +8,7 @@ import { sessionTitle } from "../../../../packages/contracts/src/sessionNames.ts
 import { STATE_DIR } from "./paths.ts";
 
 /**
- * What the charts draw from (phone and desk): when each agent worked, waited
+ * What the charts draw from (the desk): when each agent worked, waited
  * on you or sat idle today, and a few counts per day for two weeks.
  *
  * The watcher already reads every session here every few seconds; each tick

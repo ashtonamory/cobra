@@ -312,7 +312,7 @@ export function serveWorker(id: string, socket: string, deps: ProxyDeps): () => 
     if (url.startsWith("/anthropic/")) {
       // Claude Code's start-up check carries no credential and needs none, as at the gateway.
       if (helloProbe(req.method, url)) return void res.writeHead(200, { "content-type": "text/plain" }).end();
-      // The Messages API only, before any credential is read (OV-SEC-VPS-001 F12): the jail's code holds the placeholder too.
+      // The Messages API only, before any credential is read: the jail's code holds the placeholder too.
       if (!anthropicPathAllowed(req.method, url.slice("/anthropic".length))) {
         deps.log(`worker ${id}: refused ${String(req.method).slice(0, 10)} ${(url.split("?")[0] ?? "").slice(0, 120)}: not a Messages path`);
         req.resume();

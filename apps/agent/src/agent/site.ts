@@ -709,7 +709,7 @@ function ensureChecksFolder(folders: SiteFolders, project: Pick<Project, "path">
   return dir;
 }
 
-/** A screenshot as the card and the thread name an image: the hub's path, its name, bytes and pixels. */
+/** A screenshot as the card and the thread name an image: its path here, its name, bytes and pixels. */
 function shotFile(shot: CheckShot, dir: string): DesignFile {
   const name = basename(shot.file);
   return { path: join(dir, name), name, bytes: shot.bytes, width: shot.width, height: shot.height };
@@ -834,7 +834,7 @@ function domainCard(site: ApprovalSite, domains: NonNullable<ApprovalSite["domai
   return { title: `Put ${site.name}'s website on ${domains.zone}?`, body: lines.join("\n") };
 }
 
-/** Where Allow saves the source (Phase 3b); the phone and the desk say the same. */
+/** Where Allow saves the source (Phase 3b); the desk say the same. */
 export function sourceLine(github: NonNullable<ApprovalSite["github"]>): string {
   return `Saves the source to GitHub: ${github.repo} (${github.newRepo ? "new private repo" : "private"})`;
 }

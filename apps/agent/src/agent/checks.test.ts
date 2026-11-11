@@ -127,9 +127,9 @@ test("a check runs headless: the session's display, buses and key agents are not
 });
 
 test("the status line: what ran, where, how long, and why it failed, in 140 characters", () => {
-  assert.equal(checks.describe({ state: "success", ms: 192_000 }, "pnpm check", "legion"), "pnpm check passed on legion in 3m 12s");
-  assert.equal(checks.describe({ state: "failure", ms: 9_000 }, "pnpm check", "legion", "fail 2"), "pnpm check failed on legion: fail 2 after 9s");
-  assert.equal(checks.describe({ state: "error", ms: 0 }, "make test", "mini", "bubblewrap is not installed"), "make test could not run on mini: bubblewrap is not installed");
+  assert.equal(checks.describe({ state: "success", ms: 192_000 }, "pnpm check", "laptop"), "pnpm check passed on laptop in 3m 12s");
+  assert.equal(checks.describe({ state: "failure", ms: 9_000 }, "pnpm check", "laptop", "fail 2"), "pnpm check failed on laptop: fail 2 after 9s");
+  assert.equal(checks.describe({ state: "error", ms: 0 }, "make test", "office", "bubblewrap is not installed"), "make test could not run on office: bubblewrap is not installed");
   assert.equal(checks.describe({ state: "failure", ms: 1 }, "x", "y", "z".repeat(300)).length, 140);
   assert.equal(checks.failureReason("ok\nℹ pass 10\nℹ fail 2\n"), "fail 2");
   assert.equal(checks.failureReason("Tests: 1 failed, 9 passed"), "Tests: 1 failed, 9 passed");
@@ -157,24 +157,24 @@ const pnpmCheck = { argv: ["pnpm", "run", "check"], label: "pnpm check", defined
 test("a passing run: success, the program by its full path, the log kept", async () => {
   const { deps, calls } = runDeps({ code: 0, output: "ℹ pass 12\nℹ fail 0\n" });
   const log = join(STATE, "logs", "a.log");
-  const outcome = await checks.runCheck(deps, { worktree: "/w" }, pnpmCheck, { computer: "legion", logPath: log, env: { CI: "1" } });
+  const outcome = await checks.runCheck(deps, { worktree: "/w" }, pnpmCheck, { computer: "laptop", logPath: log, env: { CI: "1" } });
   assert.equal(outcome.state, "success");
-  assert.equal(outcome.description, "pnpm check passed on legion in 1m 5s");
+  assert.equal(outcome.description, "pnpm check passed on laptop in 1m 5s");
   assert.deepEqual(calls[0]?.args.slice(-4), ["--", "/usr/bin/pnpm", "run", "check"]);
   assert.equal(calls[0]?.timeoutMs, checks.CHECK_TIMEOUT_MS);
   assert.match(readFileSync(log, "utf8"), /^\$ pnpm run check\nℹ pass 12[\s\S]*success \(1m 5s\)\n$/);
 });
 
 test("a failing run, a timeout, a missing tool, and a pass on a branch that changed its own check", async () => {
-  const failed = await checks.runCheck(runDeps({ code: 1, output: "x\nℹ fail 3\n" }).deps, { worktree: "/w" }, pnpmCheck, { computer: "legion", logPath: null });
+  const failed = await checks.runCheck(runDeps({ code: 1, output: "x\nℹ fail 3\n" }).deps, { worktree: "/w" }, pnpmCheck, { computer: "laptop", logPath: null });
   assert.equal(failed.state, "failure");
-  assert.match(failed.description, /failed on legion: fail 3/);
+  assert.match(failed.description, /failed on laptop: fail 3/);
   assert.match(failed.tail, /ℹ fail 3/);
-  const slow = await checks.runCheck(runDeps({ code: null, output: "", timedOut: true }).deps, { worktree: "/w" }, pnpmCheck, { computer: "legion", logPath: null, timeoutMs: 600_000 });
+  const slow = await checks.runCheck(runDeps({ code: null, output: "", timedOut: true }).deps, { worktree: "/w" }, pnpmCheck, { computer: "laptop", logPath: null, timeoutMs: 600_000 });
   assert.match(slow.description, /timed out after 10m 0s/);
-  const missing = await checks.runCheck(runDeps({ code: 0, output: "" }, {}).deps, { worktree: "/w" }, pnpmCheck, { computer: "legion", logPath: null });
-  assert.deepEqual([missing.state, missing.description], ["error", "pnpm check could not run on legion: pnpm is not installed"]);
-  const changed = await checks.runCheck(runDeps({ code: 0, output: "" }).deps, { worktree: "/w" }, pnpmCheck, { computer: "legion", logPath: null, changed: true });
+  const missing = await checks.runCheck(runDeps({ code: 0, output: "" }, {}).deps, { worktree: "/w" }, pnpmCheck, { computer: "laptop", logPath: null });
+  assert.deepEqual([missing.state, missing.description], ["error", "pnpm check could not run on laptop: pnpm is not installed"]);
+  const changed = await checks.runCheck(runDeps({ code: 0, output: "" }).deps, { worktree: "/w" }, pnpmCheck, { computer: "laptop", logPath: null, changed: true });
   assert.equal(changed.state, "failure");
   assert.match(changed.description, /changes the check itself/);
 });

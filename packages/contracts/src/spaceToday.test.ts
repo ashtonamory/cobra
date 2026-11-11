@@ -7,7 +7,7 @@ import { PER_VIEW, SHOWN, todayItems, type TodayPart } from "./spaceToday.ts";
 const followups = parseViewList({ views: [{ id: "followups", title: "Follow-ups", kind: "list", today: true, row: { id: "person_id", title: "name", subtitle: "why", trailing: "due_on", tone: "tone" }, formats: { due_on: "date" } }] }).views[0]!;
 const waiting = parseViewList({ views: [{ id: "waiting", title: "To allow", kind: "list", today: true, row: { id: "id", title: "title", badge: "badge", trailing: "amount_cents" }, formats: { amount_cents: "money" } }] }).views[0]!;
 const part = (view: typeof followups, role: string, rows: object[], project = role.toLowerCase()): TodayPart => ({
-  machine: "legion", project, role, view, currency: "USD",
+  machine: "laptop", project, role, view, currency: "USD",
   result: parseViewResult({ view: view.id, kind: "list", title: view.title, masked: [], more: false, rows, row: view.row, formats: view.formats }),
 });
 
@@ -23,7 +23,7 @@ test("brings each Foreman's flagged rows together, the late first, then the due,
     assert.deepEqual(items.map((i) => [i.role, i.title, i.tone]), [
       ["CRM", "Ava Reed", "bad"], ["CRM", "Dana Ruiz", "warn"], ["CRM", "Pete's Pet Supply", null], ["Finance", "Hardware store", null],
     ]);
-    assert.deepEqual({ ...items[0]! }, { machine: "legion", project: "crm", role: "CRM", view: "followups", viewTitle: "Follow-ups", title: "Ava Reed", subtitle: "Reply", trailing: "Oct 20", badge: "", tone: "bad" });
+    assert.deepEqual({ ...items[0]! }, { machine: "laptop", project: "crm", role: "CRM", view: "followups", viewTitle: "Follow-ups", title: "Ava Reed", subtitle: "Reply", trailing: "Oct 20", badge: "", tone: "bad" });
     assert.equal(items[3]!.badge, "Expense");
     assert.deepEqual([items[3]!.view, items[3]!.viewTitle], ["waiting", "To allow"], "a tap opens To allow itself, where Allow is");
   assert.equal(items[3]!.trailing, "$42.50");

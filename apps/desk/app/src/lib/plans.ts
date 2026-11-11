@@ -1,7 +1,6 @@
 /**
  * A Foreman's plan card, as words (the agent's plans.ts): each
- * task's model and why, what it waits for, who reviews it, and the models you changed. A port of the
- * desk's plans.py (itself the phone's src/planRules.ts): change them together. Pure.
+ * task's model and why, what it waits for, who reviews it, and the models you changed. Pure.
  */
 import { truthy, type Dict, type Json } from "./json.ts";
 import { pyStr } from "./py.ts";

@@ -61,7 +61,7 @@ export function workerProject(id: string): string | null {
 }
 
 /**
- * What a session action from the phone or the desk (`POST /session`) wakes:
+ * What a session action from the desk (`POST /session`) wakes:
  * what the person types is theirs, a dialog they answer is an answer, and
  * the rest (start, interrupt, kill, a window) types no turn.
  */

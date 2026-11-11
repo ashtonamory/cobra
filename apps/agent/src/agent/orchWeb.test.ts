@@ -99,11 +99,11 @@ test("an escalation, a failed judge, another preset or another tool leaves Claud
 
 test("Instinct turns the Lead's web tools on where nobody wrote them; written wins", () => {
   const base = { version: 1, revision: 4, judge: { fallback: null } };
-  const at = (body: object, computer = "legion") => resolveRoles(parsePolicy(JSON.stringify({ ...base, ...body })).policy, { computer }).lead.webTools;
-  assert.equal(at({ preset: "balanced", computers: { legion: { preset: "instinct" } } }), true);
-  assert.equal(at({ preset: "balanced", computers: { legion: { preset: "instinct" } } }, "mini"), false);
+  const at = (body: object, computer = "laptop") => resolveRoles(parsePolicy(JSON.stringify({ ...base, ...body })).policy, { computer }).lead.webTools;
+  assert.equal(at({ preset: "balanced", computers: { laptop: { preset: "instinct" } } }), true);
+  assert.equal(at({ preset: "balanced", computers: { laptop: { preset: "instinct" } } }, "office"), false);
   // Written wins, either way.
-  assert.equal(at({ preset: "balanced", computers: { legion: { preset: "instinct", lead: { webTools: false } } } }), false);
+  assert.equal(at({ preset: "balanced", computers: { laptop: { preset: "instinct", lead: { webTools: false } } } }), false);
   assert.equal(at({ preset: "instinct", lead: { webTools: false } }), false);
   assert.equal(at({ preset: "balanced", lead: { webTools: true } }), true);
   assert.equal(presetAt(parsePolicy(JSON.stringify({ ...base, preset: "someday" })).policy), "locked");

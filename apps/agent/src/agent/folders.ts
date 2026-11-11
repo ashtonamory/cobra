@@ -14,7 +14,7 @@ import { readPrivateFile, writePrivateFile } from "./private.ts";
  * inside the home is kept ~-relative, as projects.json's roots are; one
  * outside it, absolute. registry.ts adds them to the roots, so discovery
  * (collect/repos.ts) scans them and New project may adopt, clone or create
- * in them. Changed only by a phone or a desk you linked (index.ts).
+ * in them. Changed only by the desk you linked (index.ts).
  */
 export const FOLDERS_FILE = join(CONFIG_DIR, "folders.json");
 

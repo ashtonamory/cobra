@@ -17,7 +17,7 @@
 // the router of Figure 3 instead of being typed or dropped: a decision (a
 // failure, a refusal, a question or a reply that wants an answer, as each
 // caller marks it) reaches Cobra as one line; anything else is kept as Space
-// activity with no model turn, which the phone and the desk show and which the
+// activity with no model turn, which the desk show and which the
 // Foreman reads on its next wake. A routine that comes due is started by the
 // Figure 2 rule (routineRoutes.ts): a light one on one Worker Cobra starts
 // herself, a deep one by waking the Foreman.

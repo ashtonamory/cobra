@@ -35,7 +35,7 @@ export const PLAIN_LINES = 10;
 export type RotationFacts = {
   /** COBRA_LEAD_ROTATE: off until it has run a day, then on. */
   enabled: boolean;
-  /** She runs, on this computer, and it is the hub (or no hub was told). */
+  /** She runs on this computer. */
   running: boolean;
   /** Since her transcript last changed; null when this conversation has none yet. */
   idleMs: number | null;

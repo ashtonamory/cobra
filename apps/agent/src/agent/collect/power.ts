@@ -7,7 +7,7 @@ const run = promisify(execFile);
 
 /**
  * Battery, charger, lid and lid-awake — the facts behind "can I close this
- * laptop and leave it running". A desktop (the Mini, a lidless Mac) reports
+ * laptop and leave it running". A desktop (no battery, no lid) reports
  * nulls rather than failing, and `lidAwake.available` is false wherever
  * desktop/lid-awake was never installed.
  *

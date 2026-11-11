@@ -28,7 +28,7 @@ async function call(route: string, query: string, method: "GET" | "POST", caller
     log: () => undefined,
     caller: { id: "k1", name: "test", ...caller },
     notify: async () => undefined,
-    machineLabel: "legion",
+    machineLabel: "laptop",
     port: 8797,
   });
   return reply!;

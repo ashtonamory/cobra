@@ -8,7 +8,7 @@ const MAIL_READ = "https://www.googleapis.com/auth/gmail.readonly";
 
 describe("googleView", () => {
   it("connected says as whom and what it allows, with nothing to fix", () => {
-    const v = google.googleView({ cloudLinked: true, connected: true, email: "penny@example.com", scopes: ["openid", DRIVE, GMAIL], problem: null }, "Legion");
+    const v = google.googleView({ cloudLinked: true, connected: true, email: "penny@example.com", scopes: ["openid", DRIVE, GMAIL], problem: null }, "Laptop");
     expect([v.word, v.tone, v.fix, v.detail]).toEqual(["connected as penny@example.com", "ink", "none", ""]);
     expect(v.allows).toHaveLength(2);
     expect(v.allows[0]).toContain("It cannot see your other files.");
@@ -16,13 +16,13 @@ describe("googleView", () => {
   });
 
   it("connected with no email still reads connected", () => {
-    expect(google.googleView({ connected: true }, "Legion").word).toBe("connected");
+    expect(google.googleView({ connected: true }, "Laptop").word).toBe("connected");
   });
 
   it("no Google sign-in of its own points to the Claude account's connectors", () => {
-    const v = google.googleView({ cloudLinked: false, connected: false, problem: "no_cloud_link" }, "Mini");
+    const v = google.googleView({ cloudLinked: false, connected: false, problem: "no_cloud_link" }, "Office");
     expect([v.word, v.fix]).toEqual(["through your Claude account", "connectors"]);
-    expect(v.detail).toContain("Mini has not checked your Claude account yet");
+    expect(v.detail).toContain("Office has not checked your Claude account yet");
     expect(v.detail).toContain("claude.ai → Settings → Connectors");
   });
 
@@ -31,40 +31,40 @@ describe("googleView", () => {
       cloudLinked: false, connected: false, problem: "no_cloud_link",
       connectors: Object.entries(connected).map(([name, on]) => ({ name, connected: on })),
     });
-    const some = google.googleView(status({ Gmail: true, "Google Calendar": true, "Google Drive": false }), "Mini");
+    const some = google.googleView(status({ Gmail: true, "Google Calendar": true, "Google Drive": false }), "Office");
     expect([some.word, some.tone, some.fix]).toEqual(["Gmail and Google Calendar connected", "ink", "connectors"]);
     expect(some.detail).toBe("Google Drive is not connected. Connect them at claude.ai → Settings → Connectors.");
     expect(some.allows.join(" ")).toContain("only when you allow it");
-    const none = google.googleView(status({ Gmail: false, "Google Calendar": false, "Google Drive": false }), "Mini");
+    const none = google.googleView(status({ Gmail: false, "Google Calendar": false, "Google Drive": false }), "Office");
     expect([none.word, none.tone]).toEqual(["not connected", "signal"]);
     expect(none.detail).toContain("none of Gmail, Google Calendar and Google Drive");
-    const all = google.googleView(status({ Gmail: true, "Google Calendar": true, "Google Drive": true }), "Mini");
+    const all = google.googleView(status({ Gmail: true, "Google Calendar": true, "Google Drive": true }), "Office");
     expect([all.word, all.detail]).toEqual(["Gmail, Google Calendar and Google Drive connected", ""]);
   });
 
   it("not connected and reconnect both offer Connect Google", () => {
-    expect(google.googleView({ cloudLinked: true, connected: false, problem: "google_not_connected" }, "Mini").fix).toBe("connect");
-    const again = google.googleView({ cloudLinked: true, connected: false, problem: "google_reconnect" }, "Mini");
+    expect(google.googleView({ cloudLinked: true, connected: false, problem: "google_not_connected" }, "Office").fix).toBe("connect");
+    const again = google.googleView({ cloudLinked: true, connected: false, problem: "google_reconnect" }, "Office");
     expect([again.word, again.fix]).toEqual(["connect again", "connect"]);
   });
 
   it("unavailable says try again shortly and keeps what it last allowed", () => {
-    const v = google.googleView({ cloudLinked: true, connected: false, problem: "google_unavailable", scopes: [DRIVE] }, "Mini");
+    const v = google.googleView({ cloudLinked: true, connected: false, problem: "google_unavailable", scopes: [DRIVE] }, "Office");
     expect([v.word, v.tone, v.fix]).toEqual(["not reachable", "muted", "retry"]);
     expect(v.detail).toContain("Try again shortly");
     expect(v.allows).toHaveLength(1);
   });
 
   it("a problem from a newer agent reads as needing attention, in its own words", () => {
-    const v = google.googleView({ connected: false, problem: "google_quota_spent" }, "Mini");
+    const v = google.googleView({ connected: false, problem: "google_quota_spent" }, "Office");
     expect([v.word, v.fix]).toEqual(["needs attention", "retry"]);
-    expect(v.detail).toBe("Mini said: google quota spent.");
+    expect(v.detail).toBe("Office said: google quota spent.");
   });
 
   it("an answer that is not an object, or no reason at all, offers Connect Google", () => {
-    expect(google.googleView(null, "Mini").fix).toBe("connect");
-    expect(google.googleView("junk", "Mini").fix).toBe("connect");
-    expect(google.googleView({ connected: false }, "Mini").word).toBe("not connected");
+    expect(google.googleView(null, "Office").fix).toBe("connect");
+    expect(google.googleView("junk", "Office").fix).toBe("connect");
+    expect(google.googleView({ connected: false }, "Office").word).toBe("not connected");
   });
 });
 
@@ -106,11 +106,11 @@ describe("connected reads", () => {
   });
 
   it("the reads are their rows, not lines under What it allows, and sending no longer says it cannot read mail", () => {
-    const v = google.googleView(ready([DRIVE, GMAIL, CALENDAR_READ, MAIL_READ]), "Legion");
+    const v = google.googleView(ready([DRIVE, GMAIL, CALENDAR_READ, MAIL_READ]), "Laptop");
     expect(v.allows).toHaveLength(2);
     expect(v.allows.join(" ")).not.toContain("cannot read your mail");
     expect(google.BLURB).toContain("nothing is sent, changed or deleted without your Allow");
-    expect(google.READS_NOTE).toContain("disconnect Google on your account page and connect again");
+    expect(google.READS_NOTE).toContain("disconnect it at claude.ai → Settings → Connectors");
   });
 
   it("after Turn on the desk watches until that read is on", () => {
@@ -139,9 +139,9 @@ describe("accountPage", () => {
 
 describe("failureLine", () => {
   it("a 404 is an agent from before Google", () => {
-    expect(google.failureLine(404, "no route", "Mini")).toBe("Update the agent on Mini to use Google from here.");
-    expect(google.failureLine(0, "timed out", "Mini")).toBe("timed out");
-    expect(google.failureLine(500, "", "Mini")).toBe("Mini did not answer.");
+    expect(google.failureLine(404, "no route", "Office")).toBe("Update the agent on Office to use Google from here.");
+    expect(google.failureLine(0, "timed out", "Office")).toBe("timed out");
+    expect(google.failureLine(500, "", "Office")).toBe("Office did not answer.");
   });
 });
 
