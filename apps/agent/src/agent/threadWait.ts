@@ -1,9 +1,9 @@
 import type { ThreadEntry } from "@cobra/contracts";
 
 /**
- * GET /thread/wait (contracts ThreadWaitPage; Talk, phase V1): holds a request until Cobra's thread has an
- * entry after `after` and she is not in the middle of a turn, so the phone
- * reads her whole reply aloud once, or until the time runs out. Her thread
+ * GET /thread/wait (contracts ThreadWaitPage): holds a request until Cobra's thread has an
+ * entry after `after` and she is not in the middle of a turn, so a caller
+ * gets her whole reply at once, or until the time runs out. Her thread
  * is copied from her transcript on demand, so each look copies first.
  */
 

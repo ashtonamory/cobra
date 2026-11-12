@@ -3,7 +3,6 @@ import { basename, join } from "node:path";
 
 import type { Question, ThreadEntry, TranscriptMessage } from "@cobra/contracts";
 
-import { isCallHandOff, isVoiceText, stripVoice } from "../../../../packages/contracts/src/voiceCall.ts";
 
 import { STATE_DIR } from "./paths.ts";
 import { readPrivateFile, writePrivateFile } from "./private.ts";
@@ -61,13 +60,6 @@ export function entriesFrom(messages: readonly TranscriptMessage[], conversation
   for (const message of messages) {
     if (message.kind === "text") {
       if (message.role === "user" && forCobra(message.text)) continue;
-      // Words a call's voice front handed her: it wrote them in the thread already, as the person said them.
-      if (message.role === "user" && isCallHandOff(message.text)) continue;
-      // Words the person spoke (Talk) go in without their `[voice] ` prefix, marked spoken.
-      if (message.role === "user" && isVoiceText(message.text)) {
-        entries.push({ at: message.at, kind: "you", conversation, text: stripVoice(message.text), via: "voice" });
-        continue;
-      }
       entries.push({ at: message.at, kind: message.role === "user" ? "you" : "cobra", conversation, text: message.text });
     } else if (message.kind === "tool" && message.questions && message.questions.length > 0) {
       entries.push({ at: message.at, kind: "question", conversation, text: questionText(message.questions), questions: message.questions });
