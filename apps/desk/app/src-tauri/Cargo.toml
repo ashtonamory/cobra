@@ -1,6 +1,6 @@
 [package]
 name = "cobra-desktop"
-version = "0.4.2"
+version = "0.5.0"
 description = "Cobra's desk: the desktop app for the local agent, on Linux and macOS"
 authors = ["Cobra contributors"]
 edition = "2021"
