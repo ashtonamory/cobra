@@ -31,7 +31,7 @@ business, and the routines of a life, on one computer that the person owns.
 | 1 | Fork, scrub and rename. Single computer only: remove the phone, the relay, the cloud and the fleet. | Done |
 | 2 | Security: keychain + AES-GCM secrets, no secrets in model context, taint gate, append-only audit log, CSP-sandboxed pages ([plan](plans/phase-2-security.md)). | Done; open items in [SECURITY.md](../SECURITY.md) |
 | 3 | Models (Claude, Codex, Ollama), macOS (including a Worker sandbox), installers (one-line install, signed GitHub Releases, `SETUP_PROMPT.md`) ([plan](plans/phase-3.md)). | Models and signed releases done. macOS built, not yet tested. Installers next. |
-| 4 | The roster: each Foreman is a specialist the person names, instructs and talks to; then memory, routines and keys of its own. | Started: the record, the card and the visible roster. |
+| 4 | The roster: each Foreman is a specialist the person names, instructs and talks to; then memory, routines and keys of its own. | Started: the record, the card, the visible roster, and attaching a specialist to a project the person already has. |
 
 The first public release is Linux only. macOS follows when it has been tested
 on a Mac.

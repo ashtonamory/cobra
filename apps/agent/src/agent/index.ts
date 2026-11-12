@@ -35,6 +35,7 @@ import { allTrades, knownTrade, unknownTemplateError } from "./trades.ts";
 import { liveTradeDeps, settleTradeApproval } from "./tradeRoutes.ts";
 import { liveSpecialistDeps, setByPerson, settleSpecialistApproval } from "./specialistRoutes.ts";
 import { SPECIALIST_MODELS, specialistViews } from "./specialists.ts";
+import { attachByPerson, detach as detachSpecialist, liveAttachDeps, settleAttachApproval, SPECIALIST_ATTACH, type AttachDeps } from "./specialistAttach.ts";
 import { seatKey } from "../../../../packages/contracts/src/org.ts";
 import { liveMorningDeps, loadLatest, loadSettings, morningTick, parseSettings, saveSettings, sendsHere } from "./morning.ts";
 import { findGh, ghAuth, listRepos } from "./github.ts";
@@ -658,10 +659,26 @@ async function handleCrew(request: http.IncomingMessage, response: http.ServerRe
 /** A trade's name as the person reads it, for a specialist with no title of its own (specialists.ts). */
 const tradeName = (id: string): string | undefined => allTrades().find((trade) => trade.id === id)?.name;
 
+/** Attaching a specialist to a project (specialistAttach.ts), for the person's own routes and for the card the Lead's proposal makes. */
+function attachDeps(tell: AttachDeps["tell"] = () => undefined): AttachDeps {
+  return liveAttachDeps({
+    approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) },
+    notify: notifyApproval,
+    tell: (owner, text) => tell(owner, text),
+    log: (line) => console.log(`[${SERVICE}] ${line}`),
+    projects: async () => (await loadRegistry(process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH)).projects.filter((project) => project.machine === os.hostname()),
+    workers: async () => {
+      const running = await runningSessions();
+      return (await workerRecords()).map((extra) => ({ id: extra.id, name: extra.id, parent: extra.parent, ...(extra.worker?.owner ? { owner: extra.worker.owner } : {}), running: running.has(extra.session) }));
+    },
+  });
+}
+
 /**
  * The roster (specialists.ts): GET /specialists lists every Foreman here with
- * its name, title, instructions and model; POST /specialists/set is the
- * person's own change from the desk, so it asks for no card.
+ * its name, title, instructions, model and the projects it is attached to;
+ * POST /specialists/set, /specialists/attach and /specialists/detach are the
+ * person's own changes from the desk, so they ask for no card.
  */
 async function handleSpecialists(route: string, request: http.IncomingMessage, response: http.ServerResponse, caller: Caller): Promise<void> {
   if (caller.kind !== "desk") return sendJson(response, 403, { error: "only the desk app you linked reads and changes the specialists" });
@@ -683,6 +700,11 @@ async function handleSpecialists(route: string, request: http.IncomingMessage, r
     body = JSON.parse(await readBody(request, 64 * 1024)) as typeof body;
   } catch {
     return sendJson(response, 400, { error: "invalid JSON body" });
+  }
+  if (route === "/specialists/attach" || route === "/specialists/detach") {
+    const actor = `person:${caller.id}`;
+    const outcome = route === "/specialists/attach" ? await attachByPerson(attachDeps(), body, actor) : await detachSpecialist(attachDeps(), body, "person", actor);
+    return sendJson(response, outcome.status, outcome.body);
   }
   const project = here.find((candidate) => candidate.id === String(body.id ?? ""));
   if (!project) return sendJson(response, 404, { error: `no specialist "${String(body.id ?? "")}" on this computer` });
@@ -1232,6 +1254,11 @@ async function answerAndApply(id: string, allow: boolean, models: unknown, now: 
       approval,
       who ? `person:${who}` : "person",
     );
+    if (answered !== approval) saveApprovals(loadApprovals().map((a) => (a.id === answered.id ? answered : a)));
+  }
+  // A project Cobra proposed to attach a specialist to (specialistAttach.ts): Allow attaches exactly the pair on the card, and the Lead hears which.
+  if (approval.kind === SPECIALIST_ATTACH && approval.attach) {
+    answered = await settleAttachApproval(attachDeps((owner, text) => tell(owner, text)), approval, who ? `person:${who}` : "person");
     if (answered !== approval) saveApprovals(loadApprovals().map((a) => (a.id === answered.id ? answered : a)));
   }
   // A research run's card (webRuns.ts): Allow starts the run, and its owner hears either answer.
@@ -3205,7 +3232,7 @@ const server = http.createServer((request, response) => {
       // A Foreman's name and look (crew.ts), for the desk.
       if (route === "/crew") return await handleCrew(request, response);
       // The roster and the person's own changes to it (specialists.ts).
-      if (route === "/specialists" || route === "/specialists/set") return await handleSpecialists(route, request, response, caller);
+      if (route === "/specialists" || route === "/specialists/set" || route === "/specialists/attach" || route === "/specialists/detach") return await handleSpecialists(route, request, response, caller);
 
       // The Lead (lead.ts): its state, and start and stop, for the desk.
       if (route === "/lead" || route === "/lead/start" || route === "/lead/stop" || route === "/lead/clear") {

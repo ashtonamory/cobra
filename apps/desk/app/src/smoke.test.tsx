@@ -800,6 +800,8 @@ function apiAnswer(machine: string, method: string, path: string, body: Dict | n
         spaces: laptop ? [{ id: "paws", name: "Happy Tails", box: "b1" }] : [],
       };
       case "/routines": return laptop ? ROUTINES : { routines: [] };
+      // The roster a specialist's panel reads for the projects it is attached to (components/AttachedProjects.tsx).
+      case "/specialists": return { specialists: [], models: [] };
       case "/trust": return laptop && (params.get("project") ?? "paws") === "paws" ? TRUST : { grants: [], always: [], receipts: [] };
       case "/db/journal": return params.get("project") === "paws" ? JOURNAL : { project: params.get("project"), entries: [] };
       case "/db/mirror": return params.get("project") === "paws" ? MIRROR
