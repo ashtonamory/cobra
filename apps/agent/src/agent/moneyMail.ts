@@ -19,8 +19,6 @@
 import { RefusedError } from "./db.ts";
 import { parseCents, parseDay } from "./statements.ts";
 
-export const MONEY_QUERY =
-  'in:inbox newer_than:3d -from:me (receipt OR payment OR paid OR deposit OR deposited OR transaction OR purchase OR payout OR "e-transfer" OR charged OR withdrawal OR refund OR "you sent" OR "you received")';
 export const MONEY_SEEN_MAX = 1000;
 export const MONEY_TEXT_MAX = 6000;
 export const READ_TIMEOUT_MS = 60_000;
