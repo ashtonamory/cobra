@@ -1,6 +1,7 @@
 /**
- * Receipts as photos, from the desk or a file:
- * each photo is sent to the agent (`POST /receipts/add`, kept in
+ * Receipts as photos, added in the desk app (Finance, Transactions: dropped
+ * or chosen). The routes take any caller the person holds, so another app of
+ * theirs can send the same way. Each photo is sent to the agent (`POST /receipts/add`, kept in
  * `~/Spaces/<id>/receipts/` by its hash), then `POST /receipts/read` reads each
  * with Claude on this computer's sign-in (one `claude -p` with only Read, in a
  * throwaway folder holding just that image; a local model reads no images),
