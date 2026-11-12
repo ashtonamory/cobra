@@ -166,6 +166,17 @@ export async function addStatement(m: M, project: string, filePath: string): Pro
 /** Reads an added statement; a 409 means it needs `account_id`. Reading a PDF takes Haiku a while. */
 export const readStatement = (m: M, project: string, body: { file: string; name: string; account_id?: number }) =>
   post(m, `/statements/read?project=${q(project)}`, { project, ...body }, 180);
+/** A receipt photo for a Money seat's Space (agent receipts.ts): the raw image in, `{file}` back. Nothing is recorded yet. */
+export async function addReceipt(m: M, project: string, filePath: string): Promise<Json> {
+  try {
+    return await bridge.apiUpload(name(m), `/receipts/add?project=${q(project)}`, filePath);
+  } catch (e) {
+    const err = e as { status?: number; message?: string };
+    throw new ApiError(err?.status ?? 0, err?.message ?? String(e));
+  }
+}
+/** Starts the reading of added receipts (a 202 at once); the agent then asks on one card before any is recorded. */
+export const readReceipts = (m: M, project: string, files: string[]) => post(m, `/receipts/read?project=${q(project)}`, { project, files }, 20);
 /** `range` is a chart's range switch and `key` the bar or part a chart was tapped on (contracts views.ts `ClientParam`);
  * `filter` is a kanban's picks as JSON (contracts viewsRead.ts `filterParam`). */
 export const view = (m: M, project: string, id: string, input: { id?: string; q?: string; range?: string; key?: string; month?: string; filter?: string } = {}) =>
