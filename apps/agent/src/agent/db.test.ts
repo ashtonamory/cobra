@@ -225,9 +225,15 @@ test("query masks the sensitive column by name and respects the cap", () => {
   // A harmless column that borrows a sensitive name stays readable (pay also adds a ghost person).
   db.write("pay", { person: 1, amount: 700 }, "person");
   assert.deepEqual(db.query("SELECT amount AS bank FROM payments").rows[0], { bank: 700 });
-  // An expression has no table to trace, so its name decides: erring wide.
+  // An expression has no table to trace, and can carry a sensitive value under any name:
+  // every one is masked in a query that names a sensitive column. Erring wide.
   assert.deepEqual(db.query("SELECT max(bank) AS bank FROM people").masked, ["bank"]);
-  assert.deepEqual(db.query("SELECT count(bank) AS people FROM people").rows[0], { people: 5 });
+  assert.deepEqual(db.query("SELECT bank || '' AS x FROM people WHERE id = 1").rows[0], { x: "•••• 0001" });
+  assert.deepEqual(db.query("SELECT max(bank) AS newest, substr(bank, 1, 9) AS start FROM people").masked, ["newest", "start"]);
+  assert.deepEqual(db.query("SELECT count(bank) AS people FROM people").rows[0], { people: "••••" }, "a count is masked too: the engine cannot tell it from the value");
+  // A query that names no sensitive column keeps its expressions, and a quoted word is not a column.
+  assert.deepEqual(db.query("SELECT count(*) AS people FROM people").rows[0], { people: 6 });
+  assert.deepEqual(db.query("SELECT count(*) AS n, 'bank' AS word FROM people").rows[0], { n: 6, word: "bank" });
 });
 
 test("query refuses writes, a second statement and the engine's tables; SQLite's own errors come through", () => {
