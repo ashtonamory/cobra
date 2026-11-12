@@ -17,6 +17,7 @@ import { orchHeadless, orchLook, stopOrchHeadless } from "./orchHeadless.ts";
 import { freshConversation, promptViaFile, startHeadlessOrchestrator, tmuxHas, GITHUB_NOTE, LEAD_DIR, RESEARCH_NOTE, WORKER_RESEARCH_NOTE, LEAD_TOOLS, NO_WRITE_NOTE, localProjects, liveOrchFence, requireJail, requireOrchFence, allowedMcpTools, untrustedData, leadDenyRules, leadTools, envDenyRules, leadMcpConfig, logMcp, readRule, leadHome } from "./lead.ts";
 import { GITHUB, mcpServersFor, NO_MCP, type McpMerge } from "./mcp.ts";
 import { STATE_DIR } from "./paths.ts";
+import { CODE_TRADES } from "./hire.ts";
 import { foremanLineName, lineDir, orchLines } from "./orchSocket.ts";
 import { explainedRequest } from "./permissionRequest.ts";
 import { writePrivateFile } from "./private.ts";
@@ -326,7 +327,7 @@ export async function companyFolders(project: Pick<Project, "id" | "path">): Pro
 }
 
 /** The trades whose Foreman works on a repository (a site's code, a Designer's files): they keep GitHub and the owner's own CLAUDE.md, as a Foreman with no trade does. */
-export const CODE_TRADES: ReadonlySet<string> = new Set(["website-builder", DESIGNER]);
+export { CODE_TRADES };
 
 /** Whether a Foreman works on code: no trade, or one of CODE_TRADES. A Space's trade (Outreach, People, Money, a defined one) keeps records, not a repository. */
 export function worksOnCode(project: Pick<Project, "foremanTemplate">): boolean {

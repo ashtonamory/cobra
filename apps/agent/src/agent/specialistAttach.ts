@@ -8,7 +8,7 @@ import { allower, makeApproval, settle, type StoredApproval } from "./approvals.
 import { crewFor } from "./crew.ts";
 import { STATE_DIR } from "./paths.ts";
 import { writePrivateFile } from "./private.ts";
-import { isRepository, readSpecialist, REPOS_MAX, setAttached, type SpecialistRecord } from "./specialists.ts";
+import { isAttachable, isRepository, readSpecialist, REPOS_MAX, setAttached, type SpecialistRecord } from "./specialists.ts";
 
 /**
  * Attaching a specialist to a project the person already has.
@@ -115,6 +115,8 @@ async function pairOf(deps: Pick<AttachDeps, "projects" | "crew">, raw: unknown,
   const named = repositories.filter((candidate) => candidate.name.toLowerCase() === wantedRepo.toLowerCase());
   const repo = repositories.find((candidate) => candidate.id === wantedRepo) ?? (named.length === 1 ? named[0] : undefined);
   if (!repo) return { status: 404, body: { error: named.length > 1 ? `more than one project is named "${wantedRepo}": give its id` : `no project "${wantedRepo}" on this computer` } };
+  // Another specialist's own folder is not one of the person's projects: brief that specialist instead.
+  if (!isAttachable(repo)) return { status: 400, body: { error: `"${repo.name}" is ${deps.crew(repo)?.name ?? "a specialist"}'s own work, not one of the person's projects: nobody else is attached to it` } };
   return { specialist, repo, name: deps.crew(specialist)?.name ?? specialist.name, repositories };
 }
 
@@ -232,7 +234,7 @@ export async function settleAttachApproval(deps: AttachDeps, approval: StoredApp
     const known = new Set(repositories.map((project) => project.id));
     const there = repositories.find((project) => project.id === repo.id);
     // The card named a folder: a project re-made elsewhere under the same id is not what the person read.
-    if (!known.has(id) || !there || there.path !== repo.path) throw new Error("the specialist or the project is no longer on this computer as the card showed it");
+    if (!known.has(id) || !there || !isAttachable(there) || there.path !== repo.path) throw new Error("the specialist or the project is no longer on this computer as the card showed it");
     deps.apply(id, repo.id, true, known, "lead", actor);
     deps.tell("lead", `${allower(approval)} allowed it: ${name} (${id}) is attached to ${repo.name} (${repo.id}) and may start Workers there now. ${APPLIES}`);
     deps.log(`specialist ${id}: attached to ${repo.id}`);
