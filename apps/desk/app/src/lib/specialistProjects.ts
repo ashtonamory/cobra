@@ -10,7 +10,7 @@ import { isDict } from "./json.ts";
 export type AttachedProject = { id: string; name: string; path: string };
 
 /** One row of GET /specialists, as much as this needs. */
-export type RosterEntry = { id: string; project: string; name: string; repos: AttachedProject[] };
+export type RosterEntry = { id: string; project: string; name: string; repos: AttachedProject[]; /** Hired on its own: it has no project of the person's. */ standalone?: boolean };
 
 /** GET /specialists read with care: an answer from an older agent has no `repos`, which reads as none. */
 export function rosterOf(answer: unknown): RosterEntry[] {
@@ -19,7 +19,7 @@ export function rosterOf(answer: unknown): RosterEntry[] {
     if (!isDict(raw) || typeof raw.id !== "string") return [];
     const repos = (Array.isArray(raw.repos) ? raw.repos : []).flatMap((repo): AttachedProject[] =>
       isDict(repo) && typeof repo.id === "string" ? [{ id: repo.id, name: typeof repo.name === "string" && repo.name ? repo.name : repo.id, path: typeof repo.path === "string" ? repo.path : "" }] : []);
-    return [{ id: raw.id, project: typeof raw.project === "string" && raw.project ? raw.project : raw.id, name: typeof raw.name === "string" ? raw.name : "", repos }];
+    return [{ id: raw.id, project: typeof raw.project === "string" && raw.project ? raw.project : raw.id, name: typeof raw.name === "string" ? raw.name : "", repos, ...(raw.standalone === true ? { standalone: true } : {}) }];
   });
 }
 
@@ -28,11 +28,15 @@ export function attachedTo(roster: readonly RosterEntry[], id: string): Attached
   return roster.find((entry) => entry.id === id)?.repos ?? [];
 }
 
-/** The projects it could be attached to: every other one here it is not attached to yet, by name. */
+/**
+ * The projects it could be attached to: every other project of the person's
+ * here that it is not attached to yet, by name. A specialist hired on its
+ * own has no project, so it is never a choice (the agent refuses it too).
+ */
 export function attachChoices(roster: readonly RosterEntry[], id: string): Array<{ id: string; name: string }> {
   const has = new Set(attachedTo(roster, id).map((repo) => repo.id));
   return roster
-    .filter((entry) => entry.id !== id && !has.has(entry.id))
+    .filter((entry) => entry.id !== id && !entry.standalone && !has.has(entry.id))
     .map((entry) => ({ id: entry.id, name: entry.project }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }

@@ -9,8 +9,14 @@ import { z } from "zod";
 export const SpecialistView = z.object({
   /** The project's id. */
   id: z.string(),
-  /** The project's name. */
+  /** The project's name; for one hired on its own, what the person calls its work ("Billing"). */
   project: z.string(),
+  /**
+   * Hired on its own (Project.specialist): it has no project of the
+   * person's, so it is never offered as one to attach another specialist to.
+   * Absent from an older agent, and for a specialist that has a project.
+   */
+  standalone: z.literal(true).optional(),
   name: z.string(),
   look: z.number().int(),
   hat: z.number().int(),

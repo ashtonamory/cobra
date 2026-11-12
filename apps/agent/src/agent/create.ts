@@ -61,6 +61,8 @@ export type CreateRequest = {
   start?: boolean;
   note?: string;
   foremanTemplate?: ForemanTemplateId;
+  /** A hired specialist's own working folder (hire.ts): never one of the person's projects, so never with a remote. */
+  specialist?: boolean;
   /** One folder inside the root to put `directory` in (a Space's folder, spaces.ts): made when it is not there. */
   under?: string;
   /** What the project's id and session are made from, when the directory's name would clash across folders (`happy-tails-crm`, not `crm`). */
@@ -198,6 +200,10 @@ export async function createProject(
     throw new SessionError(`a tmux session called "${session}" is already running`, 409);
   }
 
+  // Held here too, whoever calls: a specialist's own folder is made on this computer and stays on it.
+  if (request.specialist && (request.mode !== "init" || request.remote === true)) {
+    throw new SessionError("a specialist's own folder is made on this computer, with no copy online", 400);
+  }
   const needsGh = request.mode === "clone" || request.remote === true;
   if (needsGh) {
     if (deps.gh === null) throw new SessionError("gh is not installed on this machine", 409);
@@ -257,6 +263,7 @@ export async function createProject(
     session,
     ...(request.note && request.note.trim().length > 0 ? { note: request.note.trim() } : {}),
     ...(request.foremanTemplate ? { foremanTemplate: request.foremanTemplate } : {}),
+    ...(request.specialist ? { specialist: true as const } : {}),
     source: "local",
   };
   await deps.save(project);

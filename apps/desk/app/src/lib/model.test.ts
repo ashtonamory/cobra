@@ -372,3 +372,28 @@ describe("Board", () => {
     expect(model.boardTime(null, noon)).toBe("—");
   });
 });
+
+describe("a specialist hired on its own", () => {
+  const rows = [
+    model.rowForProject(project("shop"), "laptop", NOW),
+    model.rowForProject(project("shop_1", "agent-working", { parent: "shop", branch: "feat/x" }), "laptop", NOW),
+    model.rowForProject(project("billing", "none", { specialist: true, crew: { name: "Rosa", look: 0, hat: 0 } }), "laptop", NOW),
+    model.rowForProject(project("billing_fm", "agent-idle", { parent: "billing", foreman: true }), "laptop", NOW),
+    model.rowForProject(project("billing_1", "agent-working", { parent: "billing", branch: "cobra/x", worker: { model: "sonnet" } }), "laptop", NOW),
+    // The same id on another computer is that computer's own project.
+    model.rowForProject(project("billing_2", "none", { parent: "billing", branch: "y" }), "desktop", NOW),
+  ];
+
+  it("is listed apart from the person's projects, with its conversation and helpers", () => {
+    const split = model.splitSpecialists(rows);
+    expect(split.projects.map((r) => r.id)).toEqual(["shop", "shop_1", "billing_2"]);
+    expect(split.specialists.map((r) => r.id)).toEqual(["billing", "billing_fm", "billing_1"]);
+  });
+
+  it("is named for the specialist first, then its work", () => {
+    expect(rows[2]!.displayName).toBe("Rosa · Billing");
+    expect(rows[0]!.displayName).toBe("Shop");
+    // An older agent sends no flag: every row is a project, as before.
+    expect(model.rowForProject(project("billing", "none", { crew: { name: "Rosa", look: 0, hat: 0 } }), "laptop", NOW).displayName).toBe("Billing");
+  });
+});

@@ -54,3 +54,24 @@ describe("the projects a specialist is attached to", () => {
     expect(full).not.toContain("Attach a project…");
   });
 });
+
+describe("a specialist hired on its own", () => {
+  const roster = rosterOf({
+    specialists: [
+      { id: "billing", project: "Billing", name: "Rosa", standalone: true, repos: [] },
+      { id: "shop", project: "Shop", name: "Stan", repos: [] },
+    ],
+  });
+
+  it("is never a project to attach another specialist to", () => {
+    expect(attachChoices(roster, "shop")).toEqual([]);
+    expect(attachChoices(roster, "billing")).toEqual([{ id: "shop", name: "Shop" }]);
+  });
+
+  it("says it has no project yet, not that it has one of its own", () => {
+    const html = renderToStaticMarkup(<AttachedList roster={roster} id="billing" name="Rosa" picking={false} busy={false} {...none} />);
+    expect(html).toContain("No project yet. Attach Rosa to a project you already have");
+    expect(html).not.toContain("Only its own project.");
+    expect(html).not.toContain("Also works on");
+  });
+});
