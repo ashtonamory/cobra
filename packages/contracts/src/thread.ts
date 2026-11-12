@@ -63,8 +63,8 @@ export type ThreadPage = z.infer<typeof ThreadPage>;
 /**
  * GET /thread/wait?after=<id>&timeout=<s> (agent threadWait.ts): holds until
  * an entry after `after` comes and Cobra is not in the middle of a turn, or
- * the time runs out (at most 25 s; then `entries` may be empty). Talk reads
- * her reply with it. `working`: she is still in a turn, so more can come.
+ * the time runs out (at most 25 s; then `entries` may be empty).
+ * `working`: she is still in a turn, so more can come.
  */
 export const ThreadWaitPage = ThreadPage.extend({ working: z.boolean() });
 export type ThreadWaitPage = z.infer<typeof ThreadWaitPage>;

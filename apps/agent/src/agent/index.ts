@@ -1931,7 +1931,7 @@ async function leadWorking(): Promise<boolean> {
 
 /**
  * GET /thread/wait?after=<id>&timeout=<s> (contracts ThreadWaitPage, threadWait.ts):
- * Talk's way to hear her reply as soon as her turn ends, instead of the 30 s page read.
+ * her reply as soon as her turn ends, instead of the 30 s page read.
  */
 async function handleThreadWait(url: URL, response: http.ServerResponse): Promise<void> {
   const raw = url.searchParams.get("after");

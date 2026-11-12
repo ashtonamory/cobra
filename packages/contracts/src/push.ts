@@ -24,8 +24,6 @@ export const PushData = z.object({
   head: z.string().optional(),
   /** A permission push's dialog (PermissionRequest.key); the lock-screen Allow sends it back. */
   dialogKey: z.string().optional(),
-  /** A late answer to a call (phase V5): its Play action reads this aloud. */
-  spoken: z.string().max(600).optional(),
 });
 
 /**
