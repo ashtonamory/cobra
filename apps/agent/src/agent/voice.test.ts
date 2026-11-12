@@ -9,8 +9,7 @@ process.env.COBRA_AGENT_CONFIG_DIR = join(ROOT, "config");
 process.env.COBRA_AGENT_STATE_DIR = join(ROOT, "state");
 process.env.COBRA_AGENT_DATA_DIR = join(ROOT, "data");
 
-const { OWNER_JARGON, PLAIN_WORDS, SPOKEN, VOICE, ownerJargon } = await import("./voice.ts");
-const { speakable } = await import("../../../../packages/contracts/src/voiceCall.ts");
+const { OWNER_JARGON, PLAIN_WORDS, VOICE, ownerJargon } = await import("./voice.ts");
 const { EXPLAIN_SYSTEM, RUN_PLAIN, whyOf } = await import("./permissionRequest.ts");
 const approvals = await import("./approvals.ts");
 const morning = await import("./morning.ts");
@@ -64,7 +63,6 @@ test("Cobra's prompt talks in the voice and reports results, never PR links", ()
   for (const engine of ["claude", "codex"] as const) {
     const prompt = lead.leadPrompt([], false, engine);
     assert.ok(prompt.includes(VOICE), engine);
-    assert.ok(prompt.includes(SPOKEN), `${engine}: spoken rules for [voice] messages`);
     assert.doesNotMatch(prompt, /the PR links/);
     assert.match(prompt, /never a PR link/);
     assert.match(prompt, /from the report's Owner line/);
@@ -124,31 +122,4 @@ test("Cobra's and a Foreman's tmux start fit tmux's limit, with the prompt read 
   }
   assert.ok(full.join(" ").length > lead.TMUX_COMMAND_LIMIT / 2, "the prompt alone is why: on the command line it nears the limit");
   assert.deepEqual(lead.promptViaFile(["codex", "--sandbox", "read-only"], "/x", write), ["codex", "--sandbox", "read-only"]);
-});
-
-/**
- * Ten spoken replies as SPOKEN wants them (Talk and Call):
- * each reads whole through speakable(), with nothing cut, and names no software word.
- */
-const SPOKEN_REFERENCE = [
-  "Your booking page is live. Customers can now pay the twenty-five dollar deposit when they book.",
-  "Two things wait on you: the new menu page and an invoice email. Want me to read the first one?",
-  "I'm adding the refund page now. I'll tell you when it's ready.",
-  "Nothing waits on you right now. Your morning routine ran at eight and found three new leads.",
-  "The website check found a broken photo on the about page. I'm fixing it, and the rest of the site is fine.",
-  "Your invoice to Maria went out at two this afternoon. She hasn't paid yet.",
-  "Do you want the deposit at twenty-five or fifty dollars? I'd pick twenty-five, so fewer people walk away.",
-  "The new prices are on your screen. Say yes and I'll open the card to publish them.",
-  "That card is waiting for when you've stopped the car. I'll keep it for you.",
-  "Your Instagram posts for next week are ready to look at. They're on your screen.",
-];
-
-test("SPOKEN keeps a spoken reply short, plain and fit to hear", () => {
-  for (const rule of [/starts with \[voice\]/, /One or two short sentences/, /No links, lists, tables, code/, /it is on your screen/, /at most one question/]) assert.match(SPOKEN, rule);
-  assert.deepEqual(ownerJargon(SPOKEN), []);
-  assert.equal(SPOKEN_REFERENCE.length, 10);
-  for (const reply of SPOKEN_REFERENCE) {
-    assert.deepEqual(ownerJargon(reply), [], reply);
-    assert.deepEqual(speakable(reply), { say: reply, more: false }, reply);
-  }
 });

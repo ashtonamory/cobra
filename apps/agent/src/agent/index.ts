@@ -195,12 +195,7 @@ import { SUBSCRIPTION_LIMITS } from "./limits.ts";
 import { keptTokenAt, laneStatus, onKeyNow, startModelGateway } from "./modelGateway.ts";
 import { foremanRunning, foremanSession, newForemanConversation, setForemanRoom, startForeman, stopForeman, typeBrief } from "./foreman.ts";
 import { closeCard, createKeeper, keepCloseCard, liveWaitsOn, loadOffered, markRested, saveOffered, stillIdle } from "./sessionKeeper.ts";
-import { countVoiceCalls, liveBudget, loadActivity, saveActivity } from "./sessionBudget.ts";
-import { createVoiceCalls, type HandOff, type VoiceCalls } from "./voiceFront.ts";
-import { liveVoiceDeps, summarizeLate, VOICE_DIR } from "./voiceLive.ts";
-import { createLateAnswers, type LateAnswers } from "./lateAnswer.ts";
-import { LATE_ANSWER_CATEGORY } from "../../../../packages/contracts/src/voiceCall.ts";
-import { VOICE_ROUTES, voiceRoute } from "./voiceRoutes.ts";
+import { liveBudget, loadActivity, saveActivity } from "./sessionBudget.ts";
 import { killTmuxSession, listTmuxSessions, loadSweep, PARKED_REPORT_MS, saveSweep, sweepDue, sweepPlan, sweepReport } from "./sessionSweep.ts";
 import { changeCrew, CrewError, type CrewChange } from "./crew.ts";
 import { headlessRequest, headlessTranscriptFile, headlessView, isHeadless, servePermission } from "./headlessWorkers.ts";
@@ -1936,7 +1931,7 @@ async function leadWorking(): Promise<boolean> {
 
 /**
  * GET /thread/wait?after=<id>&timeout=<s> (contracts ThreadWaitPage, threadWait.ts):
- * Talk's way to hear her reply as soon as her turn ends, instead of the 30 s page read.
+ * her reply as soon as her turn ends, instead of the 30 s page read.
  */
 async function handleThreadWait(url: URL, response: http.ServerResponse): Promise<void> {
   const raw = url.searchParams.get("after");
@@ -1959,100 +1954,6 @@ async function handleThreadWait(url: URL, response: http.ServerResponse): Promis
     more: first ? thread.page({ before: first.id, limit: 1 }).entries.length > 0 : false,
     working: result.working,
   });
-}
-
-let voiceCalls: VoiceCalls | null = null;
-let lateAnswers: LateAnswers | null = null;
-let lateTimer: ReturnType<typeof setInterval> | null = null;
-
-/** Answers to calls' hand-offs that come after the turn (lateAnswer.ts): looked for every 5 s while any wait. */
-function liveLateAnswers(): LateAnswers {
-  if (lateAnswers) return lateAnswers;
-  const log = (line: string) => console.log(`[${SERVICE}] ${line}`);
-  lateAnswers = createLateAnswers({
-    now: Date.now,
-    entriesAfter: (id) => thread.page({ after: id, limit: 200 }).entries,
-    leadWorking,
-    summarize: (request, reply) => summarizeLate(request, reply, log),
-    tellCall: (call, text) => voiceCalls?.tell(call, text) ?? false,
-    push: async (request, spoken) => {
-      const title = `Done: ${request.length > 60 ? `${request.slice(0, 59).trimEnd()}…` : request}`;
-      notices.record({ kind: "lead", projectId: LEAD_SESSION, session: LEAD_SESSION, title, body: spoken });
-      const tokens = await loadPushTokens();
-      if (tokens.length === 0) return;
-      const outcome = await push(tokens, {
-        title,
-        body: spoken,
-        data: { machine: os.hostname(), projectId: LEAD_SESSION, session: LEAD_SESSION, path: leadHome(), spoken },
-        category: LATE_ANSWER_CATEGORY,
-      });
-      for (const error of outcome.errors) log(`push ticket: ${error}`);
-      for (const token of outcome.dead) await dropPushToken(token);
-    },
-    log,
-  });
-  return lateAnswers;
-}
-
-function waitForLateAnswer(handoff: HandOff): void {
-  const late = liveLateAnswers();
-  late.add(handoff, thread.page({ limit: 1 }).entries.at(-1)?.id ?? 0);
-  if (lateTimer) return;
-  lateTimer = setInterval(() => {
-    void late.tick().finally(() => {
-      if (late.waiting() === 0 && lateTimer) {
-        clearInterval(lateTimer);
-        lateTimer = null;
-      }
-    });
-  }, 5000);
-  lateTimer.unref?.();
-}
-
-/** The voice front's calls (voiceFront.ts, voiceLive.ts), made on the first call; a crashed agent's call folders go first. */
-function liveVoiceCalls(): VoiceCalls {
-  if (voiceCalls) return voiceCalls;
-  rmSync(VOICE_DIR, { recursive: true, force: true });
-  const calls = createVoiceCalls(
-    liveVoiceDeps({
-      projects: async () => {
-        const { projects } = await collectProjects(process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH, { git: false });
-        return markHandled(projects, cobraAnswers);
-      },
-      leadWorking,
-      recent: (limit) => thread.page({ limit }).entries,
-      thread: { append: (entries) => void thread.append(entries), conversation: () => thread.current() ?? "" },
-      // What the person said goes to her as /session say types it: nothing of the voice front's own.
-      handOff: async (text) => {
-        if (!(await leadRunning())) throw new Error("Cobra is not running on this computer");
-        await withWake(LEAD_SESSION, "person", undefined, async () => {
-          if (!(await headlessAction(LEAD_SESSION, "say", { text }))) await runSessionAction("say", LEAD_SESSION, { text });
-        });
-      },
-      handedOff: waitForLateAnswer,
-      log: (line) => console.log(`[${SERVICE}] ${line}`),
-    }),
-  );
-  // An open call holds one Worker's room (sessionBudget.ts).
-  countVoiceCalls(() => (calls.open() ? 1 : 0));
-  voiceCalls = calls;
-  return calls;
-}
-
-/** /voice/* (voiceRoutes.ts): calls with Cobra, where her thread is. */
-async function handleVoice(route: string, url: URL, request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
-  if (!thread.exists()) return sendJson(response, 409, { error: "Cobra keeps no thread on this computer yet, so there is nothing to call" });
-  let body: Record<string, unknown> = {};
-  if (request.method === "POST") {
-    try {
-      const raw = await readBody(request, 8 * 1024);
-      body = raw.trim() ? (JSON.parse(raw) as Record<string, unknown>) : {};
-    } catch {
-      return sendJson(response, 400, { error: "invalid JSON body" });
-    }
-  }
-  const reply = await voiceRoute(liveVoiceCalls(), route, request.method ?? "GET", url.searchParams, body);
-  return sendJson(response, reply.status, reply.body);
 }
 
 async function handleTranscript(url: URL, response: http.ServerResponse): Promise<void> {
@@ -3302,7 +3203,6 @@ const server = http.createServer((request, response) => {
         });
       }
 
-      if (VOICE_ROUTES.has(route)) return await handleVoice(route, url, request, response);
 
       switch (route) {
         case "/system":

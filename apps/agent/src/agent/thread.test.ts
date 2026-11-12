@@ -63,26 +63,6 @@ test("the thread keeps what was said, her questions and the answers, and leaves 
   assert.deepEqual(entries[3]!.answers, { "Which one first?": "Payroll" });
 });
 
-test("a spoken message goes in without its [voice] prefix, marked spoken", () => {
-  const at = "2026-11-02T20:00:00Z";
-  const entries = entriesFrom(
-    [
-      { kind: "text", role: "user", at, text: "[voice] What is waiting on me?" },
-      { kind: "text", role: "assistant", at, text: "Two things." },
-      { kind: "text", role: "user", at, text: "Typed words" },
-    ] as never,
-    "c1",
-  );
-  assert.deepEqual(
-    entries.map((entry) => [entry.kind, entry.text, entry.via]),
-    [
-      ["you", "What is waiting on me?", "voice"],
-      ["cobra", "Two things.", undefined],
-      ["you", "Typed words", undefined],
-    ],
-  );
-});
-
 test("ingest copies only what is new, and marks each new conversation with why it began", async () => {
   const folder = dir();
   const store = createThreadStore(join(folder, "thread"), () => new Date("2026-10-26T12:00:00Z"));

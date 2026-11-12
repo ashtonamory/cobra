@@ -35,7 +35,7 @@ denies every connector that is not Gmail, Calendar or Drive by name, so a
 Lead never sees, for example, Canva or Figma. The read tools above are
 pre-allowed; every other tool from a connector needs your Allow.
 
-Workers, jobs and the voice line still start with no MCP server at all.
+Workers and jobs still start with no MCP server at all.
 
 ## Codex
 
