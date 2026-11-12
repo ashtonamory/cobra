@@ -72,6 +72,8 @@
 .org-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .org-attached { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; border-top: 1px solid var(--hair); }
 .org-attached-row { display: flex; align-items: center; gap: 8px; }
+.org-attach-warning { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 1px solid var(--hair); border-radius: 8px; background: var(--bg-light); }
+.org-attach-warning p { margin: 0; }
 .org-switch { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
 .org-switch > span { display: flex; flex-direction: column; gap: 2px; }
 .org-field { display: flex; gap: 6px; }

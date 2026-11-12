@@ -41,6 +41,17 @@ export function attachChoices(roster: readonly RosterEntry[], id: string): Array
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * The agent's answer to an attach it will not make before the person has
+ * read a warning ({confirm: true, warnings}): the warnings, in its words, or
+ * null when it attached (or the answer says nothing of the kind).
+ */
+export function attachWarnings(answer: unknown): string[] | null {
+  if (!isDict(answer) || answer.confirm !== true || !Array.isArray(answer.warnings)) return null;
+  const warnings = answer.warnings.filter((warning): warning is string => typeof warning === "string" && warning.trim() !== "");
+  return warnings.length > 0 ? warnings : null;
+}
+
 /** The most projects one specialist is attached to (agent specialists.ts REPOS_MAX). */
 export const ATTACH_MAX = 8;
 
