@@ -138,11 +138,8 @@ async function routes(box = true) {
       notify: async (approval) => void notified.push(approval.title),
       machineLabel: "laptop",
       port: 8797,
-<<<<<<< HEAD
       mailboxOf: () => (box ? { box: "box_1", address: "owner@example.com", mailbox: "Zoho Mail" } : null),
-=======
       attachedOf,
->>>>>>> origin/feat/specialist-attach
     });
     return reply;
   };
