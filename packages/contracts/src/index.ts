@@ -20,6 +20,7 @@ export * from "./mailboxes.ts";
 export * from "./mcp.ts";
 export * from "./permissions.ts";
 export * from "./crew.ts";
+export * from "./specialists.ts";
 export * from "./keys.ts";
 export * from "./localModels.ts";
 export * from "./apiLane.ts";

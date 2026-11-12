@@ -47,7 +47,7 @@ test("docs/voice.md holds 15 reference examples, and every New line is plain", (
 });
 
 test("the voice carries the rules the plan names, with the word list in it", () => {
-  for (const rule of [/business partner/, /two to four short sentences/, /one thing you need from them/, /Never a link to a pull request/, /Never paste error text/, /mark your pick with one reason/, /at most one per reply/, /go deeper for that conversation/, /Never name a Foreman, a Worker/]) {
+  for (const rule of [/business partner/, /two to four short sentences/, /one thing you need from them/, /Never a link to a pull request/, /Never paste error text/, /mark your pick with one reason/, /at most one per reply/, /go deeper for that conversation/, /Never say "Foreman" or "Worker" to them/, /say who is doing what by name/]) {
     assert.match(VOICE, rule);
   }
   assert.ok(VOICE.includes(PLAIN_WORDS));

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { ApprovalRoutine } from "./routines.ts";
 import { DesignFile } from "./thread.ts";
+import { ApprovalSpecialist } from "./specialists.ts";
 import { ApprovalTrade } from "./tradeDefine.ts";
 import { ApprovalTrust, ApprovalTrusted, TrustAsk, TrustGrant } from "./trust.ts";
 
@@ -687,6 +688,8 @@ export const Approval = z.object({
   trusted: ApprovalTrusted.optional(),
   /** A trade Cobra defined (kind `trade`): Allow installs exactly it. */
   trade: ApprovalTrade.optional(),
+  /** A change Cobra proposes to a specialist's title, instructions or model (kind `specialist`): Allow makes exactly it. */
+  specialist: ApprovalSpecialist.optional(),
   /** A move Cobra suggests in My Organization (kind `org`): Allow makes exactly it. */
   org: ApprovalOrg.optional(),
   /** A Space Cobra proposes to open from an intake (kind `space`): Allow opens exactly it and starts its Foremen. */

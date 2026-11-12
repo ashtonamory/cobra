@@ -336,6 +336,8 @@ export function auditWords(record: AuditRecord): string {
       const amounts = list(d.amounts).map(Number).filter(Number.isFinite);
       return `${who} recorded ${str(d.mutation) || "money"} in ${record.subject?.project ?? "a Space"}${amounts.length ? `: ${amounts.map(money).join(", ")}` : ""}`;
     }
+    case "specialist.set":
+      return `${who} changed ${record.subject?.project ?? "a specialist"} (${str(d.fields) || "its record"})${str(d.by) === "lead" ? ", as Cobra proposed and you allowed" : ""}`;
     case "key.minted":
       return `${who} made a key for ${str(d.keyKind) || "a caller"} ${str(d.name) || record.subject?.target || ""}`.trim();
     case "key.rotated":

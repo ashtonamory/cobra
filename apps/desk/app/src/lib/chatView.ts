@@ -53,7 +53,9 @@ export function rosterLine(orch: Record<string, Dict>, machine: string, project:
   const trade = typeof p.trade === "string" ? String(trades.find((t) => t.id === p.trade)?.name ?? p.trade) : "";
   const on = isDict(p.routines) && typeof p.routines.on === "number" ? p.routines.on : 0;
   const trusted = Array.isArray(p.trusted) ? p.trusted.length : 0;
-  return [trade, p.briefed === true ? `${LEAD_NAME}'s` : "", on ? `${on} routine${on === 1 ? "" : "s"}` : "", trusted ? `${trusted} trusted` : ""].filter((x) => x).join(" · ");
+  // What the person or Cobra said this specialist is for (agent specialists.ts), over its trade's name.
+  const title = isDict(p.foreman) && typeof p.foreman.title === "string" ? p.foreman.title : "";
+  return [title || trade, p.briefed === true ? `${LEAD_NAME}'s` : "", on ? `${on} routine${on === 1 ? "" : "s"}` : "", trusted ? `${trusted} trusted` : ""].filter((x) => x).join(" · ");
 }
 
 /** A slash command as it ran: "/compact focus", then what it printed. */

@@ -194,7 +194,7 @@ function OrgChart({ switcher }: { switcher: ReactNode }) {
     const seat = town.seats.get(panel.key);
     if (seat) {
       title = seat.name;
-      sub = `${seat.label} · ${seat.retired ? "Outskirts" : companyName(seat.company)} · ${config.label(seat.machine)}`;
+      sub = `${seat.title || seat.label} · ${seat.retired ? "Outskirts" : companyName(seat.company)} · ${config.label(seat.machine)}`;
       body = panel.kind === "peek" ? (
         <>
           <p>{stateWords(seat, config.label(seat.machine))}</p>
@@ -458,7 +458,7 @@ function SeatList({ seats, empty, onPick, action }: { seats: Seat[]; empty: stri
           <span className={cls("org-state", `st-${s.state}`)} />
           <div className="grow">
             <div className="org-seat-name">{s.name}</div>
-            <div className="dim">{s.label} · {config.label(s.machine)}</div>
+            <div className="dim">{s.title || s.label} · {config.label(s.machine)}</div>
           </div>
           {action(s)}
         </div>

@@ -33,6 +33,9 @@ import { collectRepos } from "./collect/repos.ts";
 import { createProject, liveCreateDeps } from "./create.ts";
 import { allTrades, knownTrade, unknownTemplateError } from "./trades.ts";
 import { liveTradeDeps, settleTradeApproval } from "./tradeRoutes.ts";
+import { liveSpecialistDeps, setByPerson, settleSpecialistApproval } from "./specialistRoutes.ts";
+import { SPECIALIST_MODELS, specialistViews } from "./specialists.ts";
+import { seatKey } from "../../../../packages/contracts/src/org.ts";
 import { liveMorningDeps, loadLatest, loadSettings, morningTick, parseSettings, saveSettings, sendsHere } from "./morning.ts";
 import { findGh, ghAuth, listRepos } from "./github.ts";
 import { settleBrand } from "./designer.ts";
@@ -167,7 +170,7 @@ import { handleMailboxes, MAILBOX_ROUTES } from "./mailboxRoutes.ts";
 import { handleMarketing, MARKETING_POSTS, MARKETING_ROUTES } from "./marketing.ts";
 import { EDITOR_POSTS, EDITOR_ROUTES, handleBatchEdit, handleEmailEditor, handleEmailPerson, PERSON_EMAIL_ROUTES, settleTemplateApproval } from "./emailRoutes.ts";
 import { draftsIn, editDraftLive, emailInFlight, liveEmailRouteDeps, marketingDeps, queueBatch, queueBranded, queueCampaign, queueFor, spaceById, startEmailSender, startSequenceLive, themePlace } from "./emailLive.ts";
-import { handleOrgPerson, liveOrgDeps, PERSON_ORG_ROUTES, settleOrgApproval, type OrgDeps } from "./orgRoutes.ts";
+import { handleOrgPerson, liveOrgDeps, loadOrg, PERSON_ORG_ROUTES, settleOrgApproval, type OrgDeps } from "./orgRoutes.ts";
 import { settleSpaceApproval } from "./spaceCreate.ts";
 import { liveBoardDeps, settleBoardApproval, snapshotSpaces } from "./spaceBoards.ts";
 import { startRates } from "./fxLive.ts";
@@ -650,6 +653,42 @@ async function handleCrew(request: http.IncomingMessage, response: http.ServerRe
     if (caught instanceof CrewError) return sendJson(response, caught.status, { error: caught.message });
     throw caught;
   }
+}
+
+/** A trade's name as the person reads it, for a specialist with no title of its own (specialists.ts). */
+const tradeName = (id: string): string | undefined => allTrades().find((trade) => trade.id === id)?.name;
+
+/**
+ * The roster (specialists.ts): GET /specialists lists every Foreman here with
+ * its name, title, instructions and model; POST /specialists/set is the
+ * person's own change from the desk, so it asks for no card.
+ */
+async function handleSpecialists(route: string, request: http.IncomingMessage, response: http.ServerResponse, caller: Caller): Promise<void> {
+  if (caller.kind !== "desk") return sendJson(response, 403, { error: "only the desk app you linked reads and changes the specialists" });
+  const { projects } = await loadRegistry(process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH);
+  const here = projects.filter((project) => project.machine === os.hostname());
+  if (route === "/specialists") {
+    if (request.method !== "GET") return sendJson(response, 405, { error: "GET only" });
+    const org = loadOrg();
+    const companyOf = (project: { id: string }) => {
+      const seat = org.seats[seatKey(os.hostname(), project.id)];
+      const company = seat && !seat.retired ? org.companies.find((candidate) => candidate.id === seat.company) : undefined;
+      return company ? { id: company.id, name: company.name } : undefined;
+    };
+    return sendJson(response, 200, { specialists: specialistViews(here, tradeName, { companyOf }), models: [...SPECIALIST_MODELS] });
+  }
+  if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
+  let body: { id?: unknown };
+  try {
+    body = JSON.parse(await readBody(request, 64 * 1024)) as typeof body;
+  } catch {
+    return sendJson(response, 400, { error: "invalid JSON body" });
+  }
+  const project = here.find((candidate) => candidate.id === String(body.id ?? ""));
+  if (!project) return sendJson(response, 404, { error: `no specialist "${String(body.id ?? "")}" on this computer` });
+  const outcome = setByPerson(project, body, `person:${caller.id}`);
+  if (outcome.status === 200) console.log(`[${SERVICE}] specialist ${project.id} changed by the person`);
+  return sendJson(response, outcome.status, outcome.body);
 }
 
 /** A new approval reaches every phone: Allow and Deny on the lock screen. */
@@ -1177,6 +1216,22 @@ async function answerAndApply(id: string, allow: boolean, models: unknown, now: 
   // A trade Cobra defined (tradeRoutes.ts): Allow installs exactly the definition the card was made from, and the Lead hears which.
   if (approval.kind === "trade" && approval.trade) {
     answered = settleTradeApproval(liveTradeDeps({ approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) }, notify: notifyApproval, tell: (owner, text) => tell(owner, text), log: (line) => console.log(`[${SERVICE}] ${line}`) }), approval);
+    if (answered !== approval) saveApprovals(loadApprovals().map((a) => (a.id === answered.id ? answered : a)));
+  }
+  // A change Cobra proposed to a specialist (specialistRoutes.ts): Allow applies exactly the change the card was made from, and the Lead hears which.
+  if (approval.kind === "specialist" && approval.specialist) {
+    answered = settleSpecialistApproval(
+      liveSpecialistDeps({
+        approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) },
+        notify: notifyApproval,
+        tell: (owner, text) => tell(owner, text),
+        log: (line) => console.log(`[${SERVICE}] ${line}`),
+        projects: async () => (await loadRegistry(process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH)).projects.filter((project) => project.machine === os.hostname()),
+        tradeName,
+      }),
+      approval,
+      who ? `person:${who}` : "person",
+    );
     if (answered !== approval) saveApprovals(loadApprovals().map((a) => (a.id === answered.id ? answered : a)));
   }
   // A research run's card (webRuns.ts): Allow starts the run, and its owner hears either answer.
@@ -3149,6 +3204,8 @@ const server = http.createServer((request, response) => {
 
       // A Foreman's name and look (crew.ts), for the desk.
       if (route === "/crew") return await handleCrew(request, response);
+      // The roster and the person's own changes to it (specialists.ts).
+      if (route === "/specialists" || route === "/specialists/set") return await handleSpecialists(route, request, response, caller);
 
       // The Lead (lead.ts): its state, and start and stop, for the desk.
       if (route === "/lead" || route === "/lead/start" || route === "/lead/stop" || route === "/lead/clear") {

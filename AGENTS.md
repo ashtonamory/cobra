@@ -3,7 +3,9 @@
 Cobra is an AI team that runs a person's business and life from one
 computer: a Lead the person talks to, Foremen that plan, Workers that do the
 work. It keeps leads and customers (CRM), projects, money, email, websites
-and routines. Read [docs/VISION.md](docs/VISION.md) for the principles and
+and routines. A Foreman is a specialist: the person names it, gives it
+standing instructions and may talk to it directly (`specialists.ts`); the
+code keeps the name Foreman. Read [docs/VISION.md](docs/VISION.md) for the principles and
 the roadmap, and [SECURITY.md](SECURITY.md) for the security model.
 
 ## Layout

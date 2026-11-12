@@ -42,6 +42,7 @@ import { ActionCard } from "../components/ActionCard.tsx";
 import { actionView } from "../lib/approvalAction.ts";
 import { routineApprovalView } from "../lib/routines.ts";
 import { taintNote, trustApprovalView } from "../lib/trust.ts";
+import { READ_ON_HOME, READ_ON_HOME_NOTE, specialistText } from "../lib/specialistCard.ts";
 import { sitePreview, sitePreviewLabel } from "../lib/site.ts";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import "../styles/surfaces.css";
@@ -256,6 +257,18 @@ function build(sent: PopupCard, then: (key: string, fn: () => void) => () => voi
     // A website card: its version's own address, to look at before Allow puts it live (a domain card: the website as it is).
     const preview = sitePreview(approval);
     const look: Action[] = preview ? [[sitePreviewLabel(approval), () => void openUrl(preview), "flat"]] : [];
+    // A change to a specialist is allowed only where every word of it shows (lib/specialistCard.ts): not here.
+    if (specialistText(approval)) {
+      const home: Action = [READ_ON_HOME, then(key, () => void toMain({ kind: "show", page: "ops" })), "primary"];
+      return {
+        key, kind: "APPROVE", signal: true, title: String(approval.title || "Approve?"), machine,
+        line: READ_ON_HOME_NOTE,
+        body: () => <div className="n-body">{READ_ON_HOME_NOTE}</div>,
+        actions: [home],
+        compactActions: [home],
+        hideTip: "Hide — it keeps waiting on Home",
+      };
+    }
     return {
       key, kind: action ? action.word : "APPROVE", signal: true, title: String(approval.title || "Approve?"), machine,
       line: action ? action.fields.map(([k, v]) => `${k} ${v}`).join(" · ") || oneLine(action.text) : oneLine(text),

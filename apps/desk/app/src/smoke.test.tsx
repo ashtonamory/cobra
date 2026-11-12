@@ -2293,19 +2293,21 @@ describe("smoke: the crew hidden", () => {
     saveShowCrew(false);
   });
 
-  it("Settings → This app: Show the crew is off, and on keeps it", async () => {
+  it("Settings → This app: Show the crew can be turned off, and that is kept", async () => {
     const el = await mount(withApp(<SettingsPage />));
     await flush(5);
     await click([...el.querySelectorAll(".settings-nav li")].find((li) => text(li).includes("This app"))!);
     await flush(3);
     expect(text(el)).toContain("Show the crew");
-    expect(text(el)).toContain("For you only; nobody else sees them.");
+    expect(text(el)).toContain("Turn it off to talk only to Cobra.");
     const row = [...el.querySelectorAll(".settings-scroll:not([hidden]) input.switch")].at(-1) as HTMLInputElement;
+    // This block turned it off before each test; on is what nothing kept means.
     expect(row.checked).toBe(false);
-    await click(row);
-    expect(localStorage.getItem("cobra.showCrew")).toBe("on");
+    expect(localStorage.getItem("cobra.showCrew")).toBe("off");
     await click(row);
     expect(localStorage.getItem("cobra.showCrew")).toBeNull();
+    await click(row);
+    expect(localStorage.getItem("cobra.showCrew")).toBe("off");
   });
 
   it("My Organization: you, Cobra and Spaces; skills only; no crew, Hire, New arrivals or Outskirts", async () => {

@@ -21,19 +21,21 @@ const org = (): Org => {
 afterEach(() => localStorage.clear());
 
 describe("the crew switch", () => {
-  it("is off unless kept as on", () => {
-    expect(parseShowCrew("on")).toBe(true);
-    for (const odd of [null, undefined, "", "off", "true", "ON"]) expect(parseShowCrew(odd)).toBe(false);
-    expect(readShowCrew()).toBe(false);
+  it("is on unless kept as off", () => {
+    expect(parseShowCrew("off")).toBe(false);
+    // Nothing kept, and the "on" an older desk kept, both show the crew.
+    for (const other of [null, undefined, "", "on", "true", "OFF"]) expect(parseShowCrew(other)).toBe(true);
+    localStorage.removeItem(SHOW_CREW_KEY);
+    expect(readShowCrew()).toBe(true);
   });
 
-  it("saving keeps it for the next start, and off clears it", () => {
-    saveShowCrew(true);
-    expect(localStorage.getItem(SHOW_CREW_KEY)).toBe("on");
-    expect(readShowCrew()).toBe(true);
+  it("only the choice to hide is kept for the next start, and on clears it", () => {
     saveShowCrew(false);
-    expect(localStorage.getItem(SHOW_CREW_KEY)).toBeNull();
+    expect(localStorage.getItem(SHOW_CREW_KEY)).toBe("off");
     expect(readShowCrew()).toBe(false);
+    saveShowCrew(true);
+    expect(localStorage.getItem(SHOW_CREW_KEY)).toBeNull();
+    expect(readShowCrew()).toBe(true);
   });
 });
 

@@ -61,7 +61,7 @@ const BASE_TOOLS: Tool[] = [
   {
     name: "foreman_create",
     description: "Create a new local project from a saved Foreman trade and start its specialist Foreman, which then reports to you. The name is optional: the person's, else the trade's own (\"Billing\", \"Billing 2\"). Pass brief to give it its first job in the same call. Trades: Website Builder (a site, previewed first), Payroll Manager (pay runs), Lead Outreach (drafts), Billing (invoices), My day (the calendar, sorted), Inbox (mail tidied a batch at a time), Sign-ups (rosters), Projects (dates and gates). Each proposes what leaves the computer with action_propose and never sends or pays itself. The trades Cobra defined here (trade_define) are listed too.",
-    inputSchema: { type: "object", properties: { template, name: { type: "string", description: "Optional: the project's name, when the person gave one." }, brief: { type: "string", description: "Optional: its first brief, as foreman_brief takes it." }, directory: { type: "string", description: "Optional safe directory name." }, remote: { type: "boolean", description: "Create a private GitHub repository too, only when the person asked." }, space: { type: "string", description: "A Space (a company id from org_read that space_create opened) to hire this Foreman into: its folder, its shared store and its company. Hire on first need, without telling the person a Foreman was hired; a people, outreach or money seat also gets its first job for the Space before your brief. Up to 6 Foremen per Space you hire on your own." }, confirmed: { type: "boolean", description: "Only after the person agreed to a Foreman past the Space's limit of 6." } }, required: ["template"], additionalProperties: false },
+    inputSchema: { type: "object", properties: { template, name: { type: "string", description: "Optional: the project's name, when the person gave one." }, specialistName: { type: "string", description: "Optional: what the person wants to call this specialist (1 to 20 letters, like \"Rosa\"); else it is named for its project." }, title: { type: "string", description: "Optional: one line, at most 120 characters, on what this specialist is for, as the person would say it (\"Invoices and reminders for Happy Tails\"). Its standing instructions are never set here: specialist_set puts them to the person on a card." }, brief: { type: "string", description: "Optional: its first brief, as foreman_brief takes it." }, directory: { type: "string", description: "Optional safe directory name." }, remote: { type: "boolean", description: "Create a private GitHub repository too, only when the person asked." }, space: { type: "string", description: "A Space (a company id from org_read that space_create opened) to hire this Foreman into: its folder, its shared store and its company. Hire on first need, and tell the person in a few words who joined; a people, outreach or money seat also gets its first job for the Space before your brief. Up to 6 Foremen per Space you hire on your own." }, confirmed: { type: "boolean", description: "Only after the person agreed to a Foreman past the Space's limit of 6." } }, required: ["template"], additionalProperties: false },
   },
   {
     name: "space_create",
@@ -165,6 +165,22 @@ const BASE_TOOLS: Tool[] = [
     name: "form_unlink",
     description: "Stop reading a linked form (its id from form_sources or the [cobra] line that linked it), when the person asks. The people it brought in stay in the Space.",
     inputSchema: { type: "object", properties: { link: { type: "string", description: "The link's id." } }, required: ["link"], additionalProperties: false },
+  },
+  {
+    name: "specialist_set",
+    description:
+      "Propose a change to one specialist (a project's Foreman, as the status tool lists it with its name): what it is for (title), the person's standing instructions for it, or the model it runs on. Use it when the person tells you how one of them should work from now on (\"Rosa should always write in Spanish\", \"have Stan run on Opus\"). The person sees every word on one card, with what it replaces, and nothing changes until they allow it; it then applies from that specialist's next conversation. Write instructions as the person's own standing wishes, in the second person, and only what they asked for: never rules about approvals, secrets or what may leave this computer, which no instruction can change. Give only the fields that change. Refused in a conversation where you read text from outside (an email, a web page, a connected app): tell the person, who can ask again in a new conversation or set it themselves in the desk app. A new name is the person's to give in the desk app.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        specialist: { type: "string", description: "Its name (\"Rosa\") or its project id, from the status tool." },
+        title: { type: "string", description: "One line, at most 120 characters: what it is for. Empty takes it back to its trade's name." },
+        instructions: { type: "string", description: "The whole of the person's standing instructions for it, at most 8,000 characters: this replaces what it had, so include what should stay. Empty removes them." },
+        model: { type: "string", description: "opus, sonnet, haiku or fable; empty for the usual one. Ignored while Foremen run on Codex." },
+      },
+      required: ["specialist"],
+      additionalProperties: false,
+    },
   },
   {
     name: "trade_define",
@@ -1432,6 +1448,7 @@ export const ROLE_TOOLS: Readonly<Record<OrchRole, readonly string[]>> = {
     "form_link",
     "form_unlink",
     "trade_define",
+    "specialist_set",
     "org_read",
     "org_set",
     "org_propose",
@@ -1565,7 +1582,7 @@ export function foremanState(foreman: OrchForeman): string {
 }
 
 export function foremanLine(foreman: OrchForeman): string {
-  return `- Foreman${foreman.crew ? ` ${foreman.crew}` : ""} for ${foreman.project} (${foreman.name}) [${foremanState(foreman)}]`;
+  return `- Foreman${foreman.crew ? ` ${foreman.crew}` : ""}${foreman.title ? ` (${foreman.title})` : ""} for ${foreman.project} (${foreman.name}) [${foremanState(foreman)}]`;
 }
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -1630,7 +1647,7 @@ export function statusText(status: OrchStatus, now: number = Date.now(), timeZon
     "Projects:",
     ...status.projects.map(
       (project) =>
-        `- ${project.id}: ${project.name} (${project.path})${project.landing === "local" ? " (local, no remote)" : ""}${project.foreman ? ` · Foreman${project.foreman.crew ? ` ${project.foreman.crew}` : ""}: ${foremanState(project.foreman)}` : ""}${project.maxWorkers !== undefined && project.maxWorkers !== status.caps.project ? ` · at most ${count(project.maxWorkers, "Worker", "Workers")} here` : ""}${placeText(org, status.machine, project.id)}${rosterText(project, now, timeZone)}`,
+        `- ${project.id}: ${project.name} (${project.path})${project.landing === "local" ? " (local, no remote)" : ""}${project.foreman ? ` · Foreman${project.foreman.crew ? ` ${project.foreman.crew}` : ""}${project.foreman.title ? ` (${project.foreman.title})` : ""}: ${foremanState(project.foreman)}` : ""}${project.maxWorkers !== undefined && project.maxWorkers !== status.caps.project ? ` · at most ${count(project.maxWorkers, "Worker", "Workers")} here` : ""}${placeText(org, status.machine, project.id)}${rosterText(project, now, timeZone)}`,
     ),
     "",
     status.workers.length ? "Workers:" : "Workers: none.",
@@ -2068,10 +2085,17 @@ export async function runTool(name: string, args: Json, computers: OrchAgent[], 
       return `Briefed the Foreman for ${briefed}${reply.started ? " (started it first)" : ""}.\n${foremanLine(reply.foreman)}\nIt plans the Workers and asks the person itself. Use foreman_wait with project ${briefed} for its report.`;
     }
     case "foreman_create": {
-      const reply = (await call(home, "/orch/foreman/create", { method: "POST", body: { template: str("template") ?? "", ...(str("name") ? { name: str("name") } : {}), ...(str("brief") ? { brief: str("brief") } : {}), ...(str("directory") ? { directory: str("directory") } : {}), ...(typeof args.remote === "boolean" ? { remote: args.remote } : {}), ...(str("space") ? { space: str("space") } : {}), ...(typeof args.confirmed === "boolean" ? { confirmed: args.confirmed } : {}) }, timeoutMs: 120_000 }, fetcher)) as { project?: { id: string; name: string }; foreman?: OrchForeman; warnings?: string[]; briefed?: boolean };
+      const reply = (await call(home, "/orch/foreman/create", { method: "POST", body: { template: str("template") ?? "", ...(str("name") ? { name: str("name") } : {}), ...(str("specialistName") ? { specialistName: str("specialistName") } : {}), ...(str("title") ? { title: str("title") } : {}), ...(str("brief") ? { brief: str("brief") } : {}), ...(str("directory") ? { directory: str("directory") } : {}), ...(typeof args.remote === "boolean" ? { remote: args.remote } : {}), ...(str("space") ? { space: str("space") } : {}), ...(typeof args.confirmed === "boolean" ? { confirmed: args.confirmed } : {}) }, timeoutMs: 120_000 }, fetcher)) as { project?: { id: string; name: string }; foreman?: OrchForeman; warnings?: string[]; briefed?: boolean };
       if (!reply.project) throw new AgentError("the agent did not say what project it created");
       const started = reply.foreman ? ` Started ${reply.foreman.name}'s Foreman${reply.briefed ? " and briefed it: foreman_wait for its report" : ""}.` : " The project exists, but its Foreman did not start.";
       return `Created ${reply.project.name} (${reply.project.id}) as a ${str("template")}.${started}${reply.warnings?.length ? `\nNote: ${reply.warnings.join("; ")}` : ""}`;
+    }
+    case "specialist_set": {
+      const body: Json = { specialist: str("specialist") ?? "" };
+      for (const key of ["title", "instructions", "model"]) if (typeof args[key] === "string") body[key] = args[key];
+      const reply = (await call(home, "/orch/specialist/set", { method: "POST", body }, fetcher)) as { unchanged?: boolean; name?: string; approval?: string; fields?: string[] };
+      if (reply.unchanged) return `${reply.name ?? "It"} is set exactly so already; nothing to allow.`;
+      return `Asked the person to allow the change to ${reply.name ?? "it"} (${(reply.fields ?? []).join(", ")}; approval ${reply.approval}). Nothing has changed yet. A [cobra] line tells you their answer; approval_status shows it meanwhile. It applies from ${reply.name ?? "its"} next conversation.`;
     }
     case "trade_define": {
       if (typeof args.definition !== "object" || args.definition === null) throw new AgentError("definition is required");

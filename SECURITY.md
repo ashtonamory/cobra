@@ -20,6 +20,14 @@ by an attacker. These are the protections that are in place now:
   approve its own requests.
 - **Approvals.** Anything that sends, spends, deletes or publishes becomes a
   card that you allow or refuse in the desk.
+- **Specialists change only by you.** A specialist's title, standing
+  instructions and model go into its own rules, so they change two ways
+  only: you set them yourself, or the Lead proposes a change on a card that
+  shows every word it would set and every word it replaces. A card too long
+  to show whole is refused, and Cobra never allows this card herself. The
+  Lead cannot make or change a specialist, or define a trade, in a
+  conversation that read text from outside. The instructions never override
+  the rules here: approvals, outside text as data, and secrets.
 - **Contained Workers.** Workers run in Cobra's sandbox, with no access to
   your home directory outside their project and no network but their line
   to the agent: under bubblewrap on Linux, under a `sandbox-exec` profile

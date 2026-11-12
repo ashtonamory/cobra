@@ -18,6 +18,8 @@ export type Seat = {
   /** The repository's project id there. */
   project: string;
   name: string;
+  /** What this specialist is for, in one line, when the computer says (agent specialists.ts). */
+  title?: string;
   /** The repository's own name, which a Space's seats start with the Space's name ("Happy Tails CRM"). */
   projectName: string;
   /** The repository's /projects entry, for its sprite. */
@@ -100,7 +102,8 @@ export function townOf(input: {
     const state: TownState = gone ? "away" : needing ? "needs" : working ? "working" : "idle";
     const crew = isDict(p.crew) ? p.crew : null;
     const name = typeof crew?.name === "string" ? crew.name : row.name;
-    seats.set(key, { key, machine: row.machine, project: row.id, name, projectName: typeof p.name === "string" ? p.name : row.name, repo: p, label, ...(trade ? { trade } : {}), company, retired, state, needing: needing ?? null, foreman: inside.find((other) => other.foreman) ?? null });
+    const title = typeof crew?.title === "string" && crew.title.trim() ? crew.title.trim() : undefined;
+    seats.set(key, { key, machine: row.machine, project: row.id, name, ...(title ? { title } : {}), projectName: typeof p.name === "string" ? p.name : row.name, repo: p, label, ...(trade ? { trade } : {}), company, retired, state, needing: needing ?? null, foreman: inside.find((other) => other.foreman) ?? null });
     foremen.push({
       key,
       project: row.id,

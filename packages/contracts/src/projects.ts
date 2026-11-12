@@ -112,7 +112,7 @@ export const Project = z.object({
    * of its sessions (so a Worker wears its Foreman's hat). An older agent
    * sends none, and an app then draws what it drew before.
    */
-  crew: z.object({ name: z.string(), look: z.number().int(), hat: z.number().int() }).optional(),
+  crew: z.object({ name: z.string(), look: z.number().int(), hat: z.number().int(), /** What this specialist is for, in one line (agent specialists.ts); absent when it has none. */ title: z.string().optional() }).optional(),
 });
 
 /**
