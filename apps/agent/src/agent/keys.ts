@@ -22,8 +22,7 @@ import { readPrivateFile, writePrivateFile } from "./private.ts";
  * project.
  *
  * Scopes keep each key to its job. A desk reads and acts; a Lead only
- * orchestrates. No key holds `terminal` (the scope /ticket needs): the desk
- * opens a terminal on this computer itself. A key of a kind Cobra no longer
+ * orchestrates. A key of a kind Cobra no longer
  * has (a phone's, a peer's, a widget's, a cloud API's) is skipped when
  * keys.json is read, so it stops working and never becomes one of these.
  *
@@ -39,10 +38,10 @@ import { readPrivateFile, writePrivateFile } from "./private.ts";
  * (extendOrch, from its hourly tick). A key whose line closed dies within
  * ORCH_KEY_LIFETIME_MS; a key that has expired is never brought back.
  */
-export type Scope = "read" | "act" | "terminal" | "orch";
+export type Scope = "read" | "act" | "orch";
 export const DESK_SCOPES: readonly Scope[] = ["read", "act"];
 export const LEAD_SCOPES: readonly Scope[] = ["orch"];
-const SCOPES: readonly Scope[] = ["read", "act", "terminal", "orch"];
+const SCOPES: readonly Scope[] = ["read", "act", "orch"];
 
 const DAY_MS = 24 * 60 * 60_000;
 /** How long a desk key works after it was made or last rotated. */
@@ -113,8 +112,8 @@ export function parseCallers(text: string): Caller[] {
     // A key made for another computer, from before Cobra ran on one only: it stops working here, never becomes a local key.
     if (v.remote === true) continue;
     if (!Array.isArray(v.scopes)) continue;
-    // A scope Cobra no longer has is dropped. The desk never opens terminals with its key; one made when it could loses that here.
-    const scopes = v.scopes.filter((scope): scope is Scope => SCOPES.includes(scope as Scope) && !(v.kind === "desk" && scope === "terminal"));
+    // A scope Cobra no longer has (`terminal`, from when it served one) is dropped; the key keeps its others.
+    const scopes = v.scopes.filter((scope): scope is Scope => SCOPES.includes(scope as Scope));
     if (scopes.length === 0) continue;
     if (typeof v.linkedAt !== "number") continue;
     const caller: Caller = { id: v.id, name: v.name, kind: v.kind, keyHash: v.keyHash, scopes, linkedAt: v.linkedAt };

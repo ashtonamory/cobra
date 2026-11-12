@@ -7,6 +7,3 @@ packages:
 #   apps/desk/      the Tauri desk; npm with its own package-lock.json in apps/desk/app
 #   site-template/  the Astro template Space websites build from; npm with its
 #                   own package-lock.json, checked by `npm test` there
-
-allowBuilds:
-  node-pty: true

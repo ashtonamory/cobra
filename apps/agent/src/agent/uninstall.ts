@@ -57,7 +57,6 @@ export type UninstallOptions = {
   purge: boolean;
   tmuxSocket: string;
   agentPort: number;
-  termPort: number;
   /** The package's node, which runs the hook helpers. */
   node: string;
   /** For the backups' names. */
@@ -76,6 +75,7 @@ export type UninstallDeps = {
   kill: (pid: number) => boolean;
 };
 
+// The terminal service is gone from Cobra; an install made before that may still have it, and uninstall takes it out too.
 export const UNITS = ["cobra-agent.service", "cobra-term.service"] as const;
 export const LAUNCHD_LABELS = ["app.cobra.agent", "app.cobra.term"] as const;
 
@@ -190,11 +190,11 @@ export async function runUninstall(paths: UninstallPaths, options: UninstallOpti
       const out = await run("launchctl", ["bootout", `gui/${options.launchd.uid}/${label}`]);
       if (out.code === 0) stopped += 1;
     }
-    say(stopped ? "  ✓ cobra-agent and cobra-term stopped and unloaded" : "  ✓ cobra-agent and cobra-term were not loaded");
+    say(stopped ? "  ✓ cobra-agent stopped and unloaded" : "  ✓ cobra-agent was not loaded");
   } else {
     await run("systemctl", ["--user", "kill", ...UNITS]);
     const disabled = await run("systemctl", ["--user", "disable", "--now", ...UNITS]);
-    say(disabled.code === 0 ? "  ✓ cobra-agent and cobra-term stopped and disabled" : `  ! systemctl: ${disabled.stderr.trim() || `exit ${disabled.code}`}`);
+    say(disabled.code === 0 ? "  ✓ cobra-agent stopped and disabled" : `  ! systemctl: ${disabled.stderr.trim() || `exit ${disabled.code}`}`);
   }
   if (options.tmuxSocket === "default") {
     say("  ! Cobra's sessions ran on your own tmux server (--tmux-socket default), which was left running: close cobra_lead, the *_fm sessions and the Workers' sessions yourself");

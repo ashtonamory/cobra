@@ -32,13 +32,8 @@ export function bearer(header: string | undefined): string {
   return value.startsWith("Bearer ") ? value.slice(7) : "";
 }
 
-/**
- * The scope a request needs. A terminal ticket is its own scope (it opens a
- * shell), and no key holds it now; anything else that reads is `read`, and
- * anything that changes is `act`.
- */
-export function scopeFor(route: string, method: string | undefined): Scope {
-  if (route === "/ticket") return "terminal";
+/** The scope a request needs: anything that reads is `read`, and anything that changes is `act`. */
+export function scopeFor(_route: string, method: string | undefined): Scope {
   return method === "GET" || method === "HEAD" ? "read" : "act";
 }
 

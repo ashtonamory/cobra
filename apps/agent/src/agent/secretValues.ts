@@ -49,6 +49,7 @@ export function secretSources(configDir = CONFIG_DIR, home = homedir()): string[
   };
   return [
     ...[...SEALED_NAMES].map((name) => join(configDir, name)),
+    // Left by an install from when Cobra served a terminal; the installer removes it, and until then its value stays out of the logs.
     join(configDir, "ticket.key"),
     ...each(join(configDir, "accounts"), "claude-token"),
     ...each(join(configDir, "accounts"), "codex", "auth.json"),

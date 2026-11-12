@@ -73,8 +73,6 @@ function unlink(target: string | undefined): void {
   process.stdout.write(`Unlinked ${matches[0]!.name}. Its key no longer works here.\n`);
 }
 
-const TERM_PORT = Number(process.env.COBRA_TERM_PORT ?? 8788);
-
 /**
  * `cobra-agent uninstall [--purge] [--yes]` (uninstall.ts). It asks first,
  * unless --yes: it ends every Cobra session and Worker on this computer.
@@ -91,7 +89,7 @@ async function uninstall(): Promise<void> {
     [
       "This removes Cobra's agent from this computer:",
       "  - Cobra's hooks from ~/.claude/settings.json and ~/.codex/config.toml (each copied first), and the skills it installed",
-      "  - stops and removes cobra-agent and cobra-term, which ends every Cobra session and Worker here",
+      "  - stops and removes cobra-agent, which ends every Cobra session and Worker here",
       "  - the cobra-agent and ste-check commands",
       "  - the desk app, when install.sh put it there: its service, launcher entry, window rules and bar widget",
       purge
@@ -128,7 +126,6 @@ async function uninstall(): Promise<void> {
       purge,
       tmuxSocket: TMUX_SOCKET,
       agentPort: AGENT_PORT,
-      termPort: TERM_PORT,
       node: process.execPath,
       stamp: new Date().toISOString().replace(/[-:]/g, "").replace(/\..*$/, ""),
       ...(process.platform === "darwin" ? { launchd: { uid: process.getuid?.() ?? 0 } } : {}),

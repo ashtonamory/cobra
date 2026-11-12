@@ -9,31 +9,25 @@
 #
 # Targets: linux-x64, linux-arm64, darwin-arm64, darwin-x64. The release
 # workflow builds each on its own kind of computer (one runner per target):
-# node-pty's addon and the site template's modules are native.
+# the site template's modules are native.
 #
 # A Mac package can also be built on Linux, for testing on a Mac before a
-# release: every native file it needs is a prebuilt one (node-pty's
-# prebuilds, the site template's optional platform packages), so nothing is
-# compiled. What a Linux build cannot do: run the bundled Mac Node to load
-# pty.node (the file type is still checked), and sign. The result is
-# unsigned; docs/mac-test.md says how to open it on the Mac.
+# release: every native file it needs is a prebuilt one (the site template's
+# optional platform packages), so nothing is compiled. What a Linux build
+# cannot do is sign. The result is unsigned; docs/mac-test.md says how to
+# open it on the Mac.
 #
 # On Linux, with COBRA_DESK_APPIMAGE set (the release), it also carries the
 # desk app's AppImage, which install.sh installs and links.
 #
-# Inside: its own Node runtime (pinned and checksum-verified), the agent and
-# gateway TypeScript sources (Node runs them directly, so there is no build
-# step), the runtime modules (ws, node-pty with its prebuilt addon, the xterm
-# page assets), the systemd units and install.sh. Nothing from the target machine is needed but systemd (or
-# launchd), tmux and git — no compiler, no npm.
+# Inside: its own Node runtime (pinned and checksum-verified), the agent's
+# TypeScript sources (Node runs them directly, so there is no build step),
+# zod for ste-check, the systemd unit and install.sh. Nothing from the target
+# machine is needed but systemd (or launchd), tmux and git — no compiler, no
+# npm.
 #
 # The sources keep their places in the repo (apps/agent/src, packages/ste/src)
 # so their relative imports work unchanged, and node_modules sits above both.
-#
-# node-pty is built on Node-API, so one pty.node loads in any Node; it is
-# checked against the bundled runtime before the package is written. Linux
-# uses the one built at install (build/Release); macOS uses node-pty's own
-# prebuilt one (prebuilds/darwin-<arch>) with its spawn-helper.
 #
 # The archive is reproducible with GNU tar (gtar on macOS: brew install
 # gnu-tar); with another tar it is still correct, only not byte-identical.
@@ -66,10 +60,10 @@ OS=${TARGET%-*}
 ARCH=${TARGET#*-}
 CROSS=0
 if [[ $TARGET != "$HOST" ]]; then
-  # Only a Mac package is all prebuilt; a Linux one compiles node-pty here.
+  # Only a Mac package is all prebuilt; a Linux one takes the site template's native modules from this computer.
   [[ $OS == darwin ]] || { echo "Build $TARGET on a $TARGET computer (this one is $HOST): its native modules are this computer's." >&2; exit 1; }
   CROSS=1
-  echo "    (a $TARGET test build on $HOST: unsigned, and pty.node is checked by its file type only)"
+  echo "    (a $TARGET test build on $HOST: unsigned)"
 fi
 
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -88,7 +82,7 @@ command -v gtar >/dev/null && TAR=gtar
 
 echo "==> $NAME"
 rm -rf "$STAGE" "$OUT/$NAME.tar.gz" "$OUT/$NAME.tar.gz.sha256"
-mkdir -p "$STAGE/bin" "$STAGE/node_modules/@xterm" "$CACHE"
+mkdir -p "$STAGE/bin" "$STAGE/node_modules" "$CACHE"
 
 # 1. The Node runtime, verified against the pinned hash.
 TARBALL="$CACHE/node-v$NODE_VERSION-$TARGET.tar.xz"
@@ -155,9 +149,7 @@ for hook in claude-hook.mjs claude-settings.mjs codex-notify.mjs codex-config.mj
   chmod 755 "$STAGE/apps/agent/hooks/$hook"
 done
 
-# 3. Runtime modules, resolved the way Node resolves them from the agent's
-#    folder — not from the root: the hoisted root copy of ws is React Native's
-#    ws 7, and the gateway needs ws 8.
+# 3. Runtime modules, resolved the way Node resolves them from the package that needs them.
 # FROM: the package whose dependency it is (the agent's, unless named).
 module_dir() { dirname "$(node -p "require.resolve('$1/package.json', { paths: ['${FROM:-$AGENT}'] })")"; }
 copy_module() {
@@ -171,38 +163,8 @@ copy_module() {
   [[ -f $src/LICENSE ]] && cp "$src/LICENSE" "$dest/" || true
   echo "    $name $(node -p "require('$src/package.json').version")"
 }
-copy_module ws index.js wrapper.mjs lib
-copy_module @xterm/xterm lib css
-copy_module @xterm/addon-fit lib
-copy_module node-pty lib
 # zod, for ste-check's report schema: the built files only.
 FROM="$ROOT/packages/ste" copy_module zod index.js index.cjs v3 v4 v4-mini
-if [[ $OS == linux ]]; then
-  PTY_DIR=build/Release
-else
-  # node-pty's prebuilt macOS addon, and the helper it starts each terminal
-  # with: shipped without its execute bit, which would fail every terminal.
-  PTY_DIR=prebuilds/$TARGET
-fi
-mkdir -p "$STAGE/node_modules/node-pty/$PTY_DIR"
-cp "$(module_dir node-pty)/$PTY_DIR/pty.node" "$STAGE/node_modules/node-pty/$PTY_DIR/"
-if [[ $OS == darwin ]]; then
-  cp "$(module_dir node-pty)/$PTY_DIR/spawn-helper" "$STAGE/node_modules/node-pty/$PTY_DIR/"
-  chmod 755 "$STAGE/node_modules/node-pty/$PTY_DIR/spawn-helper"
-fi
-case $TARGET in
-  linux-x64) KIND="x86-64" ;;
-  linux-arm64) KIND="aarch64" ;;
-  darwin-arm64) KIND="arm64" ;;
-  darwin-x64) KIND="x86_64" ;;
-esac
-file -b "$STAGE/node_modules/node-pty/$PTY_DIR/pty.node" | grep -q "$KIND" || { echo "pty.node is not $KIND" >&2; exit 1; }
-if [[ $CROSS == 1 ]]; then
-  echo "    pty.node is $KIND (not loaded: the bundled Node is a Mac one)"
-else
-  "$STAGE/bin/node" -e "require('$STAGE/node_modules/node-pty').spawn" >/dev/null || { echo "pty.node does not load in the bundled Node" >&2; exit 1; }
-  echo "    pty.node is $KIND and loads in the bundled Node"
-fi
 
 # The import check: the contracts files the sources import, then every
 # relative import in the package must find its file (staged-imports.mjs).
@@ -237,8 +199,8 @@ printf '#!/bin/sh\nhere=$(dirname "$(readlink -f "$0")")\nexec "$here/node" "$he
 chmod 755 "$STAGE/bin/ste-check"
 cp "$ROOT/LICENSE" "$STAGE/LICENSE"
 echo "$VERSION" > "$STAGE/VERSION"
-# macOS: every native file of ours (pty.node, spawn-helper, the site
-# template's addons and tools) signed with the Developer ID, hardened
+# macOS: every native file of ours (the site template's addons and tools)
+# signed with the Developer ID, hardened
 # runtime and a timestamp, then sent to Apple's notary service, so
 # Gatekeeper knows them. Node's own binary is already signed and notarized
 # by the Node.js project and is left as it is. Only with the release

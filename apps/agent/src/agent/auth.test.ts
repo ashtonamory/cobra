@@ -56,7 +56,6 @@ test("the stored file holds a hash that cannot be presented as a key", () => {
 });
 
 test("scopes by route and method", () => {
-  assert.equal(scopeFor("/ticket", "POST"), "terminal");
   assert.equal(scopeFor("/projects", "GET"), "read");
   assert.equal(scopeFor("/projects", "HEAD"), "read");
   assert.equal(scopeFor("/git", "POST"), "act");
@@ -87,7 +86,7 @@ test("a Lead key reaches /orch/* and nothing else; the desk reaches /orch/* with
     assert.equal(authorize(`Bearer ${key}`, route, method, store).ok, true, route);
     assert.equal(authorize(`Bearer ${DESK_KEY}`, route, method, store).ok, true, route);
   }
-  for (const [route, method] of [["/projects", "GET"], ["/ticket", "POST"], ["/fs/get", "GET"], ["/session", "POST"], ["/approvals/answer", "POST"], ["/keys", "GET"], ["/git", "POST"]] as const) {
+  for (const [route, method] of [["/projects", "GET"], ["/fs/get", "GET"], ["/session", "POST"], ["/approvals/answer", "POST"], ["/keys", "GET"], ["/git", "POST"]] as const) {
     assert.deepEqual(authorize(`Bearer ${key}`, route, method, store), { ok: false, status: 403 }, route);
   }
 });
@@ -112,7 +111,7 @@ test("a key of a kind that is gone admits nobody, on any route", () => {
   ];
   const store = keys(parseCallers(JSON.stringify(old)));
   for (const key of ["phone-key", "peer-key", "widget-key", "api-key"]) {
-    for (const [route, method] of [["/system", "GET"], ["/session", "POST"], ["/ticket", "POST"], ["/orch/status", "GET"]] as const) {
+    for (const [route, method] of [["/system", "GET"], ["/session", "POST"], ["/orch/status", "GET"]] as const) {
       assert.deepEqual(authorize(`Bearer ${key}`, route, method, store), { ok: false, status: 401 }, `${key} ${route}`);
     }
   }
@@ -136,16 +135,16 @@ test("an expired key is told to link again, not just refused", () => {
   assert.equal(authorize(`Bearer ${DESK_KEY}`, "/system", "GET", keys([{ ...desk, expiresAt: now + 1 }]), now).ok, true);
 });
 
-test("a desk key acts, but opens no terminal: no key holds that scope", () => {
+test("a desk key acts, and a scope Cobra no longer has is dropped when keys.json is read", () => {
   const { caller: minted, key } = mintDesk("Desk", 0);
   const store = keys([minted]);
   for (const [route, method] of [["/projects", "GET"], ["/session", "POST"], ["/git", "POST"], ["/approvals/answer", "POST"], ["/keys/rotate", "POST"]] as const) {
     assert.equal(authorize(`Bearer ${key}`, route, method, store, 1).ok, true, route);
   }
-  assert.deepEqual(authorize(`Bearer ${key}`, "/ticket", "POST", store, 1), { ok: false, status: 403 });
-  // One that says it may in keys.json loses the scope when the file is read.
-  const [widened] = parseCallers(JSON.stringify([{ ...minted, scopes: ["read", "act", "terminal"] }]));
-  assert.deepEqual(authorize(`Bearer ${key}`, "/ticket", "POST", keys([widened!]), 1), { ok: false, status: 403 });
+  // A key from when Cobra served a terminal still loads, without that scope.
+  const [old] = parseCallers(JSON.stringify([{ ...minted, scopes: ["read", "act", "terminal"] }]));
+  assert.deepEqual(old!.scopes, ["read", "act"]);
+  assert.equal(authorize(`Bearer ${key}`, "/projects", "GET", keys([old!]), 1).ok, true);
 });
 
 test("an expired Lead or Foreman key is told to start it again", () => {

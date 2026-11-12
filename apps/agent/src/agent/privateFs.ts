@@ -100,8 +100,7 @@ export function writePrivateFile(path: string, text: string): void {
 
 /**
  * Create the file only if it is absent, whole, in one step. Two processes may
- * race here (the agent and the terminal gateway both want the ticket key at
- * start); link(2) fails on an existing name, so exactly one wins and the other
+ * race here; link(2) fails on an existing name, so exactly one wins and the other
  * reads the winner's file. Returns whether this call created it.
  */
 export function createPrivateFileOnce(path: string, text: string): boolean {

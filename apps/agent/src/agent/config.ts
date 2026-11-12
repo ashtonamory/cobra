@@ -1,5 +1,4 @@
 import { createKeyStore, KEYS_PATH } from "./keys.ts";
-import { loadTicketKey, TICKET_KEY_PATH } from "./ticketKey.ts";
 
 /**
  * Cobra runs on one computer and is never reachable from another: the agent
@@ -23,16 +22,6 @@ const loopbackOnly = bind === "127.0.0.1" || bind === "::1";
  * to see at startup, not a machine that 401s every request while looking
  * healthy.
  */
-const ticket = loadTicketKey();
-if (ticket.refused) {
-  console.error(
-    `[cobra-agent] refusing to read ${TICKET_KEY_PATH}: ${ticket.refused}.\n` +
-      `           Fix it with: chmod 600 ${TICKET_KEY_PATH}\n` +
-      `           If others could read it, delete it and restart cobra-agent and cobra-term.`,
-  );
-  process.exit(1);
-}
-
 const keys = createKeyStore();
 const keysRead = keys.load();
 if (keysRead.refused) {
@@ -46,10 +35,7 @@ if (keysRead.refused) {
 
 export const config = {
   port: Number(process.env.COBRA_AGENT_PORT ?? 8787),
-  /** The terminal gateway's port (src/gateway), which serves /term/. */
-  termPort: Number(process.env.COBRA_TERM_PORT ?? 8788),
   bind,
-  ticketKey: ticket.key!,
   keys,
   loopbackOnly,
   version: "0.3.0",

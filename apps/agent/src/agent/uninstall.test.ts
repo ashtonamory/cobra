@@ -64,7 +64,7 @@ function fakeRun(calls: string[][], serve: unknown = SERVE) {
   };
 }
 
-const OPTIONS = { purge: false, tmuxSocket: "cobra", agentPort: 8797, termPort: 8798, node: process.execPath, stamp: "20261025T120000" };
+const OPTIONS = { purge: false, tmuxSocket: "cobra", agentPort: 8797, node: process.execPath, stamp: "20261025T120000" };
 
 test("uninstall takes Cobra out of shared files with a backup, stops and removes it, and keeps settings, memory and projects", async () => {
   const home = mkdtempSync(join(tmpdir(), "cobra-uninstall-"));

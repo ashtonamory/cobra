@@ -27,7 +27,6 @@ import { collectNetwork } from "./collect/net.ts";
 import { collectThermal } from "./collect/thermal.ts";
 import { collectPower, setLidAwake } from "./collect/power.ts";
 import { collectTmux, paneIdentity } from "./collect/tmux.ts";
-import { mintTicket } from "./tickets.ts";
 import { collectProjects, DEFAULT_CONFIG_PATH } from "./collect/projects.ts";
 import { collectRepos } from "./collect/repos.ts";
 import { createProject, liveCreateDeps } from "./create.ts";
@@ -277,9 +276,7 @@ async function buildSystemStats(): Promise<SystemStats> {
  * Rejected requests since the last sample, and where they landed.
  *
  * In memory on purpose: this is a rate alarm, and a counter that survived a
- * restart would report a burst that happened before the process existed. It
- * counts this agent only — the term-gateway is a separate process with its own
- * ticket failures, which it logs but does not share.
+ * restart would report a burst that happened before the process existed.
  */
 /** Turned-away requests in one sampling window that earn a warning in the log. */
 const REJECT_WARN_PER_SAMPLE = 10;
@@ -341,52 +338,9 @@ async function readBody(request: http.IncomingMessage, limit = 4096): Promise<st
   return (await readRaw(request, limit)).toString("utf8");
 }
 
-async function handleTicket(
-  request: http.IncomingMessage,
-  response: http.ServerResponse,
-): Promise<void> {
-  if (request.method !== "POST") {
-    return sendJson(response, 405, { error: "POST only" });
-  }
-  let body: { session?: unknown; cwd?: unknown };
-  try {
-    body = JSON.parse(await readBody(request)) as typeof body;
-  } catch {
-    return sendJson(response, 400, { error: "invalid JSON body" });
-  }
-
-  const session = typeof body.session === "string" ? body.session : "";
-  const cwd = typeof body.cwd === "string" && body.cwd.length > 0 ? body.cwd : homedir();
-
-  if (!SESSION_NAME.test(session)) {
-    return sendJson(response, 400, {
-      error: "session must match [A-Za-z0-9._-]{1,64}",
-    });
-  }
-  if (!cwd.startsWith("/")) {
-    return sendJson(response, 400, { error: "cwd must be an absolute path" });
-  }
-
-  // A headless Worker has no tmux session: a terminal there would start a plain shell under its name,
-  // which every "is it running" check would then count as the Worker (headlessWorkers.ts).
-  if ((await loadExtras()).some((extra) => extra.session === session && extra.worker && isHeadless(extra.id))) {
-    return sendJson(response, 409, { error: "this Worker runs headless: it has no terminal; open its conversation instead" });
-  }
-  if (orchHeadless(session)) {
-    return sendJson(response, 409, { error: "this session runs headless in API test mode: it has no terminal; open its conversation instead" });
-  }
-  const { ticket, claims } = mintTicket(config.ticketKey, session, cwd);
-  console.log(`[${SERVICE}] minted terminal ticket for session "${session}"`);
-  return sendJson(response, 200, {
-    ticket,
-    expiresAt: new Date(claims.exp * 1000).toISOString(),
-    session,
-  });
-}
-
 /**
- * The one endpoint that changes a machine rather than describing it. Same
- * shape constraints as /ticket; the actions themselves live in sessions.ts.
+ * The one endpoint that changes a machine rather than describing it. The
+ * actions themselves live in sessions.ts.
  */
 async function handleSession(
   request: http.IncomingMessage,
@@ -3331,8 +3285,6 @@ const server = http.createServer((request, response) => {
           return handleActivity(url, response);
         case "/alerts":
           return handleAlerts(response);
-        case "/ticket":
-          return await handleTicket(request, response);
         case "/session":
           return await handleSession(request, response);
         case "/transcript":
