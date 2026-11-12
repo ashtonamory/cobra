@@ -4,20 +4,38 @@ import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PublicView, ViewList, ViewResult } from "../../../../../packages/contracts/src/views.ts";
 
-const calls = vi.hoisted(() => ({ view: [] as Array<{ id: string; input: Record<string, string> }>, toasts: [] as string[] }));
+const calls = vi.hoisted(() => ({ view: [] as Array<{ id: string; input: Record<string, string> }>, toasts: [] as string[], picked: null as string[] | null, added: [] as string[], read: [] as string[][], refuse: null as { status: number; message: string } | null }));
 
 vi.mock("@tauri-apps/api/webview", () => ({ getCurrentWebview: () => ({ onDragDropEvent: async () => () => {} }) }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({ open: async () => null }));
+vi.mock("@tauri-apps/plugin-dialog", () => ({ open: async () => calls.picked }));
 vi.mock("../app/context.ts", () => ({ useApp: () => ({ toast: (t: string) => void calls.toasts.push(t) }) }));
-vi.mock("../lib/api.ts", () => ({
-  ApiError: class extends Error {},
+vi.mock("../lib/api.ts", () => {
+  class ApiError extends Error {
+    status: number;
+    constructor(status: number, message: string) {
+      super(message);
+      this.status = status;
+    }
+  }
+  return {
+  ApiError,
+  addReceipt: async (_m: string, _p: string, path: string) => {
+    if (calls.refuse) throw new ApiError(calls.refuse.status, calls.refuse.message);
+    calls.added.push(path);
+    return { file: `${path.split("/").pop()!.replace(/\W/g, "")}.kept` };
+  },
+  readReceipts: async (_m: string, _p: string, files: string[]) => {
+    calls.read.push(files);
+    return { reading: files.length };
+  },
   view: async (_m: string, _p: string, id: string, input: Record<string, string> = {}) => {
     calls.view.push({ id, input });
     return RESULTS[id] ?? { view: id, kind: "list", title: id, rows: [], masked: [], more: false };
   },
   addStatement: async () => ({}),
   readStatement: async () => ({}),
-}));
+  };
+});
 
 const { FinanceRail } = await import("./FinanceRail.tsx");
 const { plainCtx } = await import("./Dashboard.tsx");
@@ -97,5 +115,31 @@ describe("the Finance rail", () => {
     expect(acted).toEqual(["Trust:4"]);
     // Transactions follows no month.
     expect(host.textContent).not.toContain("October 2026");
+  });
+
+  it("sends the receipts chosen, starts the reading and says a card will ask", async () => {
+    calls.picked = ["/p/lunch.jpg", "/p/fuel.png", "/p/notes.txt"];
+    calls.added.length = 0; calls.read.length = 0; calls.toasts.length = 0; calls.refuse = null;
+    const { host } = await draw("Transactions");
+    expect(host.textContent).toContain("Drop receipts here");
+    const add = [...host.querySelectorAll("button")].find((b) => b.textContent === "Add receipts")!;
+    await act(async () => { add.click(); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(calls.added).toEqual(["/p/lunch.jpg", "/p/fuel.png"]);
+    expect(calls.read).toEqual([["lunchjpg.kept", "fuelpng.kept"]]);
+    expect(calls.toasts[0]).toContain("notes.txt");
+    expect(calls.toasts.at(-1)).toBe("Cobra is reading 2 receipts. A card will ask you before anything is recorded.");
+  });
+
+  it("reads nothing when the Space keeps no Money, and says so once", async () => {
+    calls.picked = ["/p/a.jpg", "/p/b.jpg"];
+    calls.added.length = 0; calls.read.length = 0; calls.toasts.length = 0; calls.refuse = { status: 404, message: "not seated" };
+    const { host } = await draw("Transactions");
+    const add = [...host.querySelectorAll("button")].find((b) => b.textContent === "Add receipts")!;
+    await act(async () => { add.click(); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(calls.read).toEqual([]);
+    expect(calls.toasts).toEqual(["a.jpg was not sent: This Space keeps no Money yet, so there is nowhere to put a receipt."]);
+    calls.refuse = null; calls.picked = null;
   });
 });
