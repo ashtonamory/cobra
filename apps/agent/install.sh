@@ -2,8 +2,8 @@
 # ---------------------------------------------------------------------------
 # Install or update the Cobra agent for the current user.
 #
-#   ./install.sh                      # ports 8787 (agent), 8788 (terminal), 8789 (model gateway), or the next free set
-#   ./install.sh --agent-port 8797 --term-port 8798
+#   ./install.sh                      # ports 8787 (agent) and 8789 (model gateway), or the next free pair
+#   ./install.sh --agent-port 8797    # the model gateway is the agent's port + 2
 #   ./install.sh --name laptop        # the short name for this computer's wip/ branches
 #   ./install.sh --no-git-sync        # no fetch and fast-forward timer (another agent has it)
 #   ./install.sh --git-sync           # git sync back on (undoes a kept --no-git-sync)
@@ -38,13 +38,15 @@
 # setting. Any other COBRA_* line there (COBRA_AGENT_BIND, COBRA_EA=off...)
 # is kept as it is, when its value is plain enough to be sourced safely.
 # (--memory-repo and --no-memory-repo are still accepted, and ignored: memory
-# stays on each computer, and a saved COBRA_MEMORY_REPO line is dropped.)
+# stays on each computer, and a saved COBRA_MEMORY_REPO line is dropped.
+# --term-port is the same: Cobra serves no terminal now, and a saved
+# COBRA_TERM_PORT line is dropped.)
 #
-# Ports: with no --agent-port/--term-port and none saved, the first install
-# looks before it chooses. The agent, the terminal and the model
-# gateway (the agent's port + 2) need three loopback ports. When
-# 8787/8788/8789 are taken by anything but this install's own agent, it takes
-# the next free set (8797/8798/8799, ...). It says what it chose and why.
+# Ports: with no --agent-port and none saved, the first install looks before
+# it chooses. The agent and the model gateway (the agent's port + 2) need two
+# loopback ports. When 8787 or 8789 is taken by anything but this install's
+# own agent, it takes the next free pair (8797 and 8799, ...). It says what it
+# chose and why.
 #
 # Everything listens on loopback only: Cobra is reached from this computer
 # alone, by the desk app.
@@ -67,8 +69,11 @@
 #
 # An update installs the new version beside the old one and moves a
 # `current` link, so a failed update is one `ln` away from the last version.
-# The terminal gateway is restarted, never stopped: a stop ends every tmux
-# session on the machine (see systemd/cobra-term.service).
+# The agent is restarted, never stopped: a stop ends every tmux session on
+# the machine (see systemd/cobra-agent.service).
+#
+# Cobra once ran a second service, cobra-term (a terminal in a web page). An
+# update takes it out: see retire_term below for why that is done with care.
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -98,7 +103,6 @@ fi
 
 # Flags first, into ARG_*: empty means not given.
 ARG_AGENT_PORT=
-ARG_TERM_PORT=
 ARG_MACHINE_NAME=
 ARG_GIT_SYNC=
 ARG_TMUX_SOCKET=
@@ -119,7 +123,8 @@ PRINT_ENV=0
 while (($#)); do
   case "$1" in
     --agent-port) ARG_AGENT_PORT=${2:?--agent-port needs a value}; shift 2 ;;
-    --term-port) ARG_TERM_PORT=${2:?--term-port needs a value}; shift 2 ;;
+    # Gone: Cobra serves no terminal. Accepted, so older command lines still run.
+    --term-port) echo "note: --term-port is ignored; Cobra serves no terminal now" >&2; shift; if [[ $# -gt 0 && $1 != --* ]]; then shift; fi ;;
     --name) ARG_MACHINE_NAME=${2:?--name needs a value}; shift 2 ;;
     --no-git-sync) ARG_GIT_SYNC=0; shift ;;
     --git-sync) ARG_GIT_SYNC=1; shift ;;
@@ -163,8 +168,9 @@ declare -A SAVED=()
 declare -A EXTRA=()
 EXTRA_KEYS=()
 DROPPED=()
-SETTING_KEY='^(COBRA_AGENT_PORT|COBRA_TERM_PORT|COBRA_MACHINE_NAME|COBRA_GIT_SYNC|COBRA_TMUX_SOCKET|COBRA_CONTAIN|COBRA_ORCHESTRATOR_ENGINE)$'
+SETTING_KEY='^(COBRA_AGENT_PORT|COBRA_MACHINE_NAME|COBRA_GIT_SYNC|COBRA_TMUX_SOCKET|COBRA_CONTAIN|COBRA_ORCHESTRATOR_ENGINE)$'
 MEMORY_REPO_DROPPED=0
+TERM_PORT_DROPPED=0
 # A first install (no agent.env yet) ends with the Workers' Claude token as a next step.
 FIRST_INSTALL=1
 [[ -f $CONFIG/agent.env ]] && FIRST_INSTALL=0
@@ -181,6 +187,8 @@ if ((!RESET_CONFIG)) && [[ -f $CONFIG/agent.env ]]; then
       SAVED[$key]=$value
     elif [[ $key == COBRA_CLAUDE_VERSION || $key == COBRA_CODEX_VERSION || $key == COBRA_PI_BIN || $key == COBRA_PI_VERSION ]]; then
       : # Written fresh below, from the harnesses this run pins.
+    elif [[ $key == COBRA_TERM_PORT ]]; then
+      TERM_PORT_DROPPED=1 # Nothing reads it since Cobra stopped serving a terminal.
     elif [[ $key == COBRA_MEMORY_REPO ]]; then
       MEMORY_REPO_DROPPED=1 # Nothing reads it since memory moved onto each computer.
     elif [[ $value =~ ^[A-Za-z0-9._:/@%+,-]*$ ]]; then
@@ -228,7 +236,6 @@ setting() { # setting <var> <flag value> <agent.env key> <label> <default>
   fi
 }
 setting AGENT_PORT "$ARG_AGENT_PORT" COBRA_AGENT_PORT "agent port" 8787
-setting TERM_PORT "$ARG_TERM_PORT" COBRA_TERM_PORT "terminal port" 8788
 setting MACHINE_NAME "$ARG_MACHINE_NAME" COBRA_MACHINE_NAME "name" ""
 setting TMUX_SOCKET "$ARG_TMUX_SOCKET" COBRA_TMUX_SOCKET "tmux socket" cobra
 # The switch means what the agent reads it as: git sync is on unless "off".
@@ -288,9 +295,7 @@ from() { # from <label> <flag>
 [[ -z $MACHINE_NAME || $MACHINE_NAME =~ ^[A-Za-z0-9._-]{1,63}$ ]] || fail "--name takes letters, digits, ., - and _, not \"$MACHINE_NAME\"$(from name --name)"
 [[ $ORCHESTRATOR_ENGINE == claude || $ORCHESTRATOR_ENGINE == codex ]] || fail "--orchestrator-engine takes claude or codex, not \"$ORCHESTRATOR_ENGINE\"$(from "orchestrator engine" --orchestrator-engine)"
 [[ $AGENT_PORT =~ ^[0-9]{1,5}$ ]] && ((10#$AGENT_PORT > 1023 && 10#$AGENT_PORT < 65536)) || fail "Port $AGENT_PORT is not a user port (1024-65535)$(from "agent port" --agent-port)."
-[[ $TERM_PORT =~ ^[0-9]{1,5}$ ]] && ((10#$TERM_PORT > 1023 && 10#$TERM_PORT < 65536)) || fail "Port $TERM_PORT is not a user port (1024-65535)$(from "terminal port" --term-port)."
-AGENT_PORT=$((10#$AGENT_PORT)) TERM_PORT=$((10#$TERM_PORT))
-[[ $AGENT_PORT != "$TERM_PORT" ]] || fail "The agent and the terminal need two different ports$(from "agent port" --agent-port)$(from "terminal port" --term-port)."
+AGENT_PORT=$((10#$AGENT_PORT))
 
 # Where Ollama is (the agent's ollama.ts): kept as plain COBRA_* lines, so
 # only a flag changes them. One off this computer also needs
@@ -312,7 +317,7 @@ for key in "${EXTRA_KEYS[@]}"; do [[ -z ${EXTRA[$key]+x} ]] || SET_EXTRA+=("$key
 EXTRA_KEYS=("${SET_EXTRA[@]}")
 
 # Who listens on a loopback port now, as ss says it (empty: nobody), and
-# whether that is this install's own agent or terminal (an update, or a
+# whether that is this install's own agent (an update, or a
 # re-run with --reset-config): its command line runs from $PREFIX.
 # macOS has no ss: lsof's listener, written as ss writes it (users:(("name",pid=N))).
 port_owner() {
@@ -350,31 +355,31 @@ model_port() { echo "${EXTRA[COBRA_MODEL_PORT]:-$(($1 + 2))}"; }
 
 # With no port given and none saved, look before choosing.
 PORTS_WHY=
-if [[ -z $ARG_AGENT_PORT && -z $ARG_TERM_PORT && -z ${SAVED[COBRA_AGENT_PORT]+x} && -z ${SAVED[COBRA_TERM_PORT]+x} ]] && port_tool; then
+if [[ -z $ARG_AGENT_PORT && -z ${SAVED[COBRA_AGENT_PORT]+x} ]] && port_tool; then
   busy=()
   FIRST_BUSY=
   for base in 8787 8797 8807 8817 8827 8837 8847 8857 8867 8877; do
     busy=()
-    for pair in "agent:$base" "terminal:$((base + 1))" "model gateway:$(model_port "$base")"; do
+    for pair in "agent:$base" "model gateway:$(model_port "$base")"; do
       holder=$(taken_by "${pair#*:}")
       [[ -z $holder ]] || busy+=("${pair#*:} ($holder)")
     done
     if ((${#busy[@]} == 0)); then
       if ((base != 8787)); then
-        AGENT_PORT=$base TERM_PORT=$((base + 1))
-        PORTS_WHY="the usual ports are taken: ${FIRST_BUSY}; using $AGENT_PORT, $TERM_PORT and $(model_port "$AGENT_PORT") instead"
+        AGENT_PORT=$base
+        PORTS_WHY="the usual ports are taken: ${FIRST_BUSY}; using $AGENT_PORT and $(model_port "$AGENT_PORT") instead"
       fi
       break
     fi
     if [[ -z $FIRST_BUSY ]]; then FIRST_BUSY=$(printf '%s, ' "${busy[@]}"); FIRST_BUSY=${FIRST_BUSY%, }; fi
   done
-  ((${#busy[@]} == 0)) || PORTS_WHY="8787 to 8879 are all taken; pick ports with --agent-port and --term-port"
+  ((${#busy[@]} == 0)) || PORTS_WHY="8787 to 8879 are all taken; pick a port with --agent-port"
 fi
 MODEL_PORT=$(model_port "$AGENT_PORT")
 
 if ((PRINT_CONFIG)); then
-  printf 'AGENT_PORT=%s\nTERM_PORT=%s\nMODEL_PORT=%s\nMACHINE_NAME=%s\nGIT_SYNC=%s\nTMUX_SOCKET=%s\n' \
-    "$AGENT_PORT" "$TERM_PORT" "$MODEL_PORT" "$MACHINE_NAME" "$GIT_SYNC" "$TMUX_SOCKET"
+  printf 'AGENT_PORT=%s\nMODEL_PORT=%s\nMACHINE_NAME=%s\nGIT_SYNC=%s\nTMUX_SOCKET=%s\n' \
+    "$AGENT_PORT" "$MODEL_PORT" "$MACHINE_NAME" "$GIT_SYNC" "$TMUX_SOCKET"
   printf 'CONTAIN=%s\n' "$CONTAIN"
   (IFS=,; printf 'KEPT=%s\nEXTRA=%s\nDROPPED=%s\n' "${KEPT[*]}" "${EXTRA_KEYS[*]}" "${DROPPED[*]}")
   printf 'PORTS_WHY=%s\n' "$PORTS_WHY"
@@ -432,11 +437,11 @@ if [[ -n $PI_FOUND ]]; then
   fi
 fi
 
-# agent.env, for both units and the `cobra-agent` command (which sources it:
+# agent.env, for the unit and the `cobra-agent` command (which sources it:
 # every value here is plain). Without --name, the hostname names this
 # computer's wip/ branches.
 agent_env() {
-  printf 'COBRA_AGENT_PORT=%s\nCOBRA_TERM_PORT=%s\n' "$AGENT_PORT" "$TERM_PORT"
+  printf 'COBRA_AGENT_PORT=%s\n' "$AGENT_PORT"
   [[ -z $MACHINE_NAME ]] || printf 'COBRA_MACHINE_NAME=%s\n' "$MACHINE_NAME"
   ((GIT_SYNC)) || printf 'COBRA_GIT_SYNC=off\n'
   [[ $ORCHESTRATOR_ENGINE == claude ]] || printf 'COBRA_ORCHESTRATOR_ENGINE=%s\n' "$ORCHESTRATOR_ENGINE"
@@ -504,19 +509,19 @@ esac
 # surprise at start: another program may already hold 8787. The
 # model gateway's port too: the agent starts without it, and every Cobra
 # session's Claude request then fails.
-[[ $PORTS_WHY != *"all taken"* ]] || fail "Ports 8787 to 8879 are all in use. Pick free ones with --agent-port and --term-port."
+[[ $PORTS_WHY != *"all taken"* ]] || fail "Ports 8787 to 8879 are all in use. Pick a free one with --agent-port (the model gateway takes that port + 2)."
 updating=0
 if [[ $OS == Darwin ]]; then
   launchctl print "gui/$(id -u)/app.cobra.agent" 2>/dev/null | grep -q "state = running" && updating=1
 else
   systemctl --user is-active --quiet cobra-agent 2>/dev/null && updating=1
 fi
-for port in "$AGENT_PORT" "$TERM_PORT" "$MODEL_PORT"; do
+for port in "$AGENT_PORT" "$MODEL_PORT"; do
   owner=$(port_owner "$port")
   if [[ -n $owner ]] && ((updating == 0)) && ! ours "$owner"; then
     what="Port $port"
     [[ $port == "$MODEL_PORT" ]] && what="Port $port (the model gateway: the agent's port + 2)"
-    fail "$what is in use (${owner//$'\n'/ }). Pick another with --agent-port / --term-port$( ((${#KEPT[@]})) && echo ", or --reset-config")."
+    fail "$what is in use (${owner//$'\n'/ }). Pick another with --agent-port$( ((${#KEPT[@]})) && echo ", or --reset-config")."
   fi
 done
 
@@ -555,9 +560,9 @@ for dir in "$PREFIX"/[0-9]*; do
   ok "removed old build $name"
 done
 
-"$PREFIX/current/bin/node" -e "require('$PREFIX/current/node_modules/node-pty')" \
-  || fail "The terminal addon does not load on this machine. Report it with: uname -a"
-ok "bundled Node $("$PREFIX/current/bin/node" --version) and the terminal addon load"
+"$PREFIX/current/bin/node" -e "process.exit(0)" \
+  || fail "The bundled Node does not run on this machine. Report it with: uname -a"
+ok "bundled Node $("$PREFIX/current/bin/node" --version) runs"
 
 say "Configuration"
 umask 077
@@ -565,12 +570,13 @@ mkdir -p "$CONFIG"
 chmod 700 "$CONFIG"
 agent_env > "$CONFIG/agent.env"
 rm -f "$CONFIG/ports.env"
-ok "agent.env: agent $AGENT_PORT, terminal $TERM_PORT, model gateway $MODEL_PORT${MACHINE_NAME:+, name $MACHINE_NAME}$( ((GIT_SYNC)) || echo ", git sync off"), tmux $( [[ $TMUX_SOCKET == default ]] && echo "on your own server" || echo "-L $TMUX_SOCKET")$(
+ok "agent.env: agent $AGENT_PORT, model gateway $MODEL_PORT${MACHINE_NAME:+, name $MACHINE_NAME}$( ((GIT_SYNC)) || echo ", git sync off"), tmux $( [[ $TMUX_SOCKET == default ]] && echo "on your own server" || echo "-L $TMUX_SOCKET")$(
   if ((${#KEPT[@]})); then kept=$(printf '%s, ' "${KEPT[@]}"); echo " (kept from agent.env: ${kept%, })"
   elif ((RESET_CONFIG)); then echo " (--reset-config: agent.env's old settings not read)"; fi)"
 [[ -z $PORTS_WHY ]] || ok "ports: $PORTS_WHY"
 if ((${#EXTRA_KEYS[@]})); then extra=$(printf '%s, ' "${EXTRA_KEYS[@]}"); ok "agent.env: kept ${extra%, }"; fi
 ((MEMORY_REPO_DROPPED == 0)) || ok "agent.env: dropped COBRA_MEMORY_REPO; memory stays on each computer now"
+((TERM_PORT_DROPPED == 0)) || ok "agent.env: dropped COBRA_TERM_PORT; Cobra serves no terminal now"
 if ((${#DROPPED[@]})); then dropped=$(printf '%s, ' "${DROPPED[@]}"); todo "agent.env: dropped ${dropped%, }: only letters, digits and ._:/@%+,- are kept in a value"; fi
 if [[ -n $CLAUDE_PIN ]]; then
   ok "Claude Code pinned at $CLAUDE_VERSION ($CLAUDE_PIN). To move on: mise up claude, then run this install.sh again"
@@ -585,7 +591,7 @@ else
   ok "no Pi $PI_MIN or newer on your PATH: local models run on Claude Code (for Pi, the faster harness for them: mise use -g pi, then run this install.sh again)"
 fi
 # There is no shared token any more: the desk has its own key
-# (cobra-agent desk), and the ticket key is made by whichever unit starts first.
+# (cobra-agent desk).
 if [[ -e $CONFIG/token ]]; then
   rm -f "$CONFIG/token"
   ok "removed the old shared token; the desk has its own key now"
@@ -600,20 +606,67 @@ if [[ -x "$PREFIX/current/bin/ste-check" ]]; then
 fi
 [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || todo "~/.local/bin is not on your PATH; run $HOME/.local/bin/cobra-agent, or add it"
 
+# The terminal service (cobra-term) of an install made before Cobra stopped
+# serving a terminal. Taking it out needs care on Linux: when that service
+# started the tmux server, the server lives in its cgroup, and tmux ties each
+# pane to the service that held the server when the pane was made (the
+# pane's tmux-spawn scope is PartOf it). A stop of the service then ends the
+# server or those panes: the Lead, the Foremen and the Workers with them.
+# So it is stopped only when it holds nothing. When it holds sessions it is
+# disabled and its file removed, and it runs on until the next restart of
+# this computer; nothing can use it by then, since the agent gives out no
+# tickets and the key they were signed with is deleted.
+term_holds_sessions() {
+  local main cgroup pid scope
+  main=$(systemctl --user show -p MainPID --value cobra-term.service 2>/dev/null) || return 0
+  cgroup=$(systemctl --user show -p ControlGroup --value cobra-term.service 2>/dev/null) || return 0
+  # Not readable: it cannot be shown to hold nothing, so it is left alone.
+  [[ -n $cgroup && -r /sys/fs/cgroup$cgroup/cgroup.procs ]] || return 0
+  while IFS= read -r pid; do
+    [[ $pid == "$main" ]] || return 0
+  done < "/sys/fs/cgroup$cgroup/cgroup.procs"
+  while IFS= read -r scope; do
+    [[ -n $scope ]] || continue
+    [[ $(systemctl --user show -p PartOf --value "$scope" 2>/dev/null) != *cobra-term.service* ]] || return 0
+  done < <(systemctl --user list-units --type=scope --state=active --no-legend --plain 'tmux-spawn-*' 2>/dev/null | cut -d' ' -f1)
+  return 1
+}
+retire_term() {
+  if [[ $OS == Darwin ]]; then
+    local plist="$UNIT_DIR/app.cobra.term.plist"
+    [[ -e $plist ]] || { rm -f "$CONFIG/ticket.key"; return 0; }
+    # bootout stops its node only: tmux and its sessions are left as they are (the plist's AbandonProcessGroup).
+    launchctl bootout "gui/$(id -u)/app.cobra.term" >/dev/null 2>&1 || true
+    rm -f "$plist" "$CONFIG/ticket.key"
+    ok "removed the old terminal service (Cobra serves no terminal now)"
+    return 0
+  fi
+  local file="$UNIT_DIR/cobra-term.service" running=0
+  systemctl --user is-active --quiet cobra-term.service 2>/dev/null && running=1
+  [[ -e $file || $running == 1 ]] || { rm -f "$CONFIG/ticket.key"; return 0; }
+  systemctl --user disable cobra-term.service >/dev/null 2>&1 || true
+  if ((running)) && term_holds_sessions; then
+    rm -f "$file" "$CONFIG/ticket.key"
+    systemctl --user daemon-reload
+    todo "the old terminal service is switched off but still running: Cobra's sessions run under it, and stopping it would end them. It goes at the next restart of this computer; nothing can use it until then"
+  else
+    systemctl --user stop cobra-term.service >/dev/null 2>&1 || true
+    rm -f "$file" "$CONFIG/ticket.key"
+    systemctl --user daemon-reload
+    ok "removed the old terminal service (Cobra serves no terminal now)"
+  fi
+}
+
 if ((SYSTEMD)); then
   if [[ $OS == Darwin ]]; then say "launchd user agents"; else say "systemd user units"; fi
   mkdir -p "$UNIT_DIR"
   if [[ $OS == Darwin ]]; then
     mkdir -p "$HOME/Library/Logs"
-    for label in app.cobra.agent app.cobra.term; do
-      sed -e "s|@PREFIX@|$PREFIX|g" -e "s|@CONFIG@|$CONFIG|g" -e "s|@HOME@|$HOME|g" -e "s|@AGENT_PORT@|$AGENT_PORT|g" -e "s|@TERM_PORT@|$TERM_PORT|g" \
-        "$PREFIX/current/launchd/$label.plist" > "$UNIT_DIR/$label.plist"
-    done
+    sed -e "s|@PREFIX@|$PREFIX|g" -e "s|@CONFIG@|$CONFIG|g" -e "s|@HOME@|$HOME|g" -e "s|@AGENT_PORT@|$AGENT_PORT|g" \
+      "$PREFIX/current/launchd/app.cobra.agent.plist" > "$UNIT_DIR/app.cobra.agent.plist"
   else
-    for unit in cobra-agent cobra-term; do
-      sed -e "s|@PREFIX@|$PREFIX|g" -e "s|@CONFIG@|$CONFIG|g" -e "s|@AGENT_PORT@|$AGENT_PORT|g" -e "s|@TERM_PORT@|$TERM_PORT|g" \
-        "$PREFIX/current/systemd/$unit.service" > "$UNIT_DIR/$unit.service"
-    done
+    sed -e "s|@PREFIX@|$PREFIX|g" -e "s|@CONFIG@|$CONFIG|g" -e "s|@AGENT_PORT@|$AGENT_PORT|g" \
+      "$PREFIX/current/systemd/cobra-agent.service" > "$UNIT_DIR/cobra-agent.service"
   fi
   # The vault seals the secret files (vault.ts): its key in the keychain when
   # there is one; else the person sets a passphrase (a next step below).
@@ -625,17 +678,16 @@ if ((SYSTEMD)); then
   fi
   if [[ $OS == Darwin ]]; then
     # bootout stops node only (AbandonProcessGroup keeps tmux and its sessions); bootstrap loads the new plist and starts it.
-    for label in app.cobra.agent app.cobra.term; do
-      launchctl bootout "gui/$(id -u)/$label" >/dev/null 2>&1 || true
-      launchctl bootstrap "gui/$(id -u)" "$UNIT_DIR/$label.plist"
-    done
+    launchctl bootout "gui/$(id -u)/app.cobra.agent" >/dev/null 2>&1 || true
+    launchctl bootstrap "gui/$(id -u)" "$UNIT_DIR/app.cobra.agent.plist"
   else
     systemctl --user daemon-reload
-    systemctl --user enable cobra-agent.service cobra-term.service >/dev/null 2>&1
+    systemctl --user enable cobra-agent.service >/dev/null 2>&1
     # restart, never stop: see the header.
-    systemctl --user restart cobra-agent.service cobra-term.service
+    systemctl --user restart cobra-agent.service
   fi
-  ok "cobra-agent on 127.0.0.1:$AGENT_PORT, cobra-term on 127.0.0.1:$TERM_PORT"
+  ok "cobra-agent on 127.0.0.1:$AGENT_PORT"
+  retire_term
 fi
 
 # The desk app, when this package carries it: linked first (cobra-agent desk
