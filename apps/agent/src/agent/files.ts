@@ -12,7 +12,7 @@ import { readPrivateFile } from "./private.ts";
  * a size cap.
  */
 
-/** A local folder the owner chose to receive files a Foreman exports (actions.ts, channel file); the person's Google Drive needs none (key `drive` is reserved for it). */
+/** A local folder the owner chose to receive files a Foreman exports (actions.ts, channel file). */
 export type ExportFolder = { label: string; path: string };
 
 export type FilesConfig = {

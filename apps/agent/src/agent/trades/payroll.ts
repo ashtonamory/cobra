@@ -627,7 +627,7 @@ const MUTATIONS: Record<string, Mutation> = {
     },
   },
 
-  timesheet_import: {
+  timefile_import: {
     describe: "Sets many timesheets for one period at once, naming each employee by name or id. One bad row refuses the whole import.",
     args: {
       period_id: { kind: "integer", required: true, describe: "The pay period's id" },

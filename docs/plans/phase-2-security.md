@@ -109,8 +109,8 @@ What was built:
 - **Secrets by name.** Every `cobra-orch` tool (lead and foreman lists) and
   every Worker Space tool was checked: none takes or returns a credential.
   Cloudflare, mail, Google and GitHub are used by the agent with what it
-  holds (`form_sources`, `site_domain`, `site_publish`, `mail_*`,
-  `mirror_status`); `form_link`'s `key` is a column name.
+  holds (`form_sources`, `site_domain`, `site_publish`, `mail_*`);
+  `form_link`'s `key` is a column name.
 - **Tests** (`secretValues.test.ts`, `mcp.test.ts`) plant values in a temp
   config folder and check that none appears in an `/orch/*` answer, an
   `orchMcp` tool result or error, an HTTP error body, a log line, the
@@ -157,8 +157,8 @@ What was built:
   | Source | Taints | Where |
   | --- | --- | --- |
   | Web search and page reads | yes | `gate.ts`, `orchWeb.ts` (as before) |
-  | Mail search and read (Gmail, a Space's own mailbox) | yes | `orch.ts` TAINTING_READS |
-  | Calendar reads | yes, every one (invites carry other people's words) | `orch.ts` TAINTING_READS |
+  | Mail search and read (a Space's own mailbox) | yes | `orch.ts` TAINTING_READS |
+  | Gmail and Calendar reads through a connector | yes, every one (invites carry other people's words) | `orchWeb.ts` connectorRead |
   | An email reply, summed up and told to its Foreman | yes, when the line is typed | `emailLive.ts`, `finishes.ts` |
   | Form submissions and site pulls (`sitePull.ts`, `formLinks.ts`), and replies, in the store | yes, on a `db_query` of the people or timeline when the store holds such rows | `dbRoutes.ts` holdsOutsideText |
   | Files copied into a Worker (`worker_import`) | yes, unless each is a picture or a font | `index.ts`, `workerImport.ts` importsText |
@@ -166,14 +166,13 @@ What was built:
   | A brief, answer or message from a tainted turn | yes, for the Foreman's turn or the Worker's run | `orch.ts` |
   | A Worker started by a tainted turn | yes (as before) | `orch.ts` startOrQueue |
   | Attachments the person sends from the desk | no: the person's own | |
-  | Drive | no: Cobra only writes there (`drive.file`) | |
   | Sent files (`sentFiles.ts`) | no: they only mark what went out | |
-  | CSV and sheet imports | no: rows move by code and never through a model; a later `db_query` of people rows taints as above | |
+  | CSV file imports | no: rows move by code and never through a model; a later `db_query` of people rows taints as above | |
   | `contact_lookup`, a Foreman's transcript read by the Lead | no (see below) | |
 
 - **The gate.** Two places decide that something runs without the person,
   and both now check the caller's turn (`orch.ts` handleOrch `taintOf`):
-  - Trust and Drive consent at `action_propose` and `email_send`: in a
+  - Trust at `action_propose` and `email_send`: in a
     tainted turn there is no trusted run; it is a card. The caller is the
     Worker itself for a Worker's Space tools.
   - Merge on green: a merge asked in a tainted turn, or of any Worker whose
@@ -187,10 +186,16 @@ What was built:
   email from outside in this turn, so it asks you before this goes out."
   The desk shows it on the card (`lib/trust.ts taintNote`).
 
+Since then: Cobra's own Google code is gone (the token broker path could
+never get a token): no Gmail send or read, no Calendar read, no Drive save
+with its standing consent, no Google Sheet copy of a database. Google is
+reached only through the person's connectors ([google.md](../google.md)),
+and the table and the gate above say what holds now.
+
 Deviations and choices:
 
-- The injection audit no longer lets anything through: a tainted Drive save
-  or merge is a card, as the decision says. `taintAudit.ts`'s `audit` is no
+- The injection audit no longer lets anything through: a tainted merge is
+  a card, as the decision says. `taintAudit.ts`'s `audit` is no
   longer called; its `keepPage` and `speaksToAi` still are. Removing the rest
   is left for a later change.
 - Instinct keeps every card of a tainted turn, not only outward ones (a plan,

@@ -12,7 +12,7 @@
  *
  * What needs you keeps its answers in view: Allow and Deny on an approval and
  * on a Claude's permission prompt. A Foreman's action (an email, files for
- * your Drive, a note) shows exactly what Allow sends (components/ActionCard.tsx).
+ * a folder, a note) shows exactly what Allow sends (components/ActionCard.tsx).
  * Landed lists what ran on trust today, with no card, and the routine that
  * runs next (lib/trust.ts). What Cobra did lists what Instinct decided
  * without you this week, each with its Undo, and Pause (lib/decided.ts). The work map, the pull request list and "Tell the
@@ -534,10 +534,10 @@ function BlockerRow({ b }: { b: ops.Blocker }) {
     );
   }
   if (b.kind === "alert") {
+    // The alert's own words say what is wrong; there is no page about this computer's state to send the person to.
     return (
       <BoardRow time={b.time} title={b.title} word={b.word} tone="signal" machine={b.machine}
-        detail={String(b.alert?.body || "") || null}
-        actions={<Button kind="flat" small onClick={() => app.show("fleet")}>This computer</Button>} />
+        detail={String(b.alert?.body || "") || null} />
     );
   }
   const r = b.row;

@@ -4,7 +4,7 @@ export const DOG_WALKING = {
   name: "Dog walking",
   summary: "Keeps the dogs, their owners and the week's walks; proposes the confirmations, never takes a payment.",
   brief: "You run a dog-walking round: the dogs, their owners and the walks booked each week.",
-  reads: ["calendar"],
+  reads: ["mail"],
   tables: {
     owners: { describe: "The people whose dogs are walked", columns: { name: { kind: "text", required: true }, email: { kind: "text" }, address: { kind: "text", sensitive: true }, archived_at: { kind: "text" } } },
     dogs: { describe: "Each dog", columns: { name: { kind: "text", required: true }, owner_id: { kind: "integer", required: true, ref: "owners" }, size: { kind: "text", values: ["small", "medium", "large"] } } },

@@ -18,9 +18,9 @@ export const BOUNCE_SEEN_MAX = 500;
 export type BounceNotice = { id: string; subject: string; text: string };
 
 export type BounceDeps = {
-  /** The notices' ids and subjects (gmailRead.ts mailSearch). */
+  /** The notices' ids and subjects (mailboxes.ts boxInbox). */
   search: (query: string) => Promise<{ id: string; subject: string }[]>;
-  /** One notice: its subject, and as text only the addresses it named, read before scrubbing (gmailRead.ts mailBounce, mailboxes.ts boxInbox). */
+  /** One notice: its subject, and as text only the addresses it named, read before scrubbing (mailboxes.ts boxInbox). */
   read: (id: string) => Promise<BounceNotice>;
   seen: () => string[];
   saveSeen: (ids: string[]) => void;

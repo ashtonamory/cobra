@@ -1,35 +1,32 @@
-// The person's routes for a project's records and the account's Google
-// connection: the phone's Settings → Integrations → Google and a project's
-// Records section with Undo and Open sheet, and the desk's same.
+// The person's routes for a project's records and for Google's connectors:
+// the desk's Settings → Integrations → Google and a project's Records
+// section with Undo.
 //
-//   GET  /integrations/google            whether THIS computer's agent can use the account's Google (contracts GoogleIntegration)
+//   GET  /integrations/google            Gmail, Calendar and Drive as the Claude account's connectors have them (contracts GoogleIntegration)
 //   GET  /db/journal?project=&limit=     the project's journal, newest first, masked (JournalReply)
 //   POST /db/undo  {project, journal}    undoes one entry as "person"; answers that entry after (JournalEntry)
-//   GET  /db/mirror?project=             the project's sheet and how its last push went (MirrorStatus)
 //   GET  /views?project=                 the trade's dashboards without their SQL, and the form of each button's write (ViewList)
 //   GET  /view?project=&view=&id=&q=&range=&key=&month=&filter=   one dashboard, run, sensitive values masked (ViewResult); a chart's range and drilled-from key
 //   POST /view/write  {project, mutation, args}   a button's change, one of the trade's named writes a view names, journaled as "person"
 //   POST /view/reveal {project, view, field, id?, block?, row?}   one hidden value, for the Show button (the desk asks its passcode first)
 //
-// A phone's or a desk's key only: a Lead or Foreman key reaches /orch/* and
+// A desk's key only: a Lead or Foreman key reaches /orch/* and
 // nothing else (auth.ts), and is refused here too, so an orchestrator never
 // undoes on the person's behalf. The GETs need `read`, the POST `act`
 // (auth.ts scopeFor, by method).
 //
 // The database is reached only through dbRoutes.ts handleDb, as a Foreman's
-// db_ tools reach it: the same masking, the same refusals in words (400),
-// the mirror scheduled after the undo. A project whose trade keeps no
-// database answers an empty journal and an empty mirror status, so the app
-// draws "no records yet" and not an error. After an undo the project's
+// db_ tools reach it: the same masking, the same refusals in words (400).
+// A project whose trade keeps no database answers an empty journal, so the
+// app draws "no records yet" and not an error. After an undo the project's
 // Foreman hears it as a [cobra] line (finishes.ts tell), as it hears what
 // became of an action after Allow.
 //
-// Cobra has no Google connection of its own: a token broker can be plugged in
-// (googleAuth.ts), and otherwise Google comes through MCP connectors. The route
-// asks for a grant (held in memory, so cheap once connected) and answers what
-// it learned: never the token.
+// Cobra has no Google connection of its own: Google comes through the
+// connectors of the Claude account on this computer (connectors.ts), and the
+// route answers which of them are signed in. No token passes here.
 import { GOOGLE_CONNECTORS, lookForConnectors, readConnectors } from "./connectors.ts";
-import type { GoogleIntegration, JournalEntry as JournalView, JournalReply, MirrorStatus as MirrorView, Project } from "@cobra/contracts";
+import type { GoogleIntegration, JournalEntry as JournalView, JournalReply, Project } from "@cobra/contracts";
 
 import { BY_PERSON, handleDb, liveDbDeps, type DbDeps, type Reply } from "./dbRoutes.ts";
 import { UNDO_DAYS, type JournalEntry, type UndoResult } from "./dbTypes.ts";
@@ -37,10 +34,8 @@ import { actionMutations, currencyOf, listViews, revealCell, runView, viewsFor, 
 import { openingMonth } from "./viewSpecs/finance.ts";
 import { publicBoards, readBoards, writeBoards } from "./spaceBoards.ts";
 import { seatOf, spaceKindOf, SPACES_DIR } from "./spaces.ts";
-import { GoogleAuthError, googleGrant, googleStatus, type GoogleStatus } from "./googleAuth.ts";
-import type { MirrorStatus } from "./mirror.ts";
 
-export const PERSON_ROUTES: ReadonlySet<string> = new Set(["/integrations/google", "/db/journal", "/db/undo", "/db/mirror", "/views", "/view", "/view/write", "/view/reveal", "/boards", "/board/view", "/boards/remove"]);
+export const PERSON_ROUTES: ReadonlySet<string> = new Set(["/integrations/google", "/db/journal", "/db/undo", "/views", "/view", "/view/write", "/view/reveal", "/boards", "/board/view", "/boards/remove"]);
 export const PERSON_POSTS: ReadonlySet<string> = new Set(["/db/undo", "/view/write", "/view/reveal", "/boards/remove"]);
 
 /** The key kinds these routes answer: the person's own desk. */
@@ -52,9 +47,6 @@ export type PersonDeps = {
   /** The projects registered on this computer. */
   projects: () => Promise<Project[]>;
   db: DbDeps;
-  /** googleAuth.ts googleGrant: a GoogleAuthError when there is none. What it returns is never read here, so the token never reaches a reply. */
-  grant: () => Promise<unknown>;
-  status: () => GoogleStatus;
   /** The Claude account's Google connectors from the agent's last look (connectors.ts), or null before one. */
   connectors?: () => Array<{ name: string; connected: boolean }> | null;
   /** finishes.ts tell: one [cobra] line for an owner (here a project's Foreman). */
@@ -69,7 +61,7 @@ export type PersonDeps = {
 
 /** The live deps, with the registry and the Foreman's line from index.ts. */
 export function livePersonDeps(projects: () => Promise<Project[]>, tell: (owner: string, text: string) => void, log: (line: string) => void, importAllowed?: (project: string) => void): PersonDeps {
-  return { projects, db: liveDbDeps(), grant: googleGrant, status: googleStatus, connectors: liveGoogleConnectors, tell, now: Date.now, log, ...(importAllowed ? { importAllowed } : {}) };
+  return { projects, db: liveDbDeps(), connectors: liveGoogleConnectors, tell, now: Date.now, log, ...(importAllowed ? { importAllowed } : {}) };
 }
 
 const message = (caught: unknown): string => (caught instanceof Error ? caught.message : String(caught));
@@ -102,34 +94,10 @@ export function personEntry(entry: JournalEntry, now: number): JournalView {
   };
 }
 
-/** No sheet, nothing pushed, nothing owed. */
-export function emptyMirror(project: string): MirrorView {
-  return { project, spreadsheetId: null, url: null, createdBy: null, lastSync: null, lastError: null, pending: false };
-}
-
-/** The mirror's status with every field the app reads present, so an entry mirror.json kept from before a field existed reads null for it. */
-function mirrorView(status: MirrorStatus): MirrorView {
-  return { ...emptyMirror(status.project), ...status };
-}
-
-async function googleIntegration(deps: PersonDeps): Promise<GoogleIntegration> {
-  try {
-    await deps.grant();
-  } catch (caught) {
-    // A GoogleAuthError is what the status below says, in its own words; anything else is the agent's and goes to the log.
-    if (!(caught instanceof GoogleAuthError)) deps.log(`google: ${message(caught)}`);
-  }
-  const status = deps.status();
+/** Which of Google's connectors the Claude account here has signed in; none listed before the agent first looked. */
+function googleIntegration(deps: PersonDeps): GoogleIntegration {
   const connectors = deps.connectors?.() ?? null;
-  return {
-    cloudLinked: status.problem !== "no_cloud_link",
-    connected: status.connected,
-    email: status.email,
-    scopes: status.scopes,
-    problem: status.problem,
-    checkedAt: status.checkedAt,
-    ...(connectors ? { connectors } : {}),
-  };
+  return connectors ? { connectors } : {};
 }
 
 /** The Google ones from the last look, and a new look started for the next read. */
@@ -142,18 +110,18 @@ function liveGoogleConnectors(): Array<{ name: string; connected: boolean }> | n
 
 /**
  * One person route. `bodyText` is the raw body of a POST ("" for a GET).
- * `caller` is the key that passed auth.ts; anything but a phone's or a
+ * `caller` is the key that passed auth.ts; anything but a
  * desk's is refused 403 before anything is read.
  */
 export async function handlePerson(route: string, method: string | undefined, url: URL, bodyText: string, caller: { kind: string }, deps: PersonDeps): Promise<Reply> {
   if (!PERSON_KINDS.has(caller.kind)) {
-    return { status: 403, body: { error: "only the desk app you linked reads a project's records or the Google connection here; a Foreman uses its db_ tools" } };
+    return { status: 403, body: { error: "only the desk app you linked reads a project's records or Google's connectors here; a Foreman uses its db_ tools" } };
   }
   const post = PERSON_POSTS.has(route);
   if (post && method !== "POST") return { status: 405, body: { error: "POST only" } };
   if (!post && method !== "GET") return { status: 405, body: { error: "GET only" } };
 
-  if (route === "/integrations/google") return { status: 200, body: await googleIntegration(deps) };
+  if (route === "/integrations/google") return { status: 200, body: googleIntegration(deps) };
 
   let body: Record<string, unknown> = {};
   if (post) {
@@ -178,15 +146,8 @@ export async function handlePerson(route: string, method: string | undefined, ur
     return { status: 200, body: { project: project.id, entries, records: true } satisfies JournalReply };
   }
 
-  if (route === "/db/mirror") {
-    if (!schema) return { status: 200, body: emptyMirror(project.id) };
-    const reply = await handleDb("/orch/db/mirror", url, {}, project, deps.db, deps.log);
-    if (reply.status !== 200) return reply;
-    return { status: 200, body: mirrorView(reply.body as MirrorStatus) };
-  }
-
   if (route === "/db/undo") {
-    // handleDb checks the journal id, answers 409 for a trade with no database and 400 with the engine's words for a refused undo, and schedules the mirror.
+    // handleDb checks the journal id, answers 409 for a trade with no database and 400 with the engine's words for a refused undo.
     const reply = await handleDb("/orch/db/undo", url, { journal: body.journal }, project, deps.db, deps.log, BY_PERSON);
     if (reply.status !== 200 || !schema) return reply;
     const result = reply.body as UndoResult;
@@ -194,7 +155,7 @@ export async function handlePerson(route: string, method: string | undefined, ur
     const what = entry ? ` (${entry.mutation})` : "";
     deps.tell(
       project.id,
-      `The person undid journal ${result.undid}${what} from the ${caller.kind}: its rows are back as they were before it, and the sheet follows. Read db_journal before you change those rows again.`,
+      `The person undid journal ${result.undid}${what} from the ${caller.kind}: its rows are back as they were before it. Read db_journal before you change those rows again.`,
     );
     if (!entry) return { status: 500, body: { error: `journal ${result.undid} was undone (journal ${result.journal}), but its entry could not be read back` } };
     return { status: 200, body: personEntry(entry, deps.now()) };
@@ -215,7 +176,7 @@ const trimmed = (value: unknown): string => (typeof value === "string" ? value.t
  * The dashboards (views.ts). A project whose trade ships none answers an
  * empty list, so the app keeps its Records section. A refusal in words is a
  * 400, as the db routes give; a person's write goes through handleDb as
- * "person", so it is journaled, masked and mirrored like any other, and the
+ * "person", so it is journaled and masked like any other, and the
  * project's Foreman hears it as a [cobra] line.
  */
 async function viewRoute(route: string, url: URL, body: Record<string, unknown>, project: Project, schema: ReturnType<DbDeps["schemaFor"]>, deps: PersonDeps, callerKind: string): Promise<Reply> {

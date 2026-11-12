@@ -14,13 +14,11 @@
 // [cobra] line (finishes.ts tell).
 import type { ApprovalAction, ApprovalTrusted } from "@cobra/contracts";
 
-import { actionText, goesToDrive } from "./actions.ts";
+import { actionText } from "./actions.ts";
 import { makeApproval, type StoredApproval } from "./approvals.ts";
 import {
   actionKey,
   clearAsk,
-  DRIVE_CONSENT,
-  DRIVE_SAVES_PER_DAY,
   mayRunTrusted,
   noteOutcome,
   revokeNews,
@@ -100,10 +98,6 @@ export async function handleTrustPerson(route: string, method: string | undefine
  */
 export function trustedRun(deps: TrustDeps, action: ApprovalAction): ApprovalTrusted | null {
   const now = deps.now();
-  // The person's own Drive: agreed to at Connect (actionTrust.ts DRIVE_CONSENT), no grant needed.
-  if (action.channel === "file" && action.files && goesToDrive(action.files) && trustedRuns(deps.approvals.load(), DRIVE_CONSENT, now) < DRIVE_SAVES_PER_DAY) {
-    return { key: DRIVE_CONSENT, grantedAt: new Date(now).toISOString() };
-  }
   const keyed = actionKey(action, deps.renders());
   const state = deps.load();
   const grant = mayRunTrusted(state, keyed, deps.approvals.load(), now);

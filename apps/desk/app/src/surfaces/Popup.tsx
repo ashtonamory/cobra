@@ -7,7 +7,7 @@
  *
  * Three kinds of item: a Claude session waiting on a dialog, an approval the
  * Lead or a Foreman asked for (a merge, an email,
- * files for your Drive, a note: an action shows exactly what Allow sends), and
+ * files for a folder, a note: an action shows exactly what Allow sends), and
  * a computer listening on your network, each with its kind word (PERMISSION,
  * QUESTION, APPROVE, EMAIL, FILES, NOTE, LAN…) and its age.
  *

@@ -36,17 +36,6 @@ import { renderOf, type RenderEntry } from "./renders.ts";
 export const TRUST_PATH = join(STATE_DIR, "trust.json");
 /** Allows in a row, with nothing denied between, before trust is proposed. */
 export const CLEAN_RUNS = 3;
-/**
- * A save to the person's own Google Drive (`Cobra/<project>`, channel
- * `file`, folder `drive`) runs at once, as a trusted run with this key: the
- * person agreed to it when they connected Google in the app. It only adds
- * files there (Drive never replaces one), and nothing in Cobra deletes from
- * Drive. A local folder from files.json still asks and earns trust as before.
- */
-export const DRIVE_CONSENT = "drive-connected";
-/** Saves to Drive in 24 hours before the next one asks: a runaway Foreman stays small. */
-export const DRIVE_SAVES_PER_DAY = 50;
-
 /** A trusted key's runs in 24 hours before it asks again. */
 export const TRUSTED_PER_DAY = 10;
 /** How long receipts stay on the apps' lists. */
@@ -288,8 +277,7 @@ export function trustList(state: TrustState, list: readonly StoredApproval[], no
 export function receiptNotice(approval: Pick<StoredApproval, "state" | "title" | "results" | "action" | "trusted">): { title: string; body: string } {
   const project = approval.action?.projectName ?? "A Foreman";
   const outcome = (approval.results ?? []).map((result) => result.message).join("; ");
-  const agreed = approval.trusted?.key === DRIVE_CONSENT ? "as you agreed when you connected Google" : "on trust";
-  const how = approval.trusted?.audited ? `${agreed}, checked for planted content first` : agreed;
+  const how = approval.trusted?.audited ? "on trust, checked for planted content first" : "on trust";
   if (approval.state === "done") return { title: `${project}: ${approval.title}`, body: `Done ${how}: ${outcome || "done"}.` };
   return { title: `${project}: not done`, body: `${approval.title} ran ${how} and failed: ${outcome || "failed"}.` };
 }

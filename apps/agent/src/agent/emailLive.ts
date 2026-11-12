@@ -14,15 +14,13 @@ import type { ApprovalAction, Project } from "@cobra/contracts";
 import { seatKey } from "../../../../packages/contracts/src/org.ts";
 import { loadApprovals, saveApprovals } from "./approvals.ts";
 import { audienceOf, mayGetMarketing, readFilter, statusOf, topicsOfEmail } from "./emailAudience.ts";
-import { grantForRead, LIVE_READ_DEPS } from "./calendar.ts";
 import { checkBounces } from "./emailBounces.ts";
 import { checkReplies, REPLY_SYSTEM, type SentThread } from "./emailReplies.ts";
-import { checkMoneyMail, MONEY_QUERY, MONEY_SYSTEM, READ_TIMEOUT_MS as MONEY_READ_TIMEOUT_MS, type MoneyMessage, type MoneyRead, type MoneySpace, type SpaceLook } from "./moneyMail.ts";
+import { checkMoneyMail, MONEY_SYSTEM, READ_TIMEOUT_MS as MONEY_READ_TIMEOUT_MS, type MoneyRead, type MoneySpace, type SpaceLook } from "./moneyMail.ts";
 import { boxAdapter, boxForSpace, boxInbox, loadMailboxes, PROVIDER_WORDS, type BoxMessage, type Mailbox } from "./mailboxes.ts";
 import { eaArgs, liveEaRun } from "./ea.ts";
 import { subscriptionHeld } from "./subscriptionHeld.ts";
 import { fireHooks, startCursor } from "./emailHooks.ts";
-import { mailBounce, mailRead, mailSearch } from "./gmailRead.ts";
 import { readVersion } from "./emailFiles.ts";
 import { personValues, proposeBranded, queueBatchJobs, queueCampaignJobs } from "./emailRoutes.ts";
 import { SequenceRuns, sequenceDigest, startSequence, tickSequences, triggerProblem, type SequenceRow } from "./emailSequences.ts";
@@ -34,7 +32,7 @@ import { emailFolders, type ThemePlace } from "./emailFiles.ts";
 import { DAILY_CAP, emailDbPath, EmailQueue, type EmailJob, type JobState, type SendRow } from "./emailQueue.ts";
 import type { EmailRouteDeps, PersonFound, SpacePlace } from "./emailRoutes.ts";
 import { sendNext, type PeopleLink } from "./emailSend.ts";
-import { gmailAdapter, type MailAdapter } from "./mailAdapter.ts";
+import { noMailboxAdapter, NO_SENDER, type MailAdapter } from "./mailAdapter.ts";
 import { linkOf, type MarketingDeps } from "./marketing.ts";
 import { loadRoutines } from "./routines.ts";
 import { orgForMemory } from "./memoryIndex.ts";
@@ -62,22 +60,25 @@ export function spaceOfProject(project: Project): SpacePlace | null {
   return space && project.path.startsWith(`${space.dir}/`) ? space : null;
 }
 
-/** Where a Space's email goes from: the mailbox the person chose for it in Settings → Mailboxes, else their Gmail (its address when Google is connected, else null). */
+/** Where a Space's email goes from: the mailbox the person chose for it in Settings → Mailboxes. With none, `mailbox` says so and the address is null. */
 export type SpaceSender = { mailbox: string; address: string | null };
+
+/** What a Space with no mailbox shows where its mailbox's name would be. */
+const NO_SENDER_NAME = "No mailbox";
 
 export async function senderOf(space: string): Promise<SpaceSender> {
   const box = boxForSpace(loadMailboxes(), space);
   if (box) return { mailbox: PROVIDER_WORDS[box.provider].name, address: box.address };
-  return { mailbox: "Gmail", address: await gmailAdapter().account().catch(() => null) };
+  return { mailbox: NO_SENDER_NAME, address: null };
 }
 
-/** The Space's own mailbox a project's mail reads and mail_organize use instead of Gmail (boxMail.ts), or null for Gmail. */
+/** The Space's own mailbox a project's mail reads and mail_organize use (boxMail.ts), or null when it has none. */
 export function boxOfProject(project: Project): Mailbox | null {
   const space = spaceOfProject(project);
   return space ? boxForSpace(loadMailboxes(), space.id) : null;
 }
 
-/** The mailbox a Foreman's plain email (action_propose channel email) goes from: its Space's box, or null for Gmail. Frozen on the card. */
+/** The mailbox a Foreman's plain email (action_propose channel email) goes from: its Space's box, or null when it has none. Frozen on the card. */
 export function mailboxOfProject(project: Project): { box: string; address: string; mailbox: string } | null {
   const space = spaceOfProject(project);
   const box = space ? boxForSpace(loadMailboxes(), space.id) : null;
@@ -322,8 +323,7 @@ export function marketingDeps(io: { project: RouteIo["project"]; projects: () =>
       } catch {
         boxes = [];
       }
-      const gmail = await gmailAdapter().account().catch(() => null);
-      return [...boxes, ...(gmail ? [gmail] : [])];
+      return boxes;
     },
     place: themePlace,
     now: () => Date.now(),
@@ -362,8 +362,8 @@ export function liveEmailRouteDeps(io: RouteIo): EmailRouteDeps {
         return { status: 409, error: `the Space's People could not be read: ${caught instanceof Error ? caught.message : String(caught)}` };
       }
     },
-    // A Space with an iCloud or Zoho box reads its mail over IMAP with the same app password: always on.
-    mailOn: async (space) => (boxForSpace(loadMailboxes(), space) ? null : await mailReadOn()),
+    // A Space with a mailbox reads its mail over IMAP with the same app password; one with none reads no mail, and the words say the step.
+    mailOn: async (space) => (boxForSpace(loadMailboxes(), space) ? null : NO_SENDER),
     capNow: (space) => capNow(adapterForSpace(space, io.log)),
     sender: senderOf,
     sequenceTrigger: (space, trigger) => {
@@ -380,16 +380,6 @@ export function liveEmailRouteDeps(io: RouteIo): EmailRouteDeps {
     drafts: draftsIn,
     editDraft: editDraftLive,
   };
-}
-
-/** Null when the Google connection reads mail (bounces need it), else the step to turn it on. */
-async function mailReadOn(): Promise<string | null> {
-  try {
-    await grantForRead(LIVE_READ_DEPS, "mail");
-    return null;
-  } catch (caught) {
-    return caught instanceof Error ? caught.message : String(caught);
-  }
 }
 
 /** The account's cap, what is left of it across every Space here, and the jobs waiting in them. */
@@ -452,23 +442,21 @@ const BOUNCE_EVERY_MS = 30 * 60_000;
 const BOUNCES_SEEN = join(STATE_DIR, "email-bounces-seen.json");
 const INBOX_DAYS_MS = 3 * 24 * 60 * 60_000;
 
-/** The adapter a Space's email goes through: its mailbox (mailboxes.ts), or Gmail when it names none. */
+/** The adapter a Space's email goes through: its mailbox (mailboxes.ts), or one that sends nothing and says the step when it names none. */
 function adapterForSpace(space: string, log: (line: string) => void): MailAdapter {
   const box = boxForSpace(loadMailboxes(), space);
-  return box ? boxAdapter(box, { log }) : gmailAdapter();
+  return box ? boxAdapter(box, { log }) : noMailboxAdapter();
 }
 
-/** Where the Spaces here send from: whether any uses Gmail, and each mailbox in use once. */
-function sendingBoxes(spaces: readonly { id: string }[]): { gmail: boolean; boxes: Mailbox[] } {
+/** Where the Spaces here send from: each mailbox in use once. */
+function sendingBoxes(spaces: readonly { id: string }[]): Mailbox[] {
   const file = loadMailboxes();
   const boxes = new Map<string, Mailbox>();
-  let gmail = false;
   for (const space of spaces) {
     const box = boxForSpace(file, space.id);
     if (box) boxes.set(box.id, box);
-    else gmail = true;
   }
-  return { gmail, boxes: [...boxes.values()] };
+  return [...boxes.values()];
 }
 
 function readSeen(path: string): string[] {
@@ -497,11 +485,11 @@ function inboxSource(box: Mailbox, look: { from?: readonly string[]; notFrom?: s
   };
 }
 
-/** One look for failure notices in each sending mailbox (emailBounces.ts): Gmail when Mail reading is on, each iCloud or Zoho box over IMAP. */
+/** One look for failure notices in each sending mailbox (emailBounces.ts), over IMAP. */
 async function bounceCheck(log: (line: string) => void): Promise<void> {
   const spaces = listSpaces().filter((space) => existsSync(emailDbPath(space.id)));
   if (!spaces.length) return;
-  const { gmail, boxes } = sendingBoxes(spaces);
+  const boxes = sendingBoxes(spaces);
   const common = {
     seen: () => readSeen(BOUNCES_SEEN),
     saveSeen: (ids: string[]) => writeFileSync(BOUNCES_SEEN, JSON.stringify(ids), { mode: 0o600 }),
@@ -510,21 +498,6 @@ async function bounceCheck(log: (line: string) => void): Promise<void> {
     now: () => new Date(),
     log,
   };
-  if (gmail && (await mailReadOn()) === null) {
-    const account = await gmailAdapter().account().catch(() => null);
-    if (account) {
-      await checkBounces({
-        ...common,
-        search: async (query) => (await mailSearch({}, { query, max: 25 })).messages.map((m) => ({ id: m.id, subject: m.subject })),
-        read: async (id) => {
-          // mailRead's text is scrubbed, addresses and all; the check needs only the ones the notice says failed (gmailRead.ts mailBounce).
-          const notice = await mailBounce({}, id);
-          return { id, subject: notice.subject, text: notice.addresses.join("\n") };
-        },
-        account,
-      });
-    }
-  }
   for (const box of boxes) {
     const source = inboxSource(box, { from: ["mailer-daemon", "postmaster"] });
     await checkBounces({
@@ -542,11 +515,11 @@ async function bounceCheck(log: (line: string) => void): Promise<void> {
 
 const REPLIES_SEEN = join(STATE_DIR, "email-replies-seen.json");
 
-/** One look for replies to the ledger's sends (emailReplies.ts), in Gmail and each sending mailbox: each summed up on its person's timeline and told to its Foreman. */
+/** One look for replies to the ledger's sends (emailReplies.ts), in each sending mailbox: each summed up on its person's timeline and told to its Foreman. */
 async function replyCheck(log: (line: string) => void, tell: (project: string, text: string, needs?: Needs, outside?: TaintSource) => void): Promise<void> {
   const spaces = listSpaces().filter((space) => existsSync(emailDbPath(space.id)));
   if (!spaces.length) return;
-  const { gmail, boxes } = sendingBoxes(spaces);
+  const boxes = sendingBoxes(spaces);
   // The computer's own sign-in, never the API key; at HOLD the reply's first words go instead.
   const run = liveEaRun(undefined, "email-replies", false);
   // Each Foreman hears its replies once per look, in one line, not one wake per reply.
@@ -580,13 +553,6 @@ async function replyCheck(log: (line: string) => void, tell: (project: string, t
     now: () => new Date(),
     log,
   };
-  if (gmail && (await mailReadOn()) === null) {
-    await checkReplies({
-      ...common,
-      search: async (query) => (await mailSearch({}, { query, max: 25 })).messages.map((m) => ({ id: m.id, thread: m.thread, from: m.from, subject: m.subject })),
-      read: async (id) => ({ text: (await mailRead({}, id)).text }),
-    });
-  }
   for (const box of boxes) {
     const source = inboxSource(box, { notFrom: box.address });
     await checkReplies({
@@ -625,21 +591,19 @@ function moneyLook(space: string, read: MoneyRead): SpaceLook {
 }
 
 /**
- * One look for money in mail (moneyMail.ts) for every Space with a Money seat: Gmail for those with no mailbox
- * of their own (when Mail reading is on), each iCloud or Zoho box for its Spaces.
+ * One look for money in mail (moneyMail.ts) for every Space with a Money seat and a mailbox of its own:
+ * each iCloud or Zoho box for its Spaces. A Space with no mailbox has no mail to look in.
  */
 async function moneyCheck(log: (line: string) => void): Promise<void> {
   const file = loadMailboxes();
-  const gmail: MoneySpace[] = [];
   const byBox = new Map<string, { box: Mailbox; spaces: MoneySpace[] }>();
   for (const space of listSpaces()) {
     if (!seatFor(space.id, "money")) continue;
     const entry: MoneySpace = { id: space.id, name: space.name, kind: space.kind };
     const box = boxForSpace(file, space.id);
-    if (!box) gmail.push(entry);
-    else byBox.set(box.id, { box, spaces: [...(byBox.get(box.id)?.spaces ?? []), entry] });
+    if (box) byBox.set(box.id, { box, spaces: [...(byBox.get(box.id)?.spaces ?? []), entry] });
   }
-  if (!gmail.length && !byBox.size) return;
+  if (!byBox.size) return;
   // The computer's own sign-in, never the API key; at HOLD nothing is read and the messages wait.
   const run = liveEaRun(undefined, "money-mail", false);
   const common = {
@@ -654,14 +618,6 @@ async function moneyCheck(log: (line: string) => void): Promise<void> {
   const tally = (where: string, r: { read: number; proposed: number; matched: number; trusted: number; left: number }) => {
     if (r.read) log(`money mail ${where}: ${r.read} read, ${r.proposed} proposed, ${r.matched} matched, ${r.trusted} from trusted senders, ${r.left} left out`);
   };
-  if (gmail.length && (await mailReadOn()) === null) {
-    tally("gmail", await checkMoneyMail({
-      ...common,
-      spaces: gmail,
-      search: async (): Promise<MoneyMessage[]> => (await mailSearch({}, { query: MONEY_QUERY, max: 25 })).messages.map((m) => ({ id: m.id, from: m.from, subject: m.subject, date: m.date })),
-      read: async (id) => ({ text: (await mailRead({}, id)).text }),
-    }));
-  }
   for (const { box, spaces } of byBox.values()) {
     const source = inboxSource(box, { notFrom: box.address });
     await checkMoneyMail({
@@ -772,7 +728,7 @@ export function startEmailSender(io: SenderIo): () => void {
           io.log(`email sequences ${space.id}: ${caught instanceof Error ? caught.message : String(caught)}`);
         }
       }
-      // Each Space's own mailbox (Gmail when it names none); a box's cap counts every Space's sends from that address.
+      // Each Space's own mailbox (none: its jobs wait, emailSend.ts); a box's cap counts every Space's sends from that address.
       const usedElsewhere = (except: string, account: string | null) =>
         account ? spaces.filter((s) => s.id !== except).reduce((sum, s) => sum + (DAILY_CAP - queueFor(s.id).left(account, now)), 0) : 0;
       for (let i = 0; i < spaces.length; i += 1) {

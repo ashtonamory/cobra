@@ -11,7 +11,7 @@ const run = promisify(execFile);
 /**
  * Google through the person's own Claude account.
  *
- * Cobra has no Google connection of its own (googleAuth.ts). The person
+ * Cobra has no Google connection of its own. The person
  * connects Gmail, Google Calendar and Google Drive at claude.ai → Settings →
  * Connectors, and Claude Code loads them into a session signed in to that
  * account. The Lead and the Foremen start with --restricted instead of

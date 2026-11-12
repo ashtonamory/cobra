@@ -6,8 +6,7 @@
  * sessions and + New session, then the repository — grade, the one git
  * offer, Land, Fetch, pull requests (Merge when green) and branches (Resume,
  * Delete, Ask Claude). A project made for a trade that keeps a database also
- * gets RECORDS: its sheet in your Drive (Open sheet), the last push, and the
- * journal of changes newest first with Undo behind a confirm (lib/records.ts;
+ * gets RECORDS: the journal of changes newest first with Undo behind a confirm (lib/records.ts;
  * the agent's personRoutes.ts). ROUTINES lists what the Foreman is given on a
  * schedule, with Run now, Pause or Resume, and Remove behind a confirm
  * (lib/routines.ts; the agent's routines.ts). TRUST lists what the Foreman
@@ -34,7 +33,6 @@ import * as records from "../lib/records.ts";
 import * as routines from "../lib/routines.ts";
 import * as trust from "../lib/trust.ts";
 import { ConfirmPress } from "../lib/confirm.ts";
-import { openUri } from "../components/settings/common.tsx";
 import { Board, BoardRow, Button, RequestView, Status } from "../components/ui.tsx";
 import { Confirm, MenuDots, useVerbs, type Verbs } from "../components/Verbs.tsx";
 import { Spinner, Toggles } from "../components/NewProject.tsx";
@@ -322,8 +320,8 @@ function Sessions({ r, verbs }: { r: model.Row; verbs: Verbs }) {
   );
 }
 
-/** A project's records: its sheet, the last push, and the journal with Undo. */
-type Recs = { state: "loading" } | { state: "read"; journal: Dict; mirror: Dict } | { state: "failed"; error: string };
+/** A project's records: the journal with Undo. */
+type Recs = { state: "loading" } | { state: "read"; journal: Dict } | { state: "failed"; error: string };
 
 function Records({ r }: { r: model.Row }) {
   const app = useApp();
@@ -338,8 +336,8 @@ function Records({ r }: { r: model.Row }) {
 
   const load = useCallback(() => {
     if (!config.machine(r.machine)) return;
-    Promise.all([api.dbJournal(r.machine, r.id, records.JOURNAL_LIMIT), api.dbMirror(r.machine, r.id)]).then(
-      ([journal, mirror]) => live.current && setRecs({ state: "read", journal: journal ?? {}, mirror: mirror ?? {} }),
+    api.dbJournal(r.machine, r.id, records.JOURNAL_LIMIT).then(
+      (journal) => live.current && setRecs({ state: "read", journal: journal ?? {} }),
       (e) => live.current && setRecs({
         state: "failed",
         error: (e as { status?: number })?.status === 404 ? records.updateAgentLine(r.label) : `Could not read the records: ${msg(e)}`,
@@ -368,7 +366,7 @@ function Records({ r }: { r: model.Row }) {
   const head = (
     <div className="row">
       <span className="caps grow">RECORDS</span>
-      <Button kind="flat" small title="Read the sheet and the journal again" onClick={load}>Refresh</Button>
+      <Button kind="flat" small title="Read the journal again" onClick={load}>Refresh</Button>
     </div>
   );
   // A trade that may keep no database is drawn only once its records say it has some.
@@ -379,18 +377,11 @@ function Records({ r }: { r: model.Row }) {
   if (recs.state === "failed") {
     return <div className="col" style={{ gap: 8 }}>{head}<div className="dim">{recs.error}</div></div>;
   }
-  if (!records.showsRecords(r.project?.foremanTemplate, recs.journal, recs.mirror)) return null;
-  const sheet = records.mirrorView(recs.mirror, (iso) => model.boardTime(iso));
+  if (!records.showsRecords(r.project?.foremanTemplate, recs.journal)) return null;
   const entries = records.entriesOf(recs.journal);
   return (
     <div className="col" style={{ gap: 8 }}>
       {head}
-      <div className="row wrap">
-        <span className={sheet.url ? "grow" : "dim grow"}>{sheet.sheet}</span>
-        {sheet.url && <Button kind="primary" small onClick={() => openUri(sheet.url!)}>Open sheet</Button>}
-      </div>
-      {sheet.push && <div className="dim">{sheet.push}</div>}
-      {sheet.error && <div className="pj-error">{sheet.error}</div>}
       <span className="caps">{entries.length ? `JOURNAL · ${entries.length}` : "JOURNAL"}</span>
       {!entries.length ? (
         <div className="dim">{records.NO_ENTRIES}</div>

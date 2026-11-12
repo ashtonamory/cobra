@@ -9,9 +9,9 @@ export { BY_AGENT };
  * Marking what went out. When an email the person allowed has gone out
  * with rendered files attached, the agent itself runs the trade's `sent`
  * mutation with each file's path and sha256, so an invoice or a pay stub reads
- * as sent in the database and the sheet without the Foreman remembering to
- * say so. Only email counts: a note stays on the person's phone, and a file
- * saved to their Drive has not reached anyone.
+ * as sent in the database without the Foreman remembering to say so. Only
+ * email counts: a note stays on the person's screen, and a file copied to a
+ * folder has not reached anyone.
  */
 
 /** The refusal a `sent` mutation gives when none of the files is one it recorded: nothing to mark, not a failure. */
@@ -28,12 +28,10 @@ export function sentFiles(action: ApprovalAction | undefined): SentFile[] {
 export type MarkSentDeps = {
   schemaFor: (trade: string | undefined) => TradeSchema | null;
   open: (project: string, schema: TradeSchema) => ProjectDb;
-  scheduleMirror: (project: string, schema: TradeSchema) => void;
 };
 
 /**
- * Runs the project's trade `sent` mutation for an email that went out, and
- * pushes the sheet. Returns the journal's summary, or null when the trade
+ * Runs the project's trade `sent` mutation for an email that went out. Returns the journal's summary, or null when the trade
  * marks nothing, the email carried no files, or none was one the trade
  * recorded. Any other refusal is thrown for the caller to log; what was sent
  * stays sent either way.
@@ -50,7 +48,6 @@ export function markDocumentsSent(
   const db = deps.open(project.id, schema);
   try {
     const result = db.write(schema.sent, { files, sent_at: sent.at, card_id: sent.cardId }, BY_AGENT);
-    deps.scheduleMirror(project.id, schema);
     return result.summary;
   } catch (caught) {
     if (caught instanceof Error && NOTHING_MATCHES.test(caught.message)) return null;

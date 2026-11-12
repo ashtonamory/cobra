@@ -295,7 +295,7 @@ export const PEOPLE_MUTATIONS: Record<string, Mutation> = {
 
   people_import: {
     describe:
-      "Adds many people at once, each with the Space's fields and a note, as one journal entry that db_undo takes back whole. Someone already here (the same email, the same website field, or the same name and business, archived or not) is skipped and named, never entered twice. sheet_import with table people runs it from a file or a tab, so you never type the rows.",
+      "Adds many people at once, each with the Space's fields and a note, as one journal entry that db_undo takes back whole. Someone already here (the same email, the same website field, or the same name and business, archived or not) is skipped and named, never entered twice. file_import with table people runs it from a .csv file, so you never type the rows.",
     args: {
       rows: {
         kind: "rows",

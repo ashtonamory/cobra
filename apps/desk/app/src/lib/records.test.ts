@@ -14,16 +14,14 @@ describe("whether the project page shows records", () => {
     expect(records.asksForRecords("")).toBe(false);
   });
 
-  it("shows for a trade with a database, or once there is a sheet or a journal", () => {
+  it("shows for a trade with a database, or once there is a journal", () => {
     const empty = { project: "p", entries: [] };
-    const noSheet = { project: "p", spreadsheetId: null, url: null };
-    expect(records.showsRecords("payroll-manager", empty, noSheet)).toBe(true);
-    expect(records.showsRecords("billing", empty, noSheet)).toBe(true);
-    expect(records.showsRecords("website-builder", empty, noSheet)).toBe(false);
+    expect(records.showsRecords("payroll-manager", empty)).toBe(true);
+    expect(records.showsRecords("billing", empty)).toBe(true);
+    expect(records.showsRecords("website-builder", empty)).toBe(false);
     // A trade Cobra defined: this build does not know it, the agent says it keeps records.
-    expect(records.showsRecords("dog-walking", { ...empty, records: true }, noSheet)).toBe(true);
-    expect(records.showsRecords("website-builder", { entries: [entry()] }, noSheet)).toBe(true);
-    expect(records.showsRecords("website-builder", empty, { spreadsheetId: "1Abc" })).toBe(true);
+    expect(records.showsRecords("dog-walking", { ...empty, records: true })).toBe(true);
+    expect(records.showsRecords("website-builder", { entries: [entry()] })).toBe(true);
   });
 });
 
@@ -34,41 +32,17 @@ describe("entriesOf", () => {
   });
 });
 
-describe("mirrorView", () => {
-  const when = (iso: string) => `at ${iso.slice(11, 16)}`;
-
-  it("no sheet yet says the Lead makes one in your Drive", () => {
-    const v = records.mirrorView({ project: "p", spreadsheetId: null, url: null, lastSync: null, lastError: null, pending: false }, when);
-    expect(v).toEqual({ url: null, sheet: records.NO_SHEET, push: "", error: "" });
-    expect(records.NO_SHEET).toBe("No sheet yet — Cobra makes one in your Drive the first time it writes.");
-  });
-
-  it("a sheet: whose Drive, the last push, a push owed and the last error", () => {
-    const v = records.mirrorView({ project: "p", spreadsheetId: "1Abc", url: "https://docs.google.com/spreadsheets/d/1Abc/edit",
-      createdBy: "penny@example.com", lastSync: "2026-10-23T09:05:00Z", lastError: "quota", pending: true }, when);
-    expect(v.url).toBe("https://docs.google.com/spreadsheets/d/1Abc/edit");
-    expect(v.sheet).toBe("The sheet is in the Drive of penny@example.com.");
-    expect(v.push).toBe("Last pushed at 09:05. A push is on its way.");
-    expect(v.error).toBe("The last push did not go through: quota");
-  });
-
-  it("a sheet id with no url makes the sheet's page; a url that is not https is not opened", () => {
-    expect(records.sheetUrl({ spreadsheetId: "1Abc_-x" })).toBe("https://docs.google.com/spreadsheets/d/1Abc_-x/edit");
-    expect(records.sheetUrl({ url: "javascript:alert(1)", spreadsheetId: "bad id" })).toBeNull();
-  });
-});
-
 describe("words for a change", () => {
   it("a named write, an import and an undo", () => {
     expect(records.mutationWords("add_employee")).toBe("Add employee");
-    expect(records.mutationWords("import:employees")).toBe("Import employees from the sheet");
+    expect(records.mutationWords("import:employees")).toBe("Import employees from a file");
     expect(records.mutationWords("undo:add_employee")).toBe("Undo of add employee");
     expect(records.mutationWords(undefined)).toBe("A change");
   });
 
   it("who made it", () => {
     expect(["foreman", "person", "import", "routine", "lead", ""].map(records.byWords))
-      .toEqual(["the Foreman", "you", "a sheet import", "a routine", "lead", "someone"]);
+      .toEqual(["the Foreman", "you", "a file import", "a routine", "lead", "someone"]);
   });
 });
 

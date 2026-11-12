@@ -219,20 +219,20 @@ const PR = (number: number, extra: Dict = {}): Dict => ({
 const ATTACHMENT = (path: string, bytes: number): Dict => ({ path, name: path.split("/").pop(), bytes, sha256: "ab".repeat(32) });
 const LONG_TEXT = "Hi Ann,\n\nHere are this week's pay stubs for the team.\n\nThe totals match the timesheets.\n\n" +
   "Let me know if anything looks off.\n\nThanks,\nPenny";
-// A Foreman's actions (contracts ApprovalAction): an email, files for your Drive, a note.
+// A Foreman's actions (contracts ApprovalAction): an email, files for a folder, a note.
 const ACTIONS: Dict[] = [
   {
     id: "ap-email", machine: "laptop", kind: "action", title: "Send: Pay stubs for the week", body: "To: ann@example.com", createdAt: iso(100),
     expiresAt: ahead(3600), state: "pending",
     action: { channel: "email", project: "paws", projectName: "paws-paths-payroll", summary: "Pay stubs for the week",
-      email: { to: ["ann@example.com"], cc: ["books@example.com"], subject: "Pay stubs, week 42", text: LONG_TEXT,
+      email: { from: { box: "b1", address: "studio@icloud.com", mailbox: "iCloud Mail" }, to: ["ann@example.com"], cc: ["books@example.com"], subject: "Pay stubs, week 42", text: LONG_TEXT,
         attachments: [ATTACHMENT("out/stubs-week-42.pdf", 182_000), ATTACHMENT("out/summary.csv", 900)] } },
   },
   {
-    id: "ap-file", machine: "laptop", kind: "action", title: "Copy: The week's report", body: "To: your Google Drive", createdAt: iso(90),
+    id: "ap-file", machine: "laptop", kind: "action", title: "Copy: The week's report", body: "To: Bookkeeper", createdAt: iso(90),
     expiresAt: ahead(3600), state: "pending",
     action: { channel: "file", project: "paws", projectName: "paws-paths-payroll", summary: "The week's report",
-      files: { to: "drive", label: "your Google Drive", path: "Cobra/paws-paths-payroll", items: [ATTACHMENT("out/report.pdf", 2_400_000)],
+      files: { to: "books", label: "Bookkeeper", path: "/home/me/Books", items: [ATTACHMENT("out/report.pdf", 2_400_000)],
         text: "For your records." } },
   },
   {
@@ -291,7 +291,7 @@ const TRUST: Dict = {
   receipts: [RECEIPT],
 };
 
-// A project's records and the account's Google (contracts records.ts).
+// A project's records and Google's connectors (contracts records.ts).
 const JOURNAL: Dict = {
   project: "paws",
   entries: [
@@ -303,15 +303,10 @@ const JOURNAL: Dict = {
     { id: 4, at: iso(86400 * 3), by: "import", mutation: "import:employees", changes: 12, undone: false, undoable: true, undoneAt: null, undoOf: null },
   ],
 };
-const MIRROR: Dict = {
-  project: "paws", spreadsheetId: "1AbCdEf", url: "https://docs.google.com/spreadsheets/d/1AbCdEf/edit", createdBy: "penny@example.com",
-  lastSync: iso(300), lastError: "Google needs to be connected again", pending: true,
-};
-const GOOGLE = (machine: string): Dict => machine === "laptop"
-  ? { cloudLinked: true, connected: true, email: "penny@example.com", problem: null, checkedAt: Date.now() - 120_000, accountUrl: "https://accounts.example.com/account",
-    scopes: ["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/gmail.send",
-      "https://www.googleapis.com/auth/calendar.readonly"] }
-  : { cloudLinked: true, connected: false, email: null, scopes: [], problem: "google_not_connected", checkedAt: null, accountUrl: "https://accounts.example.com/account" };
+// Laptop's Claude account has Gmail and Calendar connected; Office's has none of the three.
+const GOOGLE = (machine: string): Dict => ({
+  connectors: ["Gmail", "Google Calendar", "Google Drive"].map((name) => ({ name, connected: machine === "laptop" && name !== "Google Drive" })),
+});
 
 // The owner's Cloudflare (contracts cloudflare.ts): Laptop connected with two accounts, Office not.
 const CF_BASE = { scopes: ["workers-scripts.admin", "d1.write", "account-settings.read", "offline_access"], problem: null,
@@ -802,8 +797,6 @@ function apiAnswer(machine: string, method: string, path: string, body: Dict | n
       case "/routines": return laptop ? ROUTINES : { routines: [] };
       case "/trust": return laptop && (params.get("project") ?? "paws") === "paws" ? TRUST : { grants: [], always: [], receipts: [] };
       case "/db/journal": return params.get("project") === "paws" ? JOURNAL : { project: params.get("project"), entries: [] };
-      case "/db/mirror": return params.get("project") === "paws" ? MIRROR
-        : { project: params.get("project"), spreadsheetId: null, url: null, createdBy: null, lastSync: null, lastError: null, pending: false };
       case "/mcp": return laptop ? { ...MCP, machine } : { ...MCP, machine, github: { binary: null, pin: null }, entries: [],
         integrations: [{ id: "github", title: "GitHub", state: "disconnected", account: null, enabled: false, methods: ["device", "token"],
           tokenUrl: "https://github.com/settings/tokens" }] };
@@ -1169,8 +1162,8 @@ describe("smoke: pages", () => {
     const el = await mount(withApp(<HomePage />));
     const t = text(el);
     for (const s of ["Send: Pay stubs for the week", "EMAIL", "ann@example.com", "books@example.com", "Pay stubs, week 42", "Hi Ann,",
-      "stubs-week-42.pdf", "178 KB", "Attachments · 2", "Allow sends exactly this from your Gmail.",
-      "FILES", "Your Google Drive, in Cobra/paws-paths-payroll", "report.pdf", "2.3 MB", "For your records.", "Allow puts these files in your Drive.",
+      "stubs-week-42.pdf", "178 KB", "Attachments · 2", "studio@icloud.com (iCloud Mail)", "Allow sends exactly this from that mailbox.",
+      "FILES", "Bookkeeper (/home/me/Books)", "report.pdf", "2.3 MB", "For your records.", "Allow copies these files there.",
       "NOTE", "Ben and Cy have not sent their timesheets", "missing.md", "Nothing is sent: Allow marks it read."]) {
       expect(t, s).toContain(s);
     }
@@ -1582,16 +1575,16 @@ describe("smoke: pages", () => {
     expect(text(quiet)).not.toContain("TRUST");
   });
 
-  it("Project page: records, Open sheet and Undo behind a confirm", async () => {
+  it("Project page: records and Undo behind a confirm", async () => {
     const el = await mount(withApp(<ProjectPage machine="laptop" project="paws" onClose={() => {}} />));
     await flush(5);
     const t = text(el);
-    for (const s of ["RECORDS", "The sheet is in the Drive of penny@example.com.", "Last pushed", "A push is on its way.",
-      "The last push did not go through: Google needs to be connected again", "JOURNAL · 4", "Hours for week 42",
-      "Record hours · by the Foreman · 4 rows", "UNDONE", "UNDO", "Import employees from the sheet", "by a sheet import"]) {
+    for (const s of ["RECORDS", "JOURNAL · 4", "Hours for week 42",
+      "Record hours · by the Foreman · 4 rows", "UNDONE", "UNDO", "Import employees from a file", "by a file import"]) {
       expect(t, s).toContain(s);
     }
-    await click(button(el, "Open sheet"));
+    // Cobra keeps no copy of the records in a Google Sheet, so the section offers none.
+    for (const gone of ["Open sheet", "The sheet", "No sheet yet", "Last pushed"]) expect(t, gone).not.toContain(gone);
     // Undo is offered on the undoable rows only (not the undone one, not the undo itself).
     expect(buttons(el, "Undo").length).toBe(2);
     await click(buttons(el, "Undo")[0]);
@@ -1796,21 +1789,17 @@ describe("smoke: pages", () => {
       "Brain", "Permissions", "Local models", "qwen-tuned:fast96k", "Integrations", "GitHub", "Google", "Audit log", "Cobra merged me/r#7"]) {
       expect(t, s).toContain(s);
     }
-    // Integrations → Google: Laptop connected, Office not, with Connect Google.
+    // Integrations → Google: the connectors of Laptop's Claude account, with the way to claude.ai's settings.
     const ints = [...el.querySelectorAll(".settings-nav li")].find((li) => text(li).includes("Integrations"))!;
     await click(ints);
     const shownNow = () => [...el.querySelectorAll<HTMLElement>(".settings-scroll")].find((x) => !x.hidden)!;
-    for (const g of ["Google", "connected as penny@example.com", "What it allows", "It cannot see your other files.",
-      "Send email from your Gmail, only the messages you allow.", "Checked 2 minutes ago.", "Manage", "GitHub",
-      "What Cobra can read", "Calendar", "Read your calendar so My day and Projects can plan around it.", "Mail",
-      "works only for invited testers", "Turn on"]) {
+    for (const g of ["Google", "Gmail and Google Calendar connected", "Google Drive is not connected.", "What it allows",
+      "Sends, replies, trashes or changes an event only when you allow it.", "Claude connectors", "Refresh", "GitHub"]) {
       expect(text(shownNow()), g).toContain(g);
     }
-    // Calendar is on (no Turn on); Mail's Turn on opens the account page and watches for it.
-    expect(button(shownNow(), "Turn on")).toBeTruthy();
-    await click(button(shownNow(), "Turn on"));
-    expect(toasts.some((x) => x.startsWith("Turn on Mail on the page that opened"))).toBe(true);
-    expect(text(shownNow())).toContain("Waiting for Mail to be turned on");
+    // Cobra has no Google sign-in of its own: nothing here connects one or turns a read on.
+    for (const gone of ["Connect Google", "Turn on", "Manage", "What Cobra can read"]) expect(text(shownNow()), gone).not.toContain(gone);
+    await click(button(shownNow(), "Claude connectors"));
     // Cloudflare on Laptop: connected to Pine Yoga, Paws Studio a Use away; Disconnect asks first.
     for (const g of ["Cloudflare", "connected to Pine Yoga", "Accounts this sign-in reaches", "Paws Studio", "in use"]) {
       expect(text(shownNow()), g).toContain(g);
@@ -1856,7 +1845,7 @@ describe("smoke: pages", () => {
     expect(toasts).toContain("Unlinked the agent.");
   });
 
-  it("Settings → Integrations: Connect Google and Cloudflare on an agent with neither", async () => {
+  it("Settings → Integrations: Google's connectors and Connect Cloudflare on an agent with neither", async () => {
     const saved = tauri.route!;
     // The agent answers as one with no Google and no Cloudflare yet (the fixtures' Office).
     tauri.route = (cmd, args) => (cmd === "api" && String(args.path).startsWith("/integrations/") && !String(args.path).includes("/finish")
@@ -1868,9 +1857,7 @@ describe("smoke: pages", () => {
       await flush(5);
       const shownNow = () => [...el.querySelectorAll<HTMLElement>(".settings-scroll")].find((x) => !x.hidden)!;
       expect(text(shownNow())).toContain("not connected");
-      await click(button(shownNow(), "Connect Google"));
-      expect(toasts.some((x) => x.startsWith("Connect Google on the page that opened"))).toBe(true);
-      expect(text(shownNow())).toContain("Waiting for Google to be connected");
+      expect(text(shownNow())).toContain("Your Claude account has none of Gmail, Google Calendar and Google Drive.");
       // Cloudflare on Office: the note first, then the sign-in page, then the code box; a bad code never leaves the desk.
       await click(button(shownNow(), "Connect Cloudflare"));
       expect(text(shownNow())).toContain("only ever changes the ones it made for your Spaces");

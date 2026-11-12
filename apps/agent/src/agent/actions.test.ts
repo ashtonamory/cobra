@@ -13,10 +13,8 @@ process.env.COBRA_AGENT_CONFIG_DIR = join(ROOT, "config");
 process.env.COBRA_AGENT_STATE_DIR = join(ROOT, "state");
 process.env.COBRA_AGENT_DATA_DIR = join(ROOT, "data");
 
-const { actionFingerprint, actionNews, actionText, goesToDrive, MAX_ATTACHMENT_BYTES, MAX_BODY, parseAction, resolveAttachment, runAction } = await import("./actions.ts");
+const { actionFingerprint, actionNews, actionText, MAX_ATTACHMENT_BYTES, MAX_BODY, NO_MAILBOX, parseAction, resolveAttachment, runAction } = await import("./actions.ts");
 const { makeApproval } = await import("./approvals.ts");
-const { DriveUploadError } = await import("./drive.ts");
-const { GoogleAuthError } = await import("./googleAuth.ts");
 
 const NOW = Date.parse("2026-10-22T12:00:00Z");
 const random = (size: number) => new Uint8Array(size).fill(1);
@@ -36,8 +34,10 @@ function repo(): string {
 }
 
 const project = (path: string) => ({ id: "payroll", name: "Payroll", path });
-/** The local folders the person set up in files.json; `drive` is the Google Drive's key, so one of that name there is passed over. */
-const EXPORTS = { drive: { label: "Old synced Drive", path: "/home/me/Drive/Payroll" }, books: { label: "Bookkeeper", path: "/home/me/Drive/Books" } };
+/** The local folders the person set up in files.json. */
+const EXPORTS = { stubs: { label: "Pay stubs", path: "/home/me/Stubs" }, books: { label: "Bookkeeper", path: "/home/me/Drive/Books" } };
+/** The mailbox a Space's email is frozen with (orch.ts does this at propose). */
+const BOX = { box: "box_1", address: "owner@example.com", mailbox: "Zoho Mail" };
 
 test("parseAction: an email with the recipients, subject, text and repository attachments, as the approval keeps it", () => {
   const path = repo();
@@ -99,63 +99,56 @@ test("parseAction refuses what the card could not show honestly, and says what i
   assert.throws(() => parseAction({ channel: "note", summary: "note", text: "x".repeat(4001) }, project(path)), /text is at most 4000/);
 });
 
-test("parseAction: a file action goes to the person's Google Drive by default, and its card says Cobra/<project>", () => {
+test("parseAction: a file action names a local folder, and its card shows the label and the path", () => {
   const path = repo();
-  const action = parseAction({ channel: "file", summary: "2 pay stubs to Drive", attachments: ["out/stub-ana.pdf", "out/stub-ben.pdf", "out/stub-ana.pdf"], text: "October's stubs, as approved." }, project(path));
+  const action = parseAction({ channel: "file", summary: "2 pay stubs to the folder", folder: " stubs ", attachments: ["out/stub-ana.pdf", "out/stub-ben.pdf", "out/stub-ana.pdf"], text: "October's stubs, as approved." }, project(path), EXPORTS);
   assert.equal(action.channel, "file");
-  assert.equal(action.files?.to, "drive");
-  assert.equal(action.files?.label, "your Google Drive");
-  assert.equal(action.files?.path, "Cobra/Payroll");
-  assert.equal(goesToDrive(action.files!), true);
+  assert.deepEqual([action.files?.to, action.files?.label, action.files?.path], ["stubs", "Pay stubs", "/home/me/Stubs"]);
   assert.deepEqual(action.files?.items.map((file) => [file.path, file.bytes]), [["out/stub-ana.pdf", 9], ["out/stub-ben.pdf", 14]]);
   assert.equal(action.files?.items[0]?.sha256, "d1cb546b102fab8362de413fdacc187b05be10df72b72db3b3e50b4953f6a555");
   assert.equal("email" in action, false);
   const { title, body } = actionText(action);
-  assert.equal(title, "Save to Drive: 2 pay stubs to Drive");
-  assert.equal(body, "To: your Google Drive (Cobra/Payroll)\n\nFiles: stub-ana.pdf (9 B), stub-ben.pdf (14 B)\n\nOctober's stubs, as approved.");
-  // Naming drive is the same card; a files.json folder called drive is passed over, Drive's key being Drive's.
-  const named = parseAction({ channel: "file", summary: "2 pay stubs to Drive", folder: " drive ", attachments: ["out/stub-ana.pdf", "out/stub-ben.pdf"], text: "October's stubs, as approved." }, project(path), EXPORTS);
-  assert.equal(actionFingerprint(named), actionFingerprint(action));
+  assert.equal(title, "Copy: 2 pay stubs to the folder");
+  assert.equal(body, "To: Pay stubs (/home/me/Stubs)\n\nFiles: stub-ana.pdf (9 B), stub-ben.pdf (14 B)\n\nOctober's stubs, as approved.");
   // The note is optional; without it the card ends with the files.
-  const bare = parseAction({ channel: "file", summary: "2 pay stubs to Drive", attachments: ["out/stub-ana.pdf"] }, project(path));
+  const bare = parseAction({ channel: "file", summary: "2 pay stubs to the folder", folder: "stubs", attachments: ["out/stub-ana.pdf"] }, project(path), EXPORTS);
   assert.equal("text" in (bare.files ?? {}), false);
-  assert.equal(actionText(bare).body, "To: your Google Drive (Cobra/Payroll)\n\nFiles: stub-ana.pdf (9 B)");
+  assert.equal(actionText(bare).body, "To: Pay stubs (/home/me/Stubs)\n\nFiles: stub-ana.pdf (9 B)");
   // A different folder or a different file is a different card.
   assert.notEqual(actionFingerprint(bare), actionFingerprint(action));
-  assert.equal(actionFingerprint(bare), actionFingerprint(parseAction({ channel: "file", summary: "2 pay stubs to Drive", folder: "drive", attachments: ["./out/stub-ana.pdf"] }, project(path), EXPORTS)));
-  // The project's folder in Drive is its name on one line, without slashes.
-  assert.equal(parseAction({ channel: "file", summary: "a stub", attachments: ["out/stub-ana.pdf"] }, { id: "p", name: "Pay / Roll", path }).files?.path, "Cobra/Pay - Roll");
+  assert.equal(actionFingerprint(bare), actionFingerprint(parseAction({ channel: "file", summary: "2 pay stubs to the folder", folder: "stubs", attachments: ["./out/stub-ana.pdf"] }, project(path), EXPORTS)));
 });
 
-test("parseAction: a local folder from files.json still works, by its key, and its card shows its path", () => {
+test("parseAction: each local folder from files.json is named by its key", () => {
   const path = repo();
   const action = parseAction({ channel: "file", summary: "a stub to the books", folder: "books", attachments: ["out/stub-ana.pdf"] }, project(path), EXPORTS);
   assert.deepEqual([action.files?.to, action.files?.label, action.files?.path], ["books", "Bookkeeper", "/home/me/Drive/Books"]);
-  assert.equal(goesToDrive(action.files!), false);
   assert.equal(actionText(action).body, "To: Bookkeeper (/home/me/Drive/Books)\n\nFiles: stub-ana.pdf (9 B)");
 });
 
 test("parseAction refuses a file action that names no known folder, carries addresses, or copies nothing", () => {
   const path = repo();
-  const base = { channel: "file", summary: "stubs", attachments: ["out/stub-ana.pdf"] };
+  const base: Record<string, unknown> = { channel: "file", summary: "stubs", attachments: ["out/stub-ana.pdf"] };
   const refused = (body: Record<string, unknown>, exports: Record<string, { label: string; path: string }>, why: RegExp) =>
     assert.throws(() => parseAction(body, project(path), exports), (error: unknown) => error instanceof Error && why.test(error.message) && (error as { status?: number }).status === 400, String(why));
-  // The Foreman only knows what the person told it, so the refusal lists the folders there are, Drive first.
-  refused({ ...base, folder: "dropbox" }, EXPORTS, /no folder "dropbox": the folders there are drive \(your Google Drive\), books \(Bookkeeper\); give the key, or leave folder out for Drive/);
-  refused({ ...base, folder: "books" }, {}, /no folder "books": the folders there are drive \(your Google Drive\);/);
-  refused({ ...base, folder: 3 }, EXPORTS, /folder is the key of a folder: one of drive \(your Google Drive\), books \(Bookkeeper\)/);
+  // The Foreman only knows what the person told it, so the refusal lists the folders there are.
+  refused({ ...base, folder: "dropbox" }, EXPORTS, /no folder "dropbox": the folders there are stubs \(Pay stubs\), books \(Bookkeeper\); give the key/);
+  refused({ ...base, folder: 3 }, EXPORTS, /folder is the key of a folder: one of stubs \(Pay stubs\), books \(Bookkeeper\)/);
+  // No folder named: there is no Google Drive to fall back to, so the folders are listed.
+  refused(base, EXPORTS, /folder is the key of a folder: one of stubs \(Pay stubs\), books \(Bookkeeper\)/);
+  // No files.json folders at all: nowhere to copy to, said with the step.
+  refused({ ...base, folder: "books" }, {}, /no folder on this computer is set up to copy files into yet/);
+  refused(base, {}, /no folder on this computer is set up to copy files into yet/);
   // A copy reaches nobody: addresses mean the Foreman meant an email.
-  refused({ ...base, to: ["ana@example.com"] }, EXPORTS, /a file action has no to: it puts files in your Google Drive or a folder on this computer and sends them to nobody. To send them, use channel email/);
-  refused({ ...base, cc: ["ana@example.com"] }, EXPORTS, /a file action has no cc/);
-  refused({ ...base, subject: "Stubs" }, EXPORTS, /a file action has no subject/);
-  refused({ ...base, attachments: undefined }, EXPORTS, /attachments names the files to copy: 1 to 10 paths/);
-  refused({ ...base, attachments: [] }, EXPORTS, /attachments names the files to copy/);
-  refused({ ...base, attachments: [".env"] }, EXPORTS, /looks like a credential file/);
-  refused({ ...base, attachments: ["out/link.txt"] }, EXPORTS, /outside the repository/);
-  refused({ ...base, text: "x".repeat(4001) }, EXPORTS, /text is at most 4000/);
-  refused({ channel: "note", summary: "note", text: "x", folder: "drive" }, EXPORTS, /a note has no folder/);
-  // No files.json folders at all: Drive is there, and proposing needs nothing set up.
-  assert.equal(parseAction(base, project(path)).files?.to, "drive");
+  refused({ ...base, folder: "books", to: ["ana@example.com"] }, EXPORTS, /a file action has no to: it copies files into a folder on this computer and sends them to nobody. To send them, use channel email/);
+  refused({ ...base, folder: "books", cc: ["ana@example.com"] }, EXPORTS, /a file action has no cc/);
+  refused({ ...base, folder: "books", subject: "Stubs" }, EXPORTS, /a file action has no subject/);
+  refused({ ...base, folder: "books", attachments: undefined }, EXPORTS, /attachments names the files to copy: 1 to 10 paths/);
+  refused({ ...base, folder: "books", attachments: [] }, EXPORTS, /attachments names the files to copy/);
+  refused({ ...base, folder: "books", attachments: [".env"] }, EXPORTS, /looks like a credential file/);
+  refused({ ...base, folder: "books", attachments: ["out/link.txt"] }, EXPORTS, /outside the repository/);
+  refused({ ...base, folder: "books", text: "x".repeat(4001) }, EXPORTS, /text is at most 4000/);
+  refused({ channel: "note", summary: "note", text: "x", folder: "books" }, EXPORTS, /a note has no folder/);
   assert.equal(parseAction({ channel: "email", summary: "stubs", to: ["ana@example.com"], subject: "s", text: "t" }, project(path)).channel, "email");
 });
 
@@ -189,19 +182,17 @@ test("the approval's body is the whole email, so a 3500-character message is sho
   assert.ok(text.length > 3500 && text.length < 4000);
   const approval = approvalFor(path, { channel: "email", summary: "the October letter", to: ["ana@example.com"], subject: "October", text, attachments: ["out/stub-ana.pdf"] });
   assert.equal(approval.body, actionText(approval.action!).body);
-  assert.equal(approval.body, `To: ana@example.com\nSubject: October\n\n${text.trim()}\n\nAttachments: stub-ana.pdf (9 B)`);
+  assert.equal(approval.body, `From: owner@example.com (Zoho Mail)\nTo: ana@example.com\nSubject: October\n\n${text.trim()}\n\nAttachments: stub-ana.pdf (9 B)`);
   assert.ok(approval.body.length <= MAX_BODY);
   assert.equal(approval.action?.email?.attachments?.[0]?.sha256?.length, 64);
   // Two cards with one summary to different people are two questions; the same card is one.
   const again = parseAction({ channel: "email", summary: "the October letter", to: ["ben@example.com"], subject: "October", text }, project(path));
   assert.notEqual(actionFingerprint(again), actionFingerprint(approval.action!));
-  assert.equal(actionFingerprint(parseAction({ channel: "email", summary: "the October letter", to: ["ana@example.com"], subject: "October", text, attachments: ["out/stub-ana.pdf"] }, project(path))), actionFingerprint(approval.action!));
+  assert.equal(actionFingerprint(approvalFor(path, { channel: "email", summary: "the October letter", to: ["ana@example.com"], subject: "October", text, attachments: ["out/stub-ana.pdf"] }).action!), actionFingerprint(approval.action!));
 });
 
 type Fake = ActionDeps & {
   sent: Array<{ to: string[]; subject: string; attachments: number; types: string[] }>;
-  /** What went to Drive: the project folder and each file's name and bytes. */
-  uploaded: Array<{ project: { id: string; name: string }; files: Array<[string, string]> }>;
   /** The export folder's contents, name to bytes, as the fake disk holds them. */
   folder: Map<string, string>;
   made: string[];
@@ -211,24 +202,15 @@ function deps(overrides: Partial<ActionDeps> = {}, inFolder: Record<string, stri
   const sent: Fake["sent"] = [];
   const folder = new Map(Object.entries(inFolder));
   const made: string[] = [];
-  const uploaded: Fake["uploaded"] = [];
   return {
     sent,
-    uploaded,
     folder,
     made,
-    sendGmail: async (message) => {
+    sendBox: async (_box, address, message) => {
       sent.push({ to: message.to, subject: message.subject, attachments: message.attachments?.length ?? 0, types: (message.attachments ?? []).map((file) => file.type ?? "") });
-      return { id: "18c2f0a1b2c3d4e5", from: "me@gmail.com" };
-    },
-    sendBox: async () => {
-      throw new Error("no mailbox in this test");
+      return { id: "abc@example.com", from: address };
     },
     organizeMail: async (batch) => ({ changed: batch.ids.length, failed: 0 }),
-    uploadToDrive: async (files, project) => {
-      uploaded.push({ project, files: files.map((file) => [file.name, Buffer.from(file.data).toString("utf8")]) });
-      return files.map((file, index) => ({ name: file.name, id: `f${index + 1}`, webViewLink: `https://drive.google.com/file/d/f${index + 1}/view` }));
-    },
     readFile: (path) => readFile(path),
     projectPath: async () => null,
     readFilesConfig: async () => ({ hub: "", inbox: "inbox", maxBytes: 1, retainDays: 1, devices: {}, exports: EXPORTS }),
@@ -247,7 +229,9 @@ function deps(overrides: Partial<ActionDeps> = {}, inFolder: Record<string, stri
 }
 
 function approvalFor(path: string, body: Record<string, unknown>): StoredApproval {
-  const action = parseAction(body, project(path), EXPORTS);
+  const parsed = parseAction(body, project(path), EXPORTS);
+  // An email is frozen with its Space's mailbox when it is proposed (orch.ts).
+  const action = parsed.email ? { ...parsed, email: { ...parsed.email, from: BOX } } : parsed;
   return makeApproval({ kind: "action", ...actionText(action), requestedBy: "foreman_payroll", action }, NOW, "laptop", random);
 }
 
@@ -259,18 +243,15 @@ test("an action approval waits a day, and Allow sends exactly what it holds, att
   const d = deps({ projectPath: async (id) => (id === "payroll" ? path : null) });
   const done = await runAction(d, { ...approval, state: "allowed" });
   assert.equal(done.state, "done");
-  assert.deepEqual(done.results, [{ ok: true, message: "sent to 2 addresses from me@gmail.com (Gmail message 18c2f0a1b2c3d4e5)" }]);
+  assert.deepEqual(done.results, [{ ok: true, message: "sent to 2 addresses from owner@example.com (Zoho Mail message abc@example.com)" }]);
   assert.deepEqual(d.sent, [{ to: ["ana@example.com"], subject: "Your pay stub", attachments: 1, types: ["application/pdf"] }]);
-  assert.match(actionNews(done), /^The person allowed "Send: 2 pay stubs": sent to 2 addresses from me@gmail.com \(Gmail message 18c2f0a1b2c3d4e5\)\. approval_status ap_/);
+  assert.match(actionNews(done), /^The person allowed "Send: 2 pay stubs": sent to 2 addresses from owner@example\.com \(Zoho Mail message abc@example\.com\)\. approval_status ap_/);
 });
 
-test("an email frozen with its Space's mailbox shows From on the card and goes from that box, never from Gmail", async () => {
+test("an email shows From on the card and goes from that box; with the box gone or none named, nothing is sent", async () => {
   const path = repo();
-  const parsed = parseAction({ channel: "email", summary: "demo", to: ["ana@example.com"], subject: "Hello", text: "Hi Ana." }, project(path), EXPORTS);
-  const action = { ...parsed, email: { ...parsed.email!, from: { box: "box_1", address: "owner@example.com", mailbox: "Zoho Mail" } } };
-  const words = actionText(action);
-  assert.match(words.body, /^From: owner@example\.com \(Zoho Mail\)\nTo: ana@example\.com\n/);
-  const approval = makeApproval({ kind: "action", ...words, requestedBy: "foreman_payroll", action }, NOW, "laptop", random);
+  const approval = approvalFor(path, { channel: "email", summary: "demo", to: ["ana@example.com"], subject: "Hello", text: "Hi Ana." });
+  assert.match(approval.body, /^From: owner@example\.com \(Zoho Mail\)\nTo: ana@example\.com\n/);
   const boxSends: Array<{ box: string; address: string; to: string[] }> = [];
   const d = deps({
     projectPath: async () => path,
@@ -283,12 +264,28 @@ test("an email frozen with its Space's mailbox shows From on the card and goes f
   assert.equal(done.state, "done");
   assert.deepEqual(done.results, [{ ok: true, message: "sent to 1 address from owner@example.com (Zoho Mail message abc@example.com)" }]);
   assert.deepEqual(boxSends, [{ box: "box_1", address: "owner@example.com", to: ["ana@example.com"] }]);
-  assert.deepEqual(d.sent, [], "nothing went through Gmail");
 
-  // The box is gone since the card: it fails, and Gmail is not used in its place.
-  const gone = await runAction(deps({ projectPath: async () => path }), { ...approval, state: "allowed" });
+  // The box is gone since the card: it fails, and nothing goes another way.
+  const gone = await runAction(
+    deps({
+      projectPath: async () => path,
+      sendBox: async () => {
+        throw new Error("the mailbox owner@example.com is no longer on this computer (Settings → Mailboxes); propose the email again");
+      },
+    }),
+    { ...approval, state: "allowed" },
+  );
   assert.equal(gone.state, "failed");
-  assert.match(gone.results?.[0]?.message ?? "", /^not sent: no mailbox in this test/);
+  assert.match(gone.results?.[0]?.message ?? "", /^not sent: the mailbox owner@example\.com is no longer on this computer/);
+
+  // A card that names no mailbox (one made before Cobra's own Google connection went) is never sent: there is nothing to send it from.
+  const parsed = parseAction({ channel: "email", summary: "demo", to: ["ana@example.com"], subject: "Hello", text: "Hi Ana." }, project(path), EXPORTS);
+  const bare = makeApproval({ kind: "action", ...actionText(parsed), requestedBy: "foreman_payroll", action: parsed }, NOW, "laptop", random);
+  const none = deps({ projectPath: async () => path });
+  const unsent = await runAction(none, { ...bare, state: "allowed" });
+  assert.equal(unsent.state, "failed");
+  assert.deepEqual(unsent.results, [{ ok: false, message: `not sent: ${NO_MAILBOX}` }]);
+  assert.deepEqual(none.sent, []);
 });
 
 test("a note is done on Allow and sends nothing", async () => {
@@ -297,26 +294,12 @@ test("a note is done on Allow and sends nothing", async () => {
   const done = await runAction(d, { ...approval, state: "allowed" });
   assert.equal(done.state, "done");
   assert.deepEqual(d.sent, []);
-  assert.deepEqual(d.uploaded, []);
   assert.match(actionNews(done), /^The person read "Note: Payroll is ready"\. approval_status/);
 });
 
-test("Allow fails, and says why, when Google is not connected, the attachment moved, or Gmail refused", async () => {
+test("Allow fails, and says why, when the project left, the attachment changed, or the mailbox refused", async () => {
   const path = repo();
   const email = approvalFor(path, { channel: "email", summary: "stubs", to: ["ana@example.com"], subject: "s", text: "t", attachments: ["out/stub-ana.pdf"] });
-  // Not connected: the words that say how to connect, as they are.
-  const notConnected = await runAction(
-    deps({
-      projectPath: async () => path,
-      sendGmail: async () => {
-        throw new GoogleAuthError("google_not_connected");
-      },
-    }),
-    { ...email, state: "allowed" },
-  );
-  assert.equal(notConnected.state, "failed");
-  assert.deepEqual(notConnected.results, [{ ok: false, message: "Google is not connected: connect Google in the app (Settings → Integrations → Google)" }]);
-  assert.match(actionNews(notConnected), /was not carried out: Google is not connected: connect Google in the app .*\. Propose it again/);
 
   const gone = await runAction(deps({ projectPath: async () => null }), { ...email, state: "allowed" });
   assert.match(gone.results?.[0]?.message ?? "", /no longer on this computer/);
@@ -333,68 +316,15 @@ test("Allow fails, and says why, when Google is not connected, the attachment mo
   const refused = await runAction(
     deps({
       projectPath: async () => path,
-      sendGmail: async () => {
-        throw new Error("Gmail refused the request as malformed (Google said: 400 Invalid To header)");
+      sendBox: async () => {
+        throw new Error("the mail server refused the recipient (550 no such user)");
       },
     }),
     { ...email, state: "allowed" },
   );
   assert.equal(refused.state, "failed");
-  assert.deepEqual(refused.results, [{ ok: false, message: "not sent: Gmail refused the request as malformed (Google said: 400 Invalid To header)" }]);
-});
-
-test("Allow puts the files in the person's Drive, in Cobra/<project>, and the results carry the links", async () => {
-  const path = repo();
-  const approval = approvalFor(path, { channel: "file", summary: "2 pay stubs to Drive", attachments: ["out/stub-ana.pdf", "out/stub-ben.pdf"] });
-  assert.equal(approval.body, "To: your Google Drive (Cobra/Payroll)\n\nFiles: stub-ana.pdf (9 B), stub-ben.pdf (14 B)");
-  const d = deps({ projectPath: async (id) => (id === "payroll" ? path : null) });
-  const done = await runAction(d, { ...approval, state: "allowed" });
-  assert.equal(done.state, "done");
-  assert.deepEqual(d.uploaded, [{ project: { id: "payroll", name: "Payroll" }, files: [["stub-ana.pdf", "pdf bytes"], ["stub-ben.pdf", "more pdf bytes"]] }]);
-  assert.deepEqual(done.results, [
-    { ok: true, message: "put 2 files in your Google Drive (Cobra/Payroll)" },
-    { ok: true, message: "stub-ana.pdf: https://drive.google.com/file/d/f1/view" },
-    { ok: true, message: "stub-ben.pdf: https://drive.google.com/file/d/f2/view" },
-  ]);
-  assert.deepEqual(d.made, [], "no local folder is touched");
-  assert.equal(d.folder.size, 0);
-  assert.match(actionNews(done), /^The person allowed "Save to Drive: 2 pay stubs to Drive": put 2 files in your Google Drive \(Cobra\/Payroll\); stub-ana\.pdf: https:\/\/drive\.google\.com\/file\/d\/f1\/view; /);
-
-  // A rewritten file is refused before anything goes up.
-  writeFileSync(join(path, "out", "stub-ben.pdf"), "more pdf bytez");
-  const changed = deps({ projectPath: async () => path });
-  const refused = await runAction(changed, { ...approval, state: "allowed" });
-  assert.deepEqual(refused.results, [{ ok: false, message: "stub-ben.pdf changed since you were shown it; propose it again with the file as it is now" }]);
-  assert.deepEqual(changed.uploaded, []);
-  writeFileSync(join(path, "out", "stub-ben.pdf"), "more pdf bytes");
-
-  // Not connected: the connection's own words.
-  const notConnected = await runAction(
-    deps({
-      projectPath: async () => path,
-      uploadToDrive: async () => {
-        throw new GoogleAuthError("google_reconnect");
-      },
-    }),
-    { ...approval, state: "allowed" },
-  );
-  assert.deepEqual(notConnected.results, [{ ok: false, message: "Google needs to be connected again: open Settings → Integrations → Google in the app and connect" }]);
-
-  // Partway: the file that went up keeps its link, and the result says how far it got.
-  const partial = await runAction(
-    deps({
-      projectPath: async () => path,
-      uploadToDrive: async () => {
-        throw new DriveUploadError("Google Drive refused this Google account (Google said: 403 storageQuotaExceeded)", [{ name: "stub-ana.pdf", id: "f1", webViewLink: "https://drive.google.com/file/d/f1/view" }], "stub-ben.pdf");
-      },
-    }),
-    { ...approval, state: "allowed" },
-  );
-  assert.equal(partial.state, "failed");
-  assert.deepEqual(partial.results, [
-    { ok: true, message: "stub-ana.pdf: https://drive.google.com/file/d/f1/view" },
-    { ok: false, message: "put 1 of 2 files in your Google Drive (Cobra/Payroll); stub-ben.pdf failed: Google Drive refused this Google account (Google said: 403 storageQuotaExceeded)" },
-  ]);
+  assert.deepEqual(refused.results, [{ ok: false, message: "not sent: the mail server refused the recipient (550 no such user)" }]);
+  assert.match(actionNews(refused), /was not carried out: not sent: the mail server refused the recipient .*\. Propose it again/);
 });
 
 test("Allow copies the files into a local folder, under free names, and says how many landed", async () => {
@@ -409,7 +339,6 @@ test("Allow copies the files into a local folder, under free names, and says how
   assert.deepEqual(d.made, ["/home/me/Drive/Books"]);
   assert.deepEqual([...d.folder.entries()], [["stub-ana.pdf", "pdf bytes"], ["stub-ben.pdf", "more pdf bytes"]]);
   assert.deepEqual(d.sent, []);
-  assert.deepEqual(d.uploaded, [], "a local folder is not Drive");
   assert.match(actionNews(done), /^The person allowed "Copy: 2 pay stubs to the books": copied 2 files to Bookkeeper\. approval_status ap_/);
   assert.match(actionNews({ ...approval, state: "denied" }), /^The person denied "Copy: 2 pay stubs to the books"\. Do not copy it again as it was/);
 

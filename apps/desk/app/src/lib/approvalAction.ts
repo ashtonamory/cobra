@@ -1,17 +1,14 @@
 /**
  * A Foreman's action card, as words: an approval of kind `action` carries exactly what Allow sends
  * (`ApprovalAction` in packages/contracts/src/approvals.ts; the agent's actions.ts). Channels:
- * `email` (sent from the person's Gmail), `file` (into `Cobra/<project>` in their Google Drive,
- * or a local folder they added to files.json) and `note` (nothing leaves; the card is the
+ * `email` (sent from the mailbox the person chose for the Space, which the card names), `file`
+ * (into a local folder they added to files.json) and `note` (nothing leaves; the card is the
  * delivery). Pure.
  *
  * `channel` is a string: one this build does not know, or one missing its block, is no action card
  * here, and the approval is drawn as a plain one with its title and body.
  */
 import { isDict, type Dict, type Json } from "./json.ts";
-
-/** The folder key that means the person's Google Drive (the agent's actions.ts DRIVE_KEY). */
-export const DRIVE_KEY = "drive";
 
 /** A message longer than this many lines, or characters, opens folded. */
 export const FOLD_LINES = 4;
@@ -87,9 +84,6 @@ function str(value: Json): string {
 export function whereWords(block: Dict): string {
   const path = str(block.path);
   const label = str(block.label);
-  // A local folder's path is always absolute (the agent's files.ts); Drive's is `Cobra/<project>`.
-  const drive = block.to === DRIVE_KEY && !/^([/\\]|[A-Za-z]:[\\/])/.test(path);
-  if (drive) return path ? `Your Google Drive, in ${path}` : "Your Google Drive";
   if (label && path) return `${label} (${path})`;
   return label || path || "A folder on this computer";
 }
@@ -110,7 +104,9 @@ export function actionView(approval: Json): ActionView | null {
   const summary = str(action.summary);
   if (action.channel === "email") {
     const e: Dict = action.email;
-    const fields: Array<[string, string]> = [["To", list(e.to) || "nobody"]];
+    // The mailbox it goes from, frozen on the card by the agent (actions.ts); an older card names none.
+    const from = isDict(e.from) && str(e.from.address) ? `${str(e.from.address)}${str(e.from.mailbox) ? ` (${str(e.from.mailbox)})` : ""}` : "";
+    const fields: Array<[string, string]> = [...(from ? [["From", from] as [string, string]] : []), ["To", list(e.to) || "nobody"]];
     const cc = list(e.cc);
     if (cc) fields.push(["Cc", cc]);
     fields.push(["Subject", str(e.subject) || "(no subject)"]);
@@ -130,7 +126,7 @@ export function actionView(approval: Json): ActionView | null {
 /** What Allow does, in one line under the card. */
 export function allowLine(view: ActionView): string {
   if (view.allow) return view.allow;
-  if (view.channel === "email") return "Allow sends exactly this from your Gmail.";
-  if (view.channel === "file") return view.fields[0]?.[1].startsWith("Your Google Drive") ? "Allow puts these files in your Drive." : "Allow copies these files there.";
+  if (view.channel === "email") return view.fields[0]?.[0] === "From" ? "Allow sends exactly this from that mailbox." : "Allow sends exactly this.";
+  if (view.channel === "file") return "Allow copies these files there.";
   return "Nothing is sent: Allow marks it read.";
 }

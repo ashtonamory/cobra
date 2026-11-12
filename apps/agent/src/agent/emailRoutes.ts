@@ -123,10 +123,10 @@ export type EmailRouteDeps = {
   emailSite?: (space: SpacePlace) => EmailSite | null;
   /** Everyone a campaign on this topic (and saved segment) reaches now, or why not. */
   audience?: (space: string, topic: string, segment?: string) => { members: PersonFound[] } | { status: number; error: string };
-  /** Null when Mail reading is on (bounces need it), else what the person does to turn it on. */
+  /** Null when the Space has a mailbox the agent reads (bounces need it), else what the person does: choose one in Settings → Mailboxes. */
   /** Null when the Space's mailbox reads mail (bounces need it), else the step to turn it on. */
   mailOn?: (space: string) => Promise<string | null>;
-  /** Where the Space's email goes from (emailLive.ts senderOf): its mailbox from Settings → Mailboxes, else Gmail. Absent, replies name no sender. */
+  /** Where the Space's email goes from (emailLive.ts senderOf): its mailbox from Settings → Mailboxes, or none yet. Absent, replies name no sender. */
   sender?: (space: string) => Promise<{ mailbox: string; address: string | null }>;
   /** The account's daily cap, what is left of it now, and the jobs already waiting (every Space). */
   capNow?: (space: string) => Promise<{ cap: number; left: number; queued: number }>;
@@ -506,7 +506,7 @@ async function proposeCampaign(input: Record<string, unknown>, folders: EmailFol
   const site = deps.emailSite?.(space) ?? null;
   if (!site) return bad(409, `a campaign needs ${space.name}'s website live with its unsubscribe page, so nobody waits on the owner to stop getting email: publish the website again first (the Website Builder previews it, the person allows the publish)`);
   const mailOff = deps.mailOn ? await deps.mailOn(space.id) : "this computer cannot read mail";
-  if (mailOff) return bad(409, `a campaign needs Mail on, so the agent sees bounces and stops mailing those addresses. ${mailOff}`);
+  if (mailOff) return bad(409, `a campaign needs a mailbox the agent can read, so it sees bounces and stops mailing those addresses: ${mailOff}`);
   const segment = typeof input.segment === "string" && input.segment.trim() ? input.segment.trim() : undefined;
   const found = deps.audience ? deps.audience(space.id, topic, segment) : { status: 409, error: `${space.name} keeps no People here` };
   if ("error" in found) return bad(found.status, found.error);
@@ -788,7 +788,7 @@ async function proposeSequence(input: Record<string, unknown>, folders: EmailFol
     const found = deps.emailSite?.(space) ?? null;
     if (!found) return bad(409, `a sequence with marketing email needs ${space.name}'s website live with its unsubscribe page: publish the website again first`);
     const mailOff = deps.mailOn ? await deps.mailOn(space.id) : "this computer cannot read mail";
-    if (mailOff) return bad(409, `a sequence with marketing email needs Mail on, so the agent sees bounces. ${mailOff}`);
+    if (mailOff) return bad(409, `a sequence with marketing email needs a mailbox the agent can read, so it sees bounces: ${mailOff}`);
     site = found.address;
   }
   const latest = readSequenceVersion(folders, slug);

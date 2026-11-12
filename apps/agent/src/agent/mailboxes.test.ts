@@ -41,7 +41,7 @@ test("phase 7: a box is kept only after both logins, never shown with its passwo
   assert.equal(boxForSpace(loadMailboxes(path), "s1")?.id, box.id);
   assert.equal(boxForSpace(loadMailboxes(path), "s2"), null, "Gmail");
   assert.throws(() => removeMailbox(box.id, path), /still sends from it \(s1\)/);
-  setSpaceMailbox("s1", "gmail", path);
+  setSpaceMailbox("s1", "none", path);
   removeMailbox(box.id, path);
   assert.equal(loadMailboxes(path).boxes.length, 0);
   assert.doesNotMatch(readFileSync(path, "utf8"), /new-pass/);
@@ -125,7 +125,7 @@ test("F18: mailboxes.json is read as a private file: a wide mode, a symlink or a
   assert.throws(() => loadMailboxes(path), (caught: unknown) => caught instanceof MailboxError && caught.status === 500 && /mode 644/.test(caught.message) && /chmod 600/.test(caught.message) && !caught.message.includes("abcd"));
   // A change would write a file without the boxes it could not read: it is refused instead.
   await assert.rejects(addMailbox({ provider: "icloud", address: "two@icloud.com", password: "x" }, NOW, path, ok), /chmod 600/);
-  assert.throws(() => setSpaceMailbox("s1", "gmail", path), /chmod 600/);
+  assert.throws(() => setSpaceMailbox("s1", "none", path), /chmod 600/);
   assert.equal(readFileSync(path, "utf8"), before);
 
   chmodSync(path, 0o600);

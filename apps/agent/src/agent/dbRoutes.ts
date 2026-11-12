@@ -1,15 +1,13 @@
 // /orch/db/*: a Foreman's hands on its project's database. orch.ts checks the key (a Foreman's, for its
 // own project) and finds the project; this file does the rest, against the
-// engine's interface (dbTypes.ts) and the mirror's (mirror.ts), so it can be
-// tested with a fake ProjectDb before the engine exists.
+// engine's interface (dbTypes.ts), so it can be tested with a fake ProjectDb.
 //
 //   GET  /orch/db/schema?tables=            the tables, the sensitive columns and the named mutations (schemaView)
 //   POST /orch/db/query   {sql, params?, limit?}  SELECT only, sensitive values masked
 //   POST /orch/db/write   {mutation, args}  one named mutation, journaled, by "foreman"
 //   POST /orch/db/undo    {journal}         reverses one journal entry within UNDO_DAYS
 //   GET  /orch/db/journal?limit=            what changed, newest first
-//   POST /orch/db/import  {spreadsheetId?, tab, table, mapping}  rows from a Google Sheet (the project's own when no id), journaled
-//   GET  /orch/db/mirror                    the project's sheet and when it last synced
+//   POST /orch/db/import  {file, table, mapping}  rows from a CSV file here (tableImport.ts), journaled
 //   POST /orch/report/render {template, sql, params?, args?, format?, split?, name?}
 //                                           a document from a template and a SELECT with real values (section 8)
 //
@@ -17,12 +15,10 @@
 // (a statement that is not a SELECT, an unknown mutation, bad args, an undo
 // past its window, a SQLite error) is a 400 with its message, so the Foreman
 // reads why and tries again; nothing the engine refuses is retried here.
-// After a write, an undo or an import the sheet is pushed (scheduleMirror),
-// soon and without holding the reply.
 //
-// The person reaches the journal, undo and mirror routes too, from the phone
-// and the desk (personRoutes.ts: GET /db/journal, POST /db/undo, GET
-// /db/mirror), through handleDb with `by` "person" instead of "foreman".
+// The person reaches the journal and undo routes too, from the desk
+// (personRoutes.ts: GET /db/journal, POST /db/undo), through handleDb with
+// `by` "person" instead of "foreman".
 //
 // A render reads the database with real values (render.ts) and writes files
 // under out/ in the repository, which the Foreman's Read is denied
@@ -37,7 +33,7 @@ import type { SeatRole } from "../../../../packages/contracts/src/spaces.ts";
 
 import { openProjectDb } from "./db.ts";
 import type { Args, ProjectDb, SchemaDescription, TradeSchema, Value } from "./dbTypes.ts";
-import { importSheet, mirrorStatus, scheduleMirror, type ImportRequest, type ImportResult, type MirrorStatus } from "./mirror.ts";
+import { importTable, type ImportRequest, type ImportResult } from "./tableImport.ts";
 import { liveRenderDeps, renderReport } from "./render.ts";
 import { recordRenders } from "./renders.ts";
 import type { RenderFormat, RenderProject, RenderRequest, RenderResult } from "./renderTypes.ts";
@@ -50,7 +46,7 @@ import { seatOf } from "./spaces.ts";
 /** The report route: a Foreman's, scoped like the db routes, and dispatched by this file with them. */
 export const REPORT_ROUTE = "/orch/report/render";
 
-export const DB_ROUTES: ReadonlySet<string> = new Set(["/orch/db/schema", "/orch/db/query", "/orch/db/write", "/orch/db/undo", "/orch/db/journal", "/orch/db/import", "/orch/db/mirror", REPORT_ROUTE]);
+export const DB_ROUTES: ReadonlySet<string> = new Set(["/orch/db/schema", "/orch/db/query", "/orch/db/write", "/orch/db/undo", "/orch/db/journal", "/orch/db/import", REPORT_ROUTE]);
 export const DB_POSTS: ReadonlySet<string> = new Set(["/orch/db/query", "/orch/db/write", "/orch/db/undo", "/orch/db/import", REPORT_ROUTE]);
 
 const RENDER_FORMATS: readonly RenderFormat[] = ["pdf", "html", "csv"];
@@ -93,15 +89,13 @@ export const JOURNAL_LIMIT_MAX = 200;
 
 export type Reply = { status: number; body: unknown };
 
-/** The engine and the mirror as this file uses them; tests give fakes. */
+/** The engine and the import as this file uses them; tests give fakes. */
 export type DbDeps = {
   schemaFor: (trade: string | undefined) => TradeSchema | null;
   open: (project: string, schema: TradeSchema) => ProjectDb;
   /** The seat a project holds in its Space's shared store, or null for a project with its own database. */
   seat?: (project: string) => SeatRole | null;
-  scheduleMirror: (project: string, schema: TradeSchema) => void;
-  mirrorStatus: (project: string) => Promise<MirrorStatus>;
-  importSheet: (project: string, schema: TradeSchema, request: ImportRequest, by: string) => Promise<ImportResult>;
+  importTable: (project: string, schema: TradeSchema, request: ImportRequest, by: string) => Promise<ImportResult>;
   /** Where a CSV to import may lie (csvImport.ts): the company's folders here and their Workers' worktrees. Absent: no file import. */
   importRoots?: (project: Project) => Promise<string[]>;
   /** A query just read the people or timeline that hold what people sent in (taint.ts "records"); absent, nothing is marked. */
@@ -125,9 +119,7 @@ export function liveDbDeps(): DbDeps {
     schemaFor: tradeSchema,
     seat: (project) => seatOf(project)?.role ?? null,
     open: openProjectDb,
-    scheduleMirror,
-    mirrorStatus,
-    importSheet,
+    importTable,
     importRoots: async (project) => (await companyFolders(project)).flatMap((folder) => [folder, `${folder}.worktrees`]),
     // Each file is noted by its hash with the template it came from (renders.ts), so trust can tell a pay stub from any other file.
     render: async (project, db, request) => {
@@ -228,35 +220,34 @@ export async function handleDb(route: string, url: URL, body: Record<string, unk
   // A seat of a Space's shared store writes only what its seat owns (trades/space.ts), its Foreman and its Workers (`worker:<id>`, workerSpace.ts) alike; the person's own changes are not held to it.
   const seat = by === BY_PERSON ? null : (deps.seat?.(project.id) ?? null);
   const notYours = (what: string): Reply => ({ status: 403, body: { error: `${what} belongs to another seat of this Space. This Foreman writes as ${seat}: ask Cobra to have the seat that owns it make the change.` } });
-  if (route === "/orch/db/mirror") return { status: 200, body: await deps.mirrorStatus(project.id) };
   if (route === "/orch/db/import") {
     const str = (key: string) => (typeof body[key] === "string" ? (body[key] as string).trim() : "");
-    // No spreadsheetId is the project's own sheet, the one the mirror made (mirror.ts importSheet).
-    const request: ImportRequest = { ...(str("spreadsheetId") ? { spreadsheetId: str("spreadsheetId") } : {}), tab: str("tab"), table: str("table"), mapping: {} };
-    // A CSV a Worker wrote instead of a sheet's tab: read here, so no row passes through a model.
-    if (str("file")) {
-      if (!deps.importRoots) return { status: 409, body: { error: "a file import is not available here" } };
-      try {
-        const read = readCsvIn(str("file"), await deps.importRoots(project));
-        request.grid = read.grid;
-        request.tab = read.name;
-      } catch (caught) {
-        return { status: 400, body: { error: message(caught) } };
-      }
-    }
-    if (!request.tab || !request.table) return { status: 400, body: { error: "table is needed, and tab (and spreadsheetId for a sheet other than the project's own) or file" } };
-    const mapping = body.mapping;
-    if (typeof mapping !== "object" || mapping === null || Array.isArray(mapping)) return { status: 400, body: { error: "mapping is an object: sheet header → column name" } };
-    for (const [header, column] of Object.entries(mapping as Record<string, unknown>)) {
+    // Cobra reads no Google Sheet itself (it has no Google connection of its own): a list comes in as a CSV file.
+    if (str("spreadsheetId") || str("tab")) return { status: 400, body: { error: "Cobra does not read a Google Sheet itself: have the sheet exported as a .csv file (File → Download → CSV) into the project's folders, then give its path as file" } };
+    const table = str("table");
+    if (!str("file") || !table) return { status: 400, body: { error: "file (the absolute path of a .csv file) and table are needed" } };
+    const given = body.mapping;
+    if (typeof given !== "object" || given === null || Array.isArray(given)) return { status: 400, body: { error: "mapping is an object: the file's header → column name" } };
+    const mapping: Record<string, string> = {};
+    for (const [header, column] of Object.entries(given as Record<string, unknown>)) {
       if (typeof column !== "string" || !column.trim()) return { status: 400, body: { error: `mapping["${header}"] must name a column` } };
-      request.mapping[header] = column.trim();
+      mapping[header] = column.trim();
     }
-    if (Object.keys(request.mapping).length === 0) return { status: 400, body: { error: "mapping names no columns" } };
-    if (seat && !mayImport(seat, request.table)) return notYours(`the ${request.table} table`);
+    if (Object.keys(mapping).length === 0) return { status: 400, body: { error: "mapping names no columns" } };
+    // Before the file is opened: a seat that may not fill this table reads nothing for it.
+    if (seat && !mayImport(seat, table)) return notYours(`the ${table} table`);
+    if (!deps.importRoots) return { status: 409, body: { error: "a file import is not available here" } };
+    // Read here, so no row passes through a model.
+    let request: ImportRequest;
     try {
-      const result = await deps.importSheet(project.id, schema, request, by);
-      log(`db ${project.id}: imported ${result.rows} row(s) into ${request.table} from ${request.grid ? "file" : "tab"} "${request.tab}" (journal ${result.journal})`);
-      deps.scheduleMirror(project.id, schema);
+      const read = readCsvIn(str("file"), await deps.importRoots(project));
+      request = { file: read.name, table, mapping, grid: read.grid };
+    } catch (caught) {
+      return { status: 400, body: { error: message(caught) } };
+    }
+    try {
+      const result = await deps.importTable(project.id, schema, request, by);
+      log(`db ${project.id}: imported ${result.rows} row(s) into ${request.table} from file "${request.file}" (journal ${result.journal})`);
       return { status: 200, body: result };
     } catch (caught) {
       return { status: 400, body: { error: message(caught) } };
@@ -300,7 +291,6 @@ export async function handleDb(route: string, url: URL, body: Record<string, unk
           const result = db.write(mutation, args as Args, by);
           // The mutation's name and journal id only: args can hold pay and bank numbers.
           log(`db ${project.id}: ${mutation} by ${by} (journal ${result.journal}, ${result.changes.length} row(s))`);
-          deps.scheduleMirror(project.id, schema);
           // A proposal the person allows on one card: the budget's limits, or bills.
           const proposal = PROPOSALS[mutation];
           const hook = proposal ? deps[proposal.hook] : undefined;
@@ -331,7 +321,6 @@ export async function handleDb(route: string, url: URL, body: Record<string, unk
         try {
           const result = db.undo(journal, by);
           log(`db ${project.id}: undid journal ${result.undid} by ${by} (journal ${result.journal}, ${result.changes.length} row(s))`);
-          deps.scheduleMirror(project.id, schema);
           return { status: 200, body: result };
         } catch (caught) {
           return { status: 400, body: { error: message(caught) } };

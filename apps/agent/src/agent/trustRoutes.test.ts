@@ -116,10 +116,12 @@ test("done when: the payroll routine runs 3 times, Cobra proposes trust, and the
       w.ledger[createHash("sha256").update(bytes).digest("hex")] = { project: "payroll", template: "pay-stub", templateSha: PAY_STUB_TEMPLATE, at: new Date(w.clock.now).toISOString() };
       paths.push(path);
     }
-    const action = parseAction(
+    const parsed = parseAction(
       { channel: "email", summary: `2 pay stubs, fortnight ${fortnight}`, to: ["ana@example.com", "ben@example.com"], subject: "Your pay stub", text: `Your pay stub for fortnight ${fortnight} is attached.`, attachments: paths },
       project,
     );
+    // As /orch/action/propose does: the email is frozen with its Space's mailbox.
+    const action = { ...parsed, email: { ...parsed.email!, from: { box: "box_1", address: "pete@example.com", mailbox: "Zoho Mail" } } };
     // As /orch/action/propose does: on trust it runs now, else it is a card.
     const run = tr.trustedApproval(w.deps, action, "fm_payroll");
     w.deps.approvals.save([...w.deps.approvals.load(), run ?? makeApproval({ kind: "action", title: `Send: ${action.summary}`, body: "…", requestedBy: "fm_payroll", action }, w.clock.now)]);
@@ -157,18 +159,14 @@ test("done when: the payroll routine runs 3 times, Cobra proposes trust, and the
     tz: LONDON,
   };
 
-  // What leaves the computer: Gmail, faked.
+  // What leaves the computer: the Space's mailbox, faked.
   const sent: Array<{ to: string[]; subject: string; files: string[] }> = [];
   const actions: ActionDeps = {
-    sendBox: async () => {
-      throw new Error("no mailbox in this test");
-    },
-    sendGmail: async (message) => {
+    sendBox: async (_box, address, message) => {
       sent.push({ to: message.to, subject: message.subject, files: (message.attachments ?? []).map((file) => file.name) });
-      return { id: `m${sent.length}`, from: "pete@example.com" };
+      return { id: `m${sent.length}`, from: address };
     },
     organizeMail: async (batch) => ({ changed: batch.ids.length, failed: 0 }),
-    uploadToDrive: async () => [],
     readFile: (path) => readFile(path),
     projectPath: async () => repo,
     readFilesConfig: async () => ({ exports: {} }) as never,
@@ -246,26 +244,15 @@ test("done when: the payroll routine runs 3 times, Cobra proposes trust, and the
   assert.equal(tr.trustedApproval(w.deps, action, "fm_payroll"), null);
 });
 
-test("a save to the person's own Drive runs at once on their Connect, with no grant; a local folder still asks", () => {
-  const repo = mkdtempSync(join(ROOT, "drive-"));
+test("a copy to a local folder never runs on its own: there is no standing consent for any folder", () => {
+  const repo = mkdtempSync(join(ROOT, "copy-"));
   mkdirSync(join(repo, "out"));
   writeFileSync(join(repo, "out", "checklist.pdf"), "%PDF go-live checklist");
   const project = { id: "chrishi-beach-marketing", name: "Chrishi Beach Marketing", path: repo };
   const w = world(Date.parse("2026-10-29T15:45:00Z"));
-  const drive = parseAction({ channel: "file", summary: "Go-live checklist v2 to Drive", attachments: ["out/checklist.pdf"] }, project);
-  const run = tr.trustedApproval(w.deps, drive, "fm_marketing");
-  assert.equal(run?.state, "allowed");
-  assert.equal(run?.trusted?.key, t.DRIVE_CONSENT);
-  assert.deepEqual(w.state(), { grants: [], always: [], counts: [] }, "no trust spent or earned");
-  const done = { ...run!, state: "done" as const, results: [{ ok: true, message: "put 1 file in your Google Drive" }] };
-  assert.equal(t.receiptNotice(done).body, "Done as you agreed when you connected Google: put 1 file in your Google Drive.");
-
-  // A day's saves are capped: past it, the next one is a card again.
-  w.deps.approvals.save(Array.from({ length: t.DRIVE_SAVES_PER_DAY }, () => ({ ...run! })));
-  assert.equal(tr.trustedApproval(w.deps, drive, "fm_marketing"), null);
-
   const local = parseAction({ channel: "file", summary: "Checklist to the shared folder", folder: "shared", attachments: ["out/checklist.pdf"] }, project, {
     shared: { label: "Shared", path: join(ROOT, "shared") },
   });
-  assert.equal(tr.trustedApproval(world(Date.parse("2026-10-29T15:45:00Z")).deps, local, "fm_marketing"), null);
+  assert.equal(tr.trustedApproval(w.deps, local, "fm_marketing"), null);
+  assert.deepEqual(w.state(), { grants: [], always: [], counts: [] }, "no trust spent or earned");
 });

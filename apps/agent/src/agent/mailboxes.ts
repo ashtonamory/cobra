@@ -1,9 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 
-import { readable } from "./calendar.ts";
 import { mailAddresses } from "./emailBounces.ts";
-import { BODY_MAX } from "./gmailRead.ts";
+import { NO_BOX } from "../../../../packages/contracts/src/mailboxes.ts";
+
+import { BODY_MAX, readable } from "./mailShapes.ts";
 import { imapAppendSent, imapCheck, imapLook, ImapRefusal, type ImapServer } from "./imap.ts";
 import { MailSendError, type MailAdapter, type SendFailure } from "./mailAdapter.ts";
 import { WireClosed } from "./mailWire.ts";
@@ -19,27 +20,28 @@ import { smtpCheck, SmtpCutOff, SmtpRefusal, smtpSend, type SmtpServer } from ".
  * replies and to file each sent copy. Outlook waits for an app registration
  * (Sam, 2026-11-02). The person adds a box on the desk;
  * the agent logs in to both servers before it keeps it. Each Space names
- * the box its email goes from; Gmail (the account's Google connection) when
- * it names none.
+ * the box its email goes from; a Space that names none sends no email
+ * (Cobra has no Google connection of its own: Gmail is reached only through
+ * a connector the person adds).
  *
  * The app password stays on this computer, in `mailboxes.json` under the
  * agent's config folder (mode 0600, a folder no Worker reads). It is never
  * sent anywhere but the box's own servers, and never in a reply, an error or
  * a log line. The file is read and written as every token file is
  * (private.ts): a symlink, another owner or a mode others can read is
- * refused, aloud, and never read as "no boxes" (a Space would then send from
- * Gmail, and the next change would write a file without the others).
+ * refused, aloud, and never read as "no boxes" (a Space would then stop
+ * sending, and the next change would write a file without the others).
  *
  * Mail read from a box (boxInbox) is other people's text: its subject and
  * words pass `readable` (redact.ts scrubSecrets) here, once, before the
- * reply check's model or a Foreman sees them, as Gmail's do (gmailRead.ts).
+ * reply check's model or a Foreman sees them.
  */
 
 export const MAILBOXES_PATH = join(CONFIG_DIR, "mailboxes.json");
 export const MAILBOX_PROVIDERS = ["icloud", "zoho"] as const;
 export type MailboxProvider = (typeof MAILBOX_PROVIDERS)[number];
 export const ZOHO_REGIONS = ["com", "eu", "in", "com.au", "jp"] as const;
-/** The cap Cobra keeps per box, as for Gmail: iCloud allows up to 1,000 a day; Zoho's depends on the plan. */
+/** The cap Cobra keeps per box: iCloud allows up to 1,000 a day; Zoho's depends on the plan. */
 export const BOX_DAILY_CAP = 200;
 export const PASSWORD_MAX = 200;
 
@@ -106,7 +108,7 @@ export function publicMailbox(box: Mailbox, file: MailboxFile): PublicMailbox {
   return { id: box.id, provider: box.provider, address: box.address, user: box.user, addedAt: box.addedAt, spaces: Object.entries(file.spaces).filter(([, id]) => id === box.id).map(([space]) => space) };
 }
 
-/** The box a Space's email goes from, or null for Gmail. */
+/** The box a Space's email goes from, or null when it names none. */
 export function boxForSpace(file: MailboxFile, space: string): Mailbox | null {
   const id = file.spaces[space];
   return id ? (file.boxes.find((box) => box.id === id) ?? null) : null;
@@ -158,10 +160,10 @@ export function removeMailbox(id: string, path = MAILBOXES_PATH): void {
   saveMailboxes(file, path);
 }
 
-/** A Space's box: a box id, or "gmail". */
+/** A Space's box: a box id, or NO_BOX to name none. */
 export function setSpaceMailbox(space: string, box: string, path = MAILBOXES_PATH): void {
   const file = loadMailboxes(path);
-  if (box === "gmail") delete file.spaces[space];
+  if (box === NO_BOX) delete file.spaces[space];
   else if (file.boxes.some((b) => b.id === box)) file.spaces[space] = box;
   else throw new MailboxError(404, "no such mailbox");
   saveMailboxes(file, path);
@@ -201,7 +203,7 @@ export function boxAdapter(box: Mailbox, deps: Partial<BoxDeps> & { log: (line: 
         accepted = (await use.send(box.smtp, login, { from: box.address, recipients: mime.recipients, data: mime.data })).accepted;
       } catch (caught) {
         if (caught instanceof SmtpRefusal && (caught.code === 535 || caught.code === 534)) {
-          // The app password was revoked or changed: hold the queue, as Gmail does without its connection.
+          // The app password was revoked or changed: hold the queue until the person adds it again.
           const why = `${box.address} refused the login; add the mailbox again with a new app password`;
           refused.set(key, why);
           throw new MailSendError("retry", why);

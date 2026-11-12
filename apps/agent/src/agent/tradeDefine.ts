@@ -40,7 +40,8 @@ export type DefinedTemplate = { describe: string; html: string; sample?: Record<
 /** A service the trade would use that Cobra has no connection for (until the person adds an MCP connector for it), and what it does instead. */
 export type DefinedNeed = { service: string; purpose: string; fallback: string };
 
-export type TradeRead = "calendar" | "mail";
+/** What a defined trade's Foreman may read through Cobra's own tools: the mailbox linked for its Space. */
+export type TradeRead = "mail";
 
 export type TradeDefinition = {
   id: string;
@@ -111,7 +112,7 @@ export function parseDefinition(raw: unknown, shipped: readonly string[], instal
 
   const reads: TradeRead[] = [];
   if (raw.reads !== undefined) {
-    if (!Array.isArray(raw.reads) || !raw.reads.every((read) => read === "calendar" || read === "mail")) return "reads lists calendar, mail or both";
+    if (!Array.isArray(raw.reads) || !raw.reads.every((read) => read === "mail")) return "reads lists mail, or is left out: Cobra reads only a Space's linked mailbox itself. A calendar comes through the person's Google Calendar connector, so name it in needs instead";
     reads.push(...new Set(raw.reads as TradeRead[]));
   }
 
@@ -408,7 +409,7 @@ export function describeDefinition(definition: TradeDefinition, installed?: Trad
     ...(tables.length ? ["", "Records it keeps on this computer:", ...tables.map((table) => `- ${table.name}: ${table.describe} (${table.columns.join(", ")})`)] : []),
     ...(mutations.length ? ["", "How they change:", ...mutations.map((mutation) => `- ${mutation.name}: ${mutation.describe}`)] : []),
     ...(trade.templates.length ? ["", `Documents: ${trade.templates.join(", ")}`] : []),
-    ...(definition.reads.length ? ["", `Reads your ${definition.reads.join(" and ")} once you turn them on.`] : []),
+    ...(definition.reads.length ? ["", "Reads the mailbox you link for its Space."] : []),
     ...(definition.needs.length ? ["", "Not connected yet:", ...definition.needs.map((need) => `- ${need.service} (${need.purpose}): ${need.fallback}`)] : []),
     "",
     "Like every trade, it sends nothing and changes nothing outside this computer without your Allow, and never moves money or files anything.",

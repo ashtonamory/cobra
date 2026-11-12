@@ -27,13 +27,10 @@ const { openSpace, registerSeat, seatOf } = await import("./spaces.ts");
 const space = await import("./workerSpace.ts");
 const { handleOrch } = await import("./orch.ts");
 const { loadApprovals, saveApprovals } = await import("./approvals.ts");
-const { configureMirror } = await import("./mirror.ts");
 
 type DbDeps = Parameters<typeof handleDb>[4];
 type StoredApproval = import("./approvals.ts").StoredApproval;
 
-// No Google here: a write's sheet push only notes that it waits.
-configureMirror({ grantEmail: async () => Promise.reject(new Error("no Google in tests")), debounceMs: 1, log: () => undefined });
 
 const fresh = () => mkdtempSync(join(tmpdir(), "seat-import-"));
 const northwind = { id: "northwind", name: "Northwind", kind: "own" as const, home: hostname(), sensitive: false };
@@ -48,9 +45,7 @@ function seated(dir: string, spaces: string) {
     schemaFor: () => SPACE_SCHEMA,
     seat: (id) => seatOf(id, spaces)?.role ?? null,
     open: (id, schema) => openProjectDb(id, schema, dir, spaces),
-    scheduleMirror: () => {},
-    mirrorStatus: async () => ({}) as never,
-    importSheet: async () => ({}) as never,
+    importTable: async () => ({}) as never,
     render: async () => ({ files: [] }) as never,
   };
   return { deps, crm: project("northwind-crm", "people"), marketing: project("northwind-marketing", "outreach"), finance: project("northwind-finance", "money") };

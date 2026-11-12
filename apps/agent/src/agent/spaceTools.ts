@@ -29,9 +29,9 @@ export const SPACE_SERVER = "cobra_space";
  */
 export const WORKER_SPACE_TOOLS = {
   // The trade's database: every write journaled with Undo, as the Worker (dbRoutes.ts).
-  data: ["db_schema", "db_query", "db_write", "db_undo", "db_journal", "sheet_import", "mirror_status", "report_render"],
-  // The calendar and mail reads the trade does; mail_organize is a card.
-  reads: ["calendar_events", "mail_search", "mail_read", "mail_organize"],
+  data: ["db_schema", "db_query", "db_write", "db_undo", "db_journal", "file_import", "report_render"],
+  // The mail reads the trade does, on its Space's mailbox; mail_organize is a card.
+  reads: ["mail_search", "mail_read", "mail_organize"],
   email: [
     "email_templates",
     "email_image",

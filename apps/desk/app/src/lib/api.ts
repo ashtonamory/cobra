@@ -145,7 +145,6 @@ export const cloudflareFinish = (m: M, connectCode: string) => post(m, "/integra
 export const cloudflareAccount = (m: M, account: string) => post(m, "/integrations/cloudflare/account", { id: account }, 10);
 export const cloudflareDisconnect = (m: M) => post(m, "/integrations/cloudflare/disconnect", {}, 30);
 export const dbJournal = (m: M, project: string, limit = 30) => get(m, `/db/journal?project=${q(project)}&limit=${limit}`, 10);
-export const dbMirror = (m: M, project: string) => get(m, `/db/mirror?project=${q(project)}`, 10);
 /** Undo one journal entry as you (this desk's key has `act`); answers the entry after. */
 export const dbUndo = (m: M, project: string, journal: number) => post(m, "/db/undo", { project, journal }, 20);
 

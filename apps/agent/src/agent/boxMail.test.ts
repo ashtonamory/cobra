@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { boxMessageId, boxQuery, boxRead, boxSearch, folderKey, namedFolder, organizeBox, parseBoxId, resolveBoxBatch, roleFolder } from "./boxMail.ts";
-import { mailboxDone, mailboxHeadline } from "./gmailOrganize.ts";
+import { mailboxDone, mailboxHeadline } from "./mailOrganize.ts";
 import { ImapRefusal, type ImapBox, type ImapFetched, type ImapFolder } from "./imap.ts";
 import type { Mailbox } from "./mailboxes.ts";
 

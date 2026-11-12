@@ -48,6 +48,21 @@ can turn on only Gmail, Calendar and Drive and allow only their read tools
 exist for the model. This comes once it is tested against a ChatGPT account
 that has the connectors.
 
+## What Cobra does not do itself
+
+Cobra holds no Google sign-in, so its own tools never reach Google:
+
+- **Email it sends** (a Foreman's email, branded email, campaigns) goes
+  from a mailbox you choose for the Space in Settings → Mailboxes. A Space
+  with no mailbox sends nothing, and the agent says so.
+- **Mail it reads and tidies** with its own tools (`mail_search`,
+  `mail_read`, `mail_organize`) is that same mailbox. Gmail is read through
+  the Gmail connector above.
+- **Files** a Foreman hands over are copied to a folder on this computer
+  that you set up, after your Allow. Nothing is saved to Google Drive.
+- **Lists you keep in a Google Sheet** come in as a `.csv` file you
+  download. Cobra keeps no copy of your records in a sheet.
+
 ## Other mailboxes
 
 iCloud and Zoho mail go through IMAP and SMTP: Settings → Mailboxes.

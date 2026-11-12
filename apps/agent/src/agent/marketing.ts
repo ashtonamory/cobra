@@ -257,7 +257,7 @@ export type MarketingDeps = {
   store: <T>(space: string, use: (db: ProjectDb) => T) => T | null;
   sender: (space: string) => Promise<{ mailbox: string; address: string | null }>;
   cap: (space: string) => Promise<{ cap: number; left: number }>;
-  /** The owner's own addresses: every sending mailbox and the Gmail account. Sends to these are tests. */
+  /** The owner's own addresses: every sending mailbox. Sends to these are tests. */
   own: () => Promise<string[]>;
   place: (space: { id: string; dir: string; name: string }) => ThemePlace;
   now: () => number;

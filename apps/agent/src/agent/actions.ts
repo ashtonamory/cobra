@@ -9,13 +9,10 @@ import type { Approval, ApprovalAction, ApprovalActionAttachment, Project } from
 
 import { BODY_MAX, type StoredApproval } from "./approvals.ts";
 import { audit, recipients } from "./auditTrail.ts";
-import { ReadRequestError } from "./calendar.ts";
-import { DRIVE_ROOT_NAME, driveFolderName, type DriveFile, type DriveProject, type DriveUploaded, DriveUploadError, uploadToDrive } from "./drive.ts";
 import { SECRET_FILE } from "./ea.ts";
 import { type FilesConfig, formatBytes, loadFilesConfig, uniqueName } from "./files.ts";
-import { sendGmail } from "./gmail.ts";
-import { inverseOf, type MailboxBatch, mailboxDone, mailboxHeadline, type MailboxOp, type MailboxOutcome, type MailboxRequest, mailboxRequest, organizeMail, resolveMailbox } from "./gmailOrganize.ts";
-import { GoogleAuthError } from "./googleAuth.ts";
+import { inverseOf, type MailboxBatch, mailboxDone, mailboxHeadline, type MailboxOp, type MailboxOutcome, type MailboxRequest, mailboxRequest } from "./mailOrganize.ts";
+import { ReadRequestError } from "./mailShapes.ts";
 import { type MailMessage, typeForName, validEmail } from "./mime.ts";
 import { boxAdapter, loadMailboxes, MailboxError } from "./mailboxes.ts";
 import { organizeBox } from "./boxMail.ts";
@@ -35,26 +32,28 @@ import { SessionError } from "./sessions.ts";
  * draft is a new approval. The Foreman hears what became of it as a [cobra] line
  * (actionNews, told through finishes.ts) and never waits.
  *
- * Channels: `email`,
- * sent through Gmail as the person, from the Google account they connected in
- * the app (gmail.ts); `file`, which puts repository files in the person's
- * Google Drive, in `Cobra/<project>` (drive.ts, folder `drive`, the default),
- * or copies them into a local folder the person added to files.json
- * (`exports`, optional); and `note`, which leaves nothing: the card is the
- * delivery. Attachments, for email and file alike, are files in the Foreman's
- * own repository, by relative path, read at send time and refused if one moved
+ * Channels: `email`, sent from the mailbox the person linked for the
+ * project's Space (mailboxes.ts) and frozen on the card; `file`, which copies
+ * repository files into a local folder the person added to files.json
+ * (`exports`); and `note`, which leaves nothing: the card is the delivery.
+ * Attachments, for email and file alike, are files in the Foreman's own
+ * repository, by relative path, read at send time and refused if one moved
  * out of the repository or looks like a credential. Proposing touches no
- * network: whether Google is connected is learned at Allow, and a missing
- * connection fails the approval with the words that say how to connect.
+ * network.
  *
- * Channel `mailbox` is the
- * one exception to "proposing touches no network": its batch is worked out
- * when the Foreman proposes (gmailOrganize.ts `resolveMailbox`) and frozen on
- * the card, so Allow changes exactly the messages the person was shown. It is
- * not in CHANNELS, since parseAction is synchronous: orch.ts hands it to
- * parseMailboxAction. It never takes trust (actionTrust.ts: an unknown channel
- * is never trusted).
+ * Channel `mailbox` is the one exception to "proposing touches no network":
+ * its batch is worked out when the Foreman proposes (boxMail.ts
+ * `resolveBoxBatch`) and frozen on the card, so Allow changes exactly the
+ * messages the person was shown. It is not in CHANNELS, since parseAction is
+ * synchronous: orch.ts hands it to parseMailboxAction. It never takes trust
+ * (actionTrust.ts: an unknown channel is never trusted).
+ *
+ * Cobra has no Google connection of its own. Gmail and Drive are reached
+ * only through a connector the person adds, with that connector's own tools.
  */
+
+/** What a Foreman and the person read when an email or a mail batch has no mailbox to act through. */
+export const NO_MAILBOX = "this project's Space has no mailbox linked on this computer: the person links one in Settings → Mailboxes (iCloud Mail or Zoho Mail, with an app password)";
 
 export const MAX_SUMMARY = 120;
 export const MIN_SUMMARY = 3;
@@ -162,35 +161,19 @@ function attachments(root: string, value: unknown): Resolved[] {
   return out;
 }
 
-/** The folder key that means the person's Google Drive; files.json cannot take it for a local folder. */
-export const DRIVE_KEY = "drive";
-export const DRIVE_LABEL = "your Google Drive";
-
-/** Where a project's files land in Drive, as the card shows it: `Cobra/<project>`. */
-export function drivePath(projectName: string): string {
-  return `${DRIVE_ROOT_NAME}/${driveFolderName(projectName)}`;
-}
-
-/** A Drive file action, told from a local one by its key and its path: a local folder's path is always absolute (files.ts). */
-export function goesToDrive(files: Pick<NonNullable<ApprovalAction["files"]>, "to" | "path">): boolean {
-  return files.to === DRIVE_KEY && !isAbsolute(files.path);
-}
-
 /**
- * The folder a file action names: the person's Google Drive (`drive`, the
- * default when none is given), or a local folder by its key in files.json.
- * The refusal lists the folders there are (key and label), Drive first, since
- * the Foreman only knows what the person told it.
+ * The folder a file action names: a local folder by its key in files.json.
+ * The refusal lists the folders there are (key and label), since the Foreman
+ * only knows what the person told it.
  */
-function exportFolder(given: unknown, projectName: string, exports: FilesConfig["exports"]): { key: string; label: string; path: string } {
-  const drive = { key: DRIVE_KEY, label: DRIVE_LABEL, path: drivePath(projectName) };
-  const local = Object.entries(exports).filter(([key]) => key !== DRIVE_KEY);
-  const known = [`${drive.key} (${drive.label})`, ...local.map(([key, folder]) => `${key} (${folder.label})`)];
-  if (given !== undefined && typeof given !== "string") refuse(`folder is the key of a folder: one of ${known.join(", ")}`);
-  const key = typeof given === "string" ? given.trim() : "";
-  if (!key || key === DRIVE_KEY) return drive;
+function exportFolder(given: unknown, exports: FilesConfig["exports"]): { key: string; label: string; path: string } {
+  const local = Object.entries(exports);
+  if (local.length === 0) refuse("no folder on this computer is set up to copy files into yet: the person adds one to files.json (exports), then propose this again");
+  const known = local.map(([key, folder]) => `${key} (${folder.label})`);
+  if (typeof given !== "string" || !given.trim()) refuse(`folder is the key of a folder: one of ${known.join(", ")}`);
+  const key = given.trim();
   const folder = local.find(([name]) => name === key)?.[1];
-  if (!folder) refuse(`no folder "${key.slice(0, 80)}": the folders there are ${known.join(", ")}; give the key, or leave folder out for Drive`);
+  if (!folder) refuse(`no folder "${key.slice(0, 80)}": the folders there are ${known.join(", ")}; give the key`);
   return { key, ...folder };
 }
 
@@ -214,9 +197,9 @@ export function parseAction(body: unknown, project: Pick<Project, "id" | "name" 
   if (channel === "file") {
     // A copy reaches nobody: an email mislabelled as one would land in a folder and never go out.
     for (const key of ["to", "cc", "subject"]) {
-      if (input[key] !== undefined) refuse(`a file action has no ${key}: it puts files in your Google Drive or a folder on this computer and sends them to nobody. To send them, use channel email`);
+      if (input[key] !== undefined) refuse(`a file action has no ${key}: it copies files into a folder on this computer and sends them to nobody. To send them, use channel email`);
     }
-    const folder = exportFolder(input.folder, project.name, exports);
+    const folder = exportFolder(input.folder, exports);
     const items = attachments(project.path, input.attachments).map(({ full: _drop, ...file }) => file);
     if (items.length === 0) refuse(`attachments names the files to copy: 1 to ${MAX_ATTACHMENTS} paths in the repository`);
     const text = input.text === undefined ? undefined : longText(input.text, "text", MAX_NOTE);
@@ -233,7 +216,7 @@ export function parseAction(body: unknown, project: Pick<Project, "id" | "name" 
   });
 }
 
-/** The channel that organizes the person's mail; asked for apart from CHANNELS, since resolving its batch reads Gmail. */
+/** The channel that organizes the person's mail; asked for apart from CHANNELS, since resolving its batch reads the mailbox. */
 export const MAILBOX_CHANNEL = "mailbox";
 
 /** How many messages the mailbox cards of the last 24 hours changed or still may (pending, allowed or done; not denied, failed or lapsed). */
@@ -248,11 +231,11 @@ export function mailboxToday(list: readonly Pick<StoredApproval, "kind" | "state
 
 /**
  * A Foreman's mailbox proposal, checked and resolved: the batch of messages is
- * worked out now by `resolve` (Gmail, in gmailOrganize.ts) and frozen on the
- * action, with the card's numbers counted by code from Gmail's metadata.
- * `remaining` is what today's limit still allows. Refusals are 400s that say
- * what is wrong; a Google problem (not connected, Organize mail off) is thrown
- * as it is for the route to answer.
+ * worked out now by `resolve` (the Space's mailbox, boxMail.ts) and frozen on
+ * the action, with the card's numbers counted by code from the messages'
+ * headers. `remaining` is what today's limit still allows. Refusals are 400s
+ * that say what is wrong; the mailbox's own problem (its login refused, its
+ * server away) is thrown as it is for the route to answer.
  */
 export async function parseMailboxAction(
   body: unknown,
@@ -379,7 +362,7 @@ export function actionText(action: ApprovalAction): { title: string; body: strin
   if (action.files) {
     const files = action.files;
     const list = files.items.map((file) => `${file.name} (${formatBytes(file.bytes)})`).join(", ");
-    return { title: `${goesToDrive(files) ? "Save to Drive" : "Copy"}: ${action.summary}`, body: `To: ${files.label} (${files.path})\n\nFiles: ${list}${files.text ? `\n\n${files.text}` : ""}` };
+    return { title: `Copy: ${action.summary}`, body: `To: ${files.label} (${files.path})\n\nFiles: ${list}${files.text ? `\n\n${files.text}` : ""}` };
   }
   const noteFiles = action.note?.attachments?.length ? `\n\nAttachments: ${action.note.attachments.map((file) => `${file.name} (${formatBytes(file.bytes)})`).join(", ")}` : "";
   return { title: `Note: ${action.summary}`, body: `${action.note?.text ?? ""}${noteFiles}` };
@@ -403,14 +386,10 @@ function mailboxBody(batch: NonNullable<ApprovalAction["mailbox"]>): string {
 }
 
 export type ActionDeps = {
-  /** Sends one message through Gmail as the connected Google account (gmail.ts); a GoogleAuthError says how to connect. */
-  sendGmail: (message: MailMessage) => Promise<{ id: string; from: string }>;
   /** Sends one message from a Space's own mailbox (mailboxes.ts) by its id, refusing when the box is gone or its address changed since the card. */
   sendBox: (box: string, address: string, message: MailMessage) => Promise<{ id: string; from: string }>;
-  /** Applies a mailbox batch's operation to its frozen ids through Gmail (gmailOrganize.ts); a GoogleAuthError says how to connect or turn on Organize mail. */
+  /** Applies a mailbox batch's operation to its frozen ids in the Space's mailbox the card named (boxMail.ts). */
   organizeMail: (batch: MailboxBatch) => Promise<MailboxOutcome>;
-  /** Puts files in `Cobra/<project>` in the connected account's Drive (drive.ts), resolving with each one's link. */
-  uploadToDrive: (files: DriveFile[], project: DriveProject) => Promise<DriveUploaded[]>;
   readFile: (path: string) => Promise<Uint8Array>;
   /** The repository of a project on this computer, by id, or null when it is gone. */
   projectPath: (project: string) => Promise<string | null>;
@@ -434,7 +413,6 @@ export type ActionDeps = {
 
 export function liveActionDeps(projectPath: ActionDeps["projectPath"], readFilesConfig: ActionDeps["readFilesConfig"] = () => loadFilesConfig()): ActionDeps {
   return {
-    sendGmail: (message) => sendGmail(message),
     sendBox: async (id, address, message) => {
       const box = loadMailboxes().boxes.find((candidate) => candidate.id === id);
       if (!box || box.address !== address) throw new Error(`the mailbox ${address} is no longer on this computer (Settings → Mailboxes); propose the email again`);
@@ -442,10 +420,12 @@ export function liveActionDeps(projectPath: ActionDeps["projectPath"], readFiles
       return { id: sent.messageId, from: sent.account };
     },
     organizeMail: async (batch) => {
-      if (!batch.box) return await organizeMail({}, batch);
-      // A Space's own mailbox (boxMail.ts): the box the card named, refused when it is gone or its address changed since.
-      const box = loadMailboxes().boxes.find((candidate) => candidate.id === batch.box!.id);
-      if (!box || box.address !== batch.box.address) throw new Error(`the mailbox ${batch.box.address} is no longer on this computer (Settings → Mailboxes); propose the batch again`);
+      // A card from before mailboxes named their box has nothing to act on: Cobra holds no Google connection of its own.
+      if (!batch.box) throw new Error(NO_MAILBOX);
+      const named = batch.box;
+      // The box the card named, refused when it is gone or its address changed since.
+      const box = loadMailboxes().boxes.find((candidate) => candidate.id === named.id);
+      if (!box || box.address !== named.address) throw new Error(`the mailbox ${named.address} is no longer on this computer (Settings → Mailboxes); propose the batch again`);
       try {
         return await organizeBox(box, batch);
       } catch (caught) {
@@ -453,7 +433,6 @@ export function liveActionDeps(projectPath: ActionDeps["projectPath"], readFiles
         throw caught;
       }
     },
-    uploadToDrive: (files, project) => uploadToDrive(files, { project }),
     readFile: (path) => readFile(path),
     projectPath,
     readFilesConfig,
@@ -496,10 +475,9 @@ async function readItems(deps: ActionDeps, project: string, items: readonly Appr
 
 /**
  * After Allow: carries the action out exactly as the approval holds it, and
- * returns it done or failed, as runMerge does. An email goes through Gmail as
- * the person, the very draft the card showed, its attachments read and hashed
- * again now. Not connected to Google, the approval fails with the words that
- * say how to connect, as they are.
+ * returns it done or failed, as runMerge does. An email goes from the
+ * mailbox the card named, the very draft the card showed, its attachments
+ * read and hashed again now.
  */
 export async function runAction(deps: ActionDeps, approval: StoredApproval): Promise<StoredApproval> {
   const done = await carryOut(deps, approval);
@@ -520,16 +498,15 @@ export function auditAction(done: StoredApproval, log: typeof audit = audit): vo
   const hashes = (items: readonly ApprovalActionAttachment[]) => items.map((item) => `${item.name}:${item.sha256.slice(0, 16)}`);
   if (action.channel === "note") return log("note.read", { ...base, actor: "person", detail: { title: done.title } });
   if (action.channel === MAILBOX_CHANNEL && action.mailbox) {
-    return log("mailbox.changed", { ...base, detail: { op: action.mailbox.op, messages: action.mailbox.ids.length, mailbox: action.mailbox.box ? `a mailbox at ${recipients([action.mailbox.box.address]).domains[0] ?? "?"}` : "Gmail" } });
+    return log("mailbox.changed", { ...base, detail: { op: action.mailbox.op, messages: action.mailbox.ids.length, mailbox: action.mailbox.box ? `a mailbox at ${recipients([action.mailbox.box.address]).domains[0] ?? "?"}` : "none" } });
   }
   if (action.channel === "file" && action.files) {
-    const drive = goesToDrive(action.files);
-    return log(drive ? "drive.saved" : "file.saved", { ...base, subject: { ...base.subject, target: drive ? action.files.path : action.files.to }, detail: { files: action.files.items.length, ...(drive ? {} : { folder: action.files.label }), hashes: hashes(action.files.items) } });
+    return log("file.saved", { ...base, subject: { ...base.subject, target: action.files.to }, detail: { files: action.files.items.length, folder: action.files.label, hashes: hashes(action.files.items) } });
   }
   if (action.channel === "email" && action.email) {
     const to = [...action.email.to, ...(action.email.cc ?? [])];
     const attachments = action.email.attachments ?? [];
-    return log("email.sent", { ...base, detail: { ...recipients(to), from: action.email.from ? recipients([action.email.from.address]).domains[0] ?? "mailbox" : "Gmail", attachments: attachments.length, ...(attachments.length ? { hashes: hashes(attachments) } : {}) } });
+    return log("email.sent", { ...base, detail: { ...recipients(to), from: action.email.from ? recipients([action.email.from.address]).domains[0] ?? "mailbox" : "none", attachments: attachments.length, ...(attachments.length ? { hashes: hashes(attachments) } : {}) } });
   }
   // Branded, campaign, batch and sequence are queued here and sent one by one by the queue, which logs each send (emailSend.ts).
   const branded = action.branded ? [action.branded.to] : [];
@@ -542,7 +519,7 @@ async function carryOut(deps: ActionDeps, approval: StoredApproval): Promise<Sto
   if (!action) return fail("the approval carries no action");
   if (action.channel === "note") return { ...approval, state: "done", results: [{ ok: true, message: "read" }] };
   if (action.channel === MAILBOX_CHANNEL && action.mailbox) return runMailbox(deps, approval, action.mailbox);
-  if (action.channel === "file" && action.files) return goesToDrive(action.files) ? runUpload(deps, approval, action.files) : runCopy(deps, approval, action.files);
+  if (action.channel === "file" && action.files) return runCopy(deps, approval, action.files);
   if (action.channel === "branded" && action.branded) {
     if (!deps.queueBranded) return fail("this computer does not send branded email");
     try {
@@ -580,6 +557,8 @@ async function carryOut(deps: ActionDeps, approval: StoredApproval): Promise<Sto
   if (typeof read === "string") return fail(read);
   const files = read.map((file) => ({ name: file.name, data: file.data, type: typeForName(file.name) }));
   const box = action.email.from;
+  // A card that names no mailbox has nothing to send from: Cobra holds no Google connection of its own.
+  if (!box) return fail(`not sent: ${NO_MAILBOX}`);
   try {
     const message0: MailMessage = {
       to: action.email.to,
@@ -588,13 +567,11 @@ async function carryOut(deps: ActionDeps, approval: StoredApproval): Promise<Sto
       text: action.email.text,
       ...(files.length ? { attachments: files } : {}),
     };
-    // From the Space's own mailbox when the card named one, never Gmail in its place.
-    const sent = box ? await deps.sendBox(box.box, box.address, message0) : await deps.sendGmail(message0);
+    const sent = await deps.sendBox(box.box, box.address, message0);
     const count = action.email.to.length + (action.email.cc?.length ?? 0);
-    const message = `sent to ${count} address${count === 1 ? "" : "es"} from ${sent.from}${sent.id ? ` (${box ? box.mailbox : "Gmail"} message ${sent.id})` : ""}`;
+    const message = `sent to ${count} address${count === 1 ? "" : "es"} from ${sent.from}${sent.id ? ` (${box.mailbox} message ${sent.id})` : ""}`;
     return { ...approval, state: "done", results: [{ ok: true, message }] };
   } catch (caught) {
-    if (caught instanceof GoogleAuthError) return fail(caught.message);
     return fail(`not sent: ${said(caught)}`);
   }
 }
@@ -612,7 +589,7 @@ function boxUndo(batch: NonNullable<ApprovalAction["mailbox"]>): string {
  * Channel mailbox, after Allow: the operation on the frozen ids and no others.
  * A batch that changed some and failed some is failed, with the counts, so
  * the Foreman does not take it for done. The result lines say how to put it
- * back: every operation has an inverse, and Gmail keeps the trash 30 days.
+ * back: every operation has an inverse.
  */
 async function runMailbox(deps: ActionDeps, approval: StoredApproval, batch: NonNullable<ApprovalAction["mailbox"]>): Promise<StoredApproval> {
   const fail = (message: string): StoredApproval => ({ ...approval, state: "failed", results: [{ ok: false, message }] });
@@ -621,42 +598,12 @@ async function runMailbox(deps: ActionDeps, approval: StoredApproval, batch: Non
     const undo = batch.box ? boxUndo(batch) : `to put it back, propose op ${inverseOf(batch.op as MailboxOp)} on the same messages${batch.query !== undefined ? ` (the search ${JSON.stringify(batch.query)}${batch.op === "trash" ? " with in:trash" : ""})` : ""}`;
     const made = outcome.createdLabel ? ` and created the ${batch.box ? "folder" : "label"} "${outcome.createdLabel}"` : "";
     if (outcome.failed > 0) {
-      const message = `${mailboxDone(batch, outcome.changed)}${made}, but ${batch.box ? batch.box.address : "Gmail"} refused ${outcome.failed} of ${batch.ids.length}${outcome.failure ? `: ${outcome.failure}` : ""}`;
+      const message = `${mailboxDone(batch, outcome.changed)}${made}, but ${batch.box ? batch.box.address : "the mailbox"} refused ${outcome.failed} of ${batch.ids.length}${outcome.failure ? `: ${outcome.failure}` : ""}`;
       return { ...approval, state: "failed", results: [{ ok: false, message }, { ok: true, message: undo }] };
     }
     return { ...approval, state: "done", results: [{ ok: true, message: `${mailboxDone(batch, outcome.changed)}${made}` }, { ok: true, message: undo }] };
   } catch (caught) {
-    if (caught instanceof GoogleAuthError) return fail(caught.message);
     return fail(`nothing was changed in the mailbox: ${said(caught)}`);
-  }
-}
-
-/**
- * Channel file to Drive, after Allow: every item is read and hashed again as
- * an email's attachments are, then put in the folder the card named
- * (`Cobra/<project>`; Drive keeps two files of one name side by side, so
- * nothing there is written over). One result line says how many landed, then
- * one per file with its Drive link.
- */
-async function runUpload(deps: ActionDeps, approval: StoredApproval, files: NonNullable<ApprovalAction["files"]>): Promise<StoredApproval> {
-  const fail = (message: string): StoredApproval => ({ ...approval, state: "failed", results: [{ ok: false, message }] });
-  const project = approval.action?.project ?? "";
-  const read = await readItems(deps, project, files.items, "");
-  if (typeof read === "string") return fail(read);
-  // The folder is the one the card showed, by its own words, never worked out again from a project renamed since.
-  const name = files.path.startsWith(`${DRIVE_ROOT_NAME}/`) ? files.path.slice(DRIVE_ROOT_NAME.length + 1) : files.path;
-  const where = `${files.label} (${files.path})`;
-  const links = (done: DriveUploaded[]): Results => done.map((file) => ({ ok: true, message: `${file.name}: ${file.webViewLink}` }));
-  try {
-    const done = await deps.uploadToDrive(read.map((file) => ({ name: file.name, data: file.data, type: typeForName(file.name) })), { id: project, name });
-    return { ...approval, state: "done", results: [{ ok: true, message: `put ${done.length} file${done.length === 1 ? "" : "s"} in ${where}` }, ...links(done)] };
-  } catch (caught) {
-    if (caught instanceof GoogleAuthError) return fail(caught.message);
-    if (caught instanceof DriveUploadError) {
-      const message = `put ${caught.uploaded.length} of ${read.length} file${read.length === 1 ? "" : "s"} in ${where}; ${caught.failed} failed: ${caught.message}`;
-      return { ...approval, state: "failed", results: [...links(caught.uploaded), { ok: false, message }] };
-    }
-    return fail(`nothing was put in ${where}: ${said(caught)}`);
   }
 }
 

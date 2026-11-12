@@ -213,7 +213,6 @@ test("a card that lapsed is written down, and logged once", () => {
 test("each action carried out appends exactly one record of its kind, with counts and hashes and no content", () => {
   const cases: Array<[ApprovalAction, string]> = [
     [action(), "email.sent"],
-    [{ channel: "file", project: "paws", projectName: "Paws", summary: "s", files: { to: "drive", label: "your Google Drive", path: "Cobra/Paws", items: [{ path: "a.pdf", name: "a.pdf", bytes: 1, sha256: "c".repeat(64) }] } }, "drive.saved"],
     [{ channel: "file", project: "paws", projectName: "Paws", summary: "s", files: { to: "payroll", label: "Payroll", path: "/home/x/Payroll", items: [{ path: "a.pdf", name: "a.pdf", bytes: 1, sha256: "c".repeat(64) }] } }, "file.saved"],
     [{ channel: "mailbox", project: "paws", projectName: "Paws", summary: "s", mailbox: { op: "archive", ids: ["1", "2"], matched: 2, skipped: { alreadyDone: 0, starred: 0, missing: 0 }, more: false, senders: [{ from: "x@y.z", count: 2 }], samples: [{ from: "x@y.z", subject: "Secret subject line" }] } }, "mailbox.changed"],
     [{ channel: "note", project: "paws", projectName: "Paws", summary: "s", note: { text: "the note's own words" } }, "note.read"],
@@ -238,14 +237,14 @@ test("runAction logs the email it sent once", async () => {
   writeFileSync(join(root, "inv.pdf"), "pdf");
   const { createHash } = await import("node:crypto");
   const act = action();
+  // The mailbox the card froze: with none, nothing is sent.
+  act.email!.from = { box: "box_1", address: "me@box.com", mailbox: "Zoho Mail" };
   act.email!.attachments = [{ path: "inv.pdf", name: "inv.pdf", bytes: 3, sha256: createHash("sha256").update("pdf").digest("hex") }];
   const { result, records } = await appendedAsync(() =>
     runAction(
       {
-        sendGmail: async () => ({ id: "m1", from: "me@gmail.com" }),
         sendBox: async () => ({ id: "m1", from: "me@box.com" }),
         organizeMail: async () => ({ changed: 0, failed: 0 }),
-        uploadToDrive: async () => [],
         readFile: async (path: string) => readFileSync(path),
         projectPath: async () => root,
         readFilesConfig: async () => ({ exports: {} }),

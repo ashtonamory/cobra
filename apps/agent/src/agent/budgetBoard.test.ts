@@ -41,13 +41,9 @@ function setup(kind: "family" | "own" = "family") {
     db: {
       schemaFor: (trade) => (trade === "money" ? SPACE_SCHEMA : null),
       open: () => open(),
-      scheduleMirror: () => {},
-      mirrorStatus: async (p) => ({ project: p, spreadsheetId: null, lastSync: null, lastError: null, pending: false }) as never,
-      importSheet: async () => { throw new Error("no"); },
+      importTable: async () => { throw new Error("no"); },
       render: async () => { throw new Error("no"); },
     },
-    grant: async () => ({}),
-    status: () => ({ connected: false, email: null, scopes: [], problem: null, checkedAt: 0 }),
     tell: () => {},
     now: () => NOW,
     log: () => {},
@@ -227,9 +223,7 @@ test("Money's proposal through db_write becomes one budget card; Allow sets it, 
   const deps = {
     schemaFor: () => SPACE_SCHEMA,
     open: () => s.open(),
-    scheduleMirror: () => {},
-    mirrorStatus: async () => { throw new Error("no"); },
-    importSheet: async () => { throw new Error("no"); },
+    importTable: async () => { throw new Error("no"); },
     render: async () => { throw new Error("no"); },
     budgetProposed: (id: string, open: import("./dbTypes.ts").ProjectDb, batch: number, by: string) => proposeBudgetCard(cardDeps, id, open, batch, by),
   };
@@ -387,9 +381,7 @@ test("bills proposed through db_write become one card; unticked ones are left of
   const deps = {
     schemaFor: () => SPACE_SCHEMA,
     open: () => s.open(),
-    scheduleMirror: () => {},
-    mirrorStatus: async () => { throw new Error("no"); },
-    importSheet: async () => { throw new Error("no"); },
+    importTable: async () => { throw new Error("no"); },
     render: async () => { throw new Error("no"); },
     billsProposed: (id: string, open: import("./dbTypes.ts").ProjectDb, batch: number, by: string) => proposeBillsCard(cardDeps, id, open, batch, by),
   };

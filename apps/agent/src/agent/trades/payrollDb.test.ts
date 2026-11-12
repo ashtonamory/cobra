@@ -34,7 +34,7 @@ test("a pay run from typed hours, read back masked, closed, and undone", () => {
     assert.equal(added?.tax_id, "•••• 456C");
 
     db.write("period_add", { starts: "2026-10-05", ends: "2026-10-18", pay_date: "2026-10-23" }, "foreman");
-    const sheet = db.write("timesheet_import", { period_id: 1, source: "typed", rows: [{ employee: "Ana", regular_hours: 37, overtime_hours: 2 }, { employee: "Ben", regular_hours: 70 }] }, "foreman");
+    const sheet = db.write("timefile_import", { period_id: 1, source: "typed", rows: [{ employee: "Ana", regular_hours: 37, overtime_hours: 2 }, { employee: "Ben", regular_hours: 70 }] }, "foreman");
     assert.match(sheet.summary, /2 timesheets/);
 
     const run = db.write("pay_run_create", { period_id: 1 }, "foreman");
@@ -79,7 +79,7 @@ test("only the agent marks a stub sent: a Foreman's stub_sent or stubs_sent is r
     db.write("business_set", { legal_name: "Pippin Cay Ltd", pay_schedule: "fortnightly" }, "foreman");
     db.write("employee_add", { name: "Ana", pay_type: "salary", rate_cents: 200000 }, "foreman");
     db.write("period_add", { starts: "2026-10-05", ends: "2026-10-18", pay_date: "2026-10-23" }, "foreman");
-    db.write("timesheet_import", { period_id: 1, source: "typed", rows: [{ employee: "Ana", regular_hours: 70 }] }, "foreman");
+    db.write("timefile_import", { period_id: 1, source: "typed", rows: [{ employee: "Ana", regular_hours: 70 }] }, "foreman");
     db.write("pay_run_create", { period_id: 1 }, "foreman");
     db.write("pay_run_review", { run_id: 1 }, "foreman");
     db.write("pay_run_close", { run_id: 1 }, "foreman");

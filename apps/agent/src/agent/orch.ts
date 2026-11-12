@@ -40,8 +40,8 @@ import { audienceOf, finishes, tellLine } from "./finishes.ts";
 import { liveJobDeps, runJob } from "./jobs.ts";
 import { keepMerged } from "./prNews.ts";
 import { landCandidates, landingFor, type LandWanted } from "./landing.ts";
-import { actionFingerprint, actionText, MAILBOX_CHANNEL, mailboxToday, parseAction, parseMailboxAction } from "./actions.ts";
-import { MAILBOX_DAILY, type MailboxBatch, type MailboxRequest, resolveMailbox } from "./gmailOrganize.ts";
+import { actionFingerprint, actionText, MAILBOX_CHANNEL, mailboxToday, NO_MAILBOX, parseAction, parseMailboxAction } from "./actions.ts";
+import { MAILBOX_DAILY, type MailboxBatch, type MailboxRequest } from "./mailOrganize.ts";
 import { DEFAULT_FILES_CONFIG, loadFilesConfig } from "./files.ts";
 import {
   landText,
@@ -127,7 +127,7 @@ import { LOCAL_REVIEWER, parseVerdict, readReview, reviewForced, reviewGate, rev
 import { LEAD_SESSION } from "./lead.ts";
 import { liveSpaceOf, waking, withWake } from "./wakes.ts";
 import { DB_POSTS, DB_ROUTES, handleDb, liveDbDeps } from "./dbRoutes.ts";
-import { handleRead, liveReadDeps, READ_BODY_LIMIT, READ_ROUTES, ROUTE_READS, type ReadDeps } from "./readRoutes.ts";
+import { handleRead, liveReadDeps, READ_BODY_LIMIT, READ_ROUTES, type ReadDeps } from "./readRoutes.ts";
 import { liveTradeDeps, proposeTrade, type TradeDeps } from "./tradeRoutes.ts";
 import { createTitle, liveSpecialistDeps, proposeSpecialist, type SpecialistDeps } from "./specialistRoutes.ts";
 import { setSpecialist } from "./specialists.ts";
@@ -146,7 +146,7 @@ import { liveSpaceDeps } from "./spaceLive.ts";
 import { applyOrg, companyNote, parseOrg, seatKey, type OrgCompany } from "../../../../packages/contracts/src/org.ts";
 import { handleRoutineOrch, liveRoutineDeps, ORCH_ROUTINE_POSTS, ORCH_ROUTINE_ROUTES, type RoutineDeps } from "./routineRoutes.ts";
 import { loadRoutines, type StoredRoutine } from "./routines.ts";
-import { DRIVE_CONSENT, loadTrust, type TrustState } from "./actionTrust.ts";
+import { loadTrust, type TrustState } from "./actionTrust.ts";
 import { isTainted, noteRead, reportTaint, taintedOwner, taintWorker, type Taint, type TaintSource } from "./taint.ts";
 import { trustedApproval, type TrustDeps } from "./trustRoutes.ts";
 import { workerToolNames } from "./workerSpace.ts";
@@ -186,7 +186,7 @@ import { redactDeep } from "./secretValues.ts";
  *   GET  /orch/db/schema, POST /orch/db/query|write|undo|import, GET /orch/db/journal|mirror
  *                                     a Foreman's hands on its project's database (dbRoutes.ts):
  *                                     its own project only, 409 for a trade that keeps none
- *   POST /orch/google/calendar|mail/search|mail/read
+ *   POST /orch/mail/search|read
  *                                     a Foreman's reads of the person's calendar and mail (readRoutes.ts):
  *                                     its own project only, 403 for a trade that does not read that source,
  *                                     409 with the step when the person has not turned the read on
@@ -352,7 +352,7 @@ export function firstTaint(taintOf: (who: string) => Taint | null, sessions: rea
 }
 
 /** Reads whose answer is outside text: each taints its caller's turn (taint.ts). */
-const TAINTING_READS: Readonly<Record<string, TaintSource>> = Object.fromEntries(Object.entries(ROUTE_READS).map(([route, read]) => [route, read === "mail" ? "email" : "calendar"]));
+const TAINTING_READS: Readonly<Record<string, TaintSource>> = Object.fromEntries([...READ_ROUTES].map((route) => [route, "email"]));
 
 const FOREMAN_ROUTES: ReadonlySet<string> = new Set(["/orch/foreman", "/orch/foreman/brief", "/orch/foreman/wait", "/orch/foreman/create", "/orch/foreman/answer", "/orch/request", "/orch/request/answer"]);
 
@@ -876,11 +876,11 @@ export async function handleOrch(
     machineLabel: string;
     /** The agent's port, for a Foreman a brief starts (its key calls back here). */
     port: number;
-    /** The calendar and mail reads (readRoutes.ts); tests give fakes. */
+    /** The mail reads (readRoutes.ts); tests give fakes. */
     reads?: ReadDeps;
-    /** Works out a mailbox action's batch of messages (gmailOrganize.ts); tests give a fake. */
+    /** Works out a mailbox action's batch of messages (boxMail.ts); tests give a fake. */
     mailbox?: (request: MailboxRequest, remaining: number) => Promise<MailboxBatch>;
-    /** The Space mailbox a project's mail_organize works on instead of Gmail (emailLive.ts boxOfProject); tests fake it. */
+    /** The Space mailbox a project's mail_organize works on (emailLive.ts boxOfProject); tests fake it. */
     boxOf?: (project: Project) => Mailbox | null;
     /** The Space mailbox a project's plain email goes from (emailLive.ts mailboxOfProject); tests fake it. */
     mailboxOf?: (project: Project) => { box: string; address: string; mailbox: string } | null;
@@ -1224,7 +1224,7 @@ export async function handleOrch(
 
     if (READ_ROUTES.has(route)) {
       // A Foreman's key only, for its own project: the Lead's key stopped at FOREMAN_ONLY, Workers and jobs hold no key. The trade's reads and the rest are readRoutes.ts.
-      if (only === undefined || !isLead) return send(response, 403, { error: "only a project's Foreman reads the person's calendar or mail, and only when its trade reads it; the Lead briefs the Foreman" });
+      if (only === undefined || !isLead) return send(response, 403, { error: "only a project's Foreman reads its Space's mailbox, and only when its trade reads mail; the Lead briefs the Foreman" });
       const project = (await inScope()).find((candidate) => candidate.id === only);
       if (!project) return send(response, 404, { error: `no project "${only}" here` });
       let readBody: Record<string, unknown>;
@@ -1790,34 +1790,36 @@ export async function handleOrch(
       if (typeof body.channel === "string" && body.channel.trim().toLowerCase() === MAILBOX_CHANNEL) {
         // Organizing the person's mail: only a trade that organizes mail, and the batch is worked out and frozen now, so the card shows exactly the messages Allow changes.
         if (!tradeOrganizes(project.foremanTemplate)) return send(response, 403, { error: `${project.name}'s trade (${project.foremanTemplate ?? "none"}) does not organize the person's mail, so this Foreman has no mailbox channel` });
-        // A Space with its own mailbox (Settings → Mailboxes) organizes that box over IMAP (boxMail.ts); Gmail otherwise.
+        // The Space's own mailbox (Settings → Mailboxes), over IMAP (boxMail.ts). Cobra reaches no other: it has no Google connection of its own.
         const box = (io.boxOf ?? boxOfProject)(project);
+        if (!box && !io.mailbox) return send(response, 409, { error: NO_MAILBOX, problem: "mailbox" });
         const resolve =
           io.mailbox ??
-          (box
-            ? async (request: MailboxRequest, remaining: number) => {
-                try {
-                  return await resolveBoxBatch(box, request, remaining);
-                } catch (caught) {
-                  if (caught instanceof MailboxError) throw new SessionError(caught.message, caught.status);
-                  throw caught;
-                }
-              }
-            : (request: MailboxRequest, remaining: number) => resolveMailbox({}, request, remaining));
+          (async (request: MailboxRequest, remaining: number) => {
+            try {
+              return await resolveBoxBatch(box!, request, remaining);
+            } catch (caught) {
+              if (caught instanceof MailboxError) throw new SessionError(caught.message, caught.status);
+              throw caught;
+            }
+          });
         action = await parseMailboxAction(body, project, resolve, Math.max(0, MAILBOX_DAILY - mailboxToday(current, now)));
-        io.log(`${box ? `mailbox ${box.id}` : "google mailbox"}: ${action.mailbox?.op} ${action.mailbox?.ids.length} messages proposed for ${project.id}`);
+        io.log(`mailbox ${box?.id ?? "(test)"}: ${action.mailbox?.op} ${action.mailbox?.ids.length} messages proposed for ${project.id}`);
       } else {
-        // A file action goes to the person's Drive, or names one of the local export folders in files.json; the key, label and path go onto the card.
+        // A file action names one of the local export folders in files.json; the key, label and path go onto the card.
         action = parseAction(body, project, (await loadFilesConfig(process.env.COBRA_FILES_CONFIG ?? DEFAULT_FILES_CONFIG)).exports);
-        // An email from a Foreman in a Space goes from the Space's own mailbox (Settings → Mailboxes) when it has one: frozen on the card, which shows From.
-        const box = action.channel === "email" && action.email ? (io.mailboxOf ?? mailboxOfProject)(project) : null;
-        if (box && action.email) action = { ...action, email: { ...action.email, from: box } };
+        // An email goes from the Space's own mailbox (Settings → Mailboxes): frozen on the card, which shows From. With none there is nothing to send from, said now and not at Allow.
+        if (action.channel === "email" && action.email) {
+          const box = (io.mailboxOf ?? mailboxOfProject)(project);
+          if (!box) return send(response, 409, { error: NO_MAILBOX, problem: "mailbox" });
+          action = { ...action, email: { ...action.email, from: box } };
+        }
       }
       // The same card twice is one question; two pay stubs with one summary are two.
       const print = actionFingerprint(action);
       const same = current.find((a) => a.kind === "action" && a.state === "pending" && a.action !== undefined && actionFingerprint(a.action) === print);
       if (same) return send(response, 409, { error: `"${same.title}" with this same content already waits for the person (approval ${same.id}); approval_status shows it` });
-      // Trusted (actionTrust.ts), or a save to the person's own Drive on their Connect consent: it runs now, as an Allow would, and lands as a receipt; nothing waits for the person.
+      // Trusted (actionTrust.ts): it runs now, as an Allow would, and lands as a receipt; nothing waits for the person.
       // Never in a tainted turn (taint.ts): what it read may have planted what it sends, so it is a card whatever trust says.
       const taint = taintOf(who);
       const run = io.trust && !taint ? trustedApproval(io.trust.deps, action, io.caller.id) : null;
@@ -1825,7 +1827,7 @@ export async function handleOrch(
         saveApprovals([...current, run]);
         io.log(`approval ${run.id}: ${run.title} runs on trust for ${io.caller.id} (${action.channel})`);
         io.trust.carryOut(run);
-        return send(response, 202, { approval: publicView(run), trusted: true, ...(run.trusted?.key === DRIVE_CONSENT ? { drive: true } : {}) });
+        return send(response, 202, { approval: publicView(run), trusted: true });
       }
       const made = makeApproval({ kind: "action", ...actionText(action), requestedBy: io.caller.id, action }, now);
       const approval = taint ? stampTaint(made, who, taint) : made;

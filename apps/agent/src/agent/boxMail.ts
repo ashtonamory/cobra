@@ -1,17 +1,17 @@
 import { createHash } from "node:crypto";
 
-import { readable, ReadRequestError } from "./calendar.ts";
-import { frozenBatch, MAILBOX_DAILY, type MailboxBatch, type MailboxOp, MAILBOX_OPS, type MailboxOutcome, type MailboxRequest, MAX_BATCH, plural } from "./gmailOrganize.ts";
-import { BODY_MAX, htmlToText, mailSearchRequest, type MailMessage, type MailSearchResult, type MailSummary, tidy } from "./gmailRead.ts";
+import { frozenBatch, MAILBOX_DAILY, type MailboxBatch, type MailboxOp, MAILBOX_OPS, type MailboxOutcome, type MailboxRequest, MAX_BATCH, plural } from "./mailOrganize.ts";
+import { BODY_MAX, htmlToText, mailSearchRequest, type MailMessage, type MailSearchResult, type MailSummary, readable, ReadRequestError, tidy } from "./mailShapes.ts";
 import { imapDate, ImapRefusal, quoted, withImap, type ImapBox, type ImapFetched, type ImapFolder } from "./imap.ts";
 import { MailboxError, PROVIDER_WORDS, type Mailbox } from "./mailboxes.ts";
 import { attachmentsOf, decodeWords, readBody, readHeaders } from "./mimeRead.ts";
 
 /**
  * A Space's own mailbox (Settings → Mailboxes: Zoho Mail or iCloud Mail,
- * over IMAP with its app password) read and organized for a Foreman, the
- * way gmailRead.ts and gmailOrganize.ts do Gmail (Sam, 2026-11-05: "the
- * same as Gmail", on once the box is linked to the Space).
+ * over IMAP with its app password) read and organized for a Foreman, on
+ * once the box is linked to the Space. It is the only mail Cobra reads
+ * itself: Gmail is reached through the person's connector. The tools keep
+ * the search words and the label names people know from Gmail.
  *
  * - mail_search takes Gmail's search words and turns them into an IMAP
  *   SEARCH (`boxQuery`); it looks in the inbox unless `in:` names a folder.
@@ -26,7 +26,7 @@ import { attachmentsOf, decodeWords, readBody, readHeaders } from "./mimeRead.ts
  *
  * A message's id is `b<uidvalidity>-<uid>-<folder>`, where `<folder>` is
  * the first 8 hex digits of the SHA-256 of the folder's name: it fits the
- * Gmail id pattern the tools take, and a folder renamed or rebuilt since
+ * id pattern the tools take (mailShapes.ts MESSAGE_ID), and a folder renamed or rebuilt since
  * (a new UIDVALIDITY) makes the id stale rather than point at another
  * message.
  *
@@ -57,7 +57,7 @@ export function boxMessageId(validity: string, uid: number, folder: string): str
 
 export type BoxId = { validity: string; uid: number; key: string };
 
-/** An id from a box search, or null for anything else (a Gmail id among them). */
+/** An id from a box search, or null for anything else. */
 export function parseBoxId(id: string): BoxId | null {
   const match = BOX_ID.exec(id.trim());
   return match ? { validity: match[1]!, uid: Number(match[2]), key: match[3]! } : null;
@@ -428,8 +428,8 @@ function verdictFor(op: MailboxOp, folders: readonly ImapFolder[], seen: Seen, l
 const RESERVED = new Set(["inbox", "archive", "trash", "spam", "junk", "sent", "drafts", "outbox", "templates"]);
 
 /**
- * A box's batch, worked out now and frozen, as resolveMailbox does for
- * Gmail: the messages the search (or ids) found, those the operation would
+ * A box's batch, worked out now and frozen: the messages the search (or
+ * ids) found, those the operation would
  * change, and the card's numbers, counted here. The batch names the box, so
  * Allow changes that box and no other.
  */
