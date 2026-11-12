@@ -280,6 +280,7 @@ export function specialistViews(
       {
         id: project.id,
         project: project.name,
+        ...(project.specialist ? { standalone: true as const } : {}),
         name: crew.name,
         look: crew.look,
         hat: crew.hat,
@@ -289,7 +290,7 @@ export function specialistViews(
         ...(project.foremanTemplate ? { trade: project.foremanTemplate } : {}),
         ...(company ? { company } : {}),
         repos: (record?.repos ?? []).flatMap((repo) => {
-          const attached = repo === project.id ? undefined : repositories.find((candidate) => candidate.id === repo);
+          const attached = repo === project.id ? undefined : repositories.find((candidate) => candidate.id === repo && isAttachable(candidate));
           return attached ? [{ id: attached.id, name: attached.name, path: attached.path }] : [];
         }),
         ...(record ? { updatedAt: record.updatedAt, updatedBy: record.updatedBy } : {}),

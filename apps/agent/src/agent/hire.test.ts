@@ -4,6 +4,7 @@ import { test } from "node:test";
 import type { Project } from "@cobra/contracts";
 
 import { createProject, type CreateDeps } from "./create.ts";
+import { foremanPrompt } from "./foreman.ts";
 import { hireMakesProject, hirePlace, SPECIALISTS_DIR } from "./hire.ts";
 import { STATE_DIR } from "./paths.ts";
 import { isAttachable, isRepository } from "./specialists.ts";
@@ -102,6 +103,12 @@ test("a project made the usual way carries no flag", async () => {
   const made = deps({ roots: ["/home/pat/Projects"] });
   const result = await createProject(made.deps, { mode: "init", name: "Shop", directory: "shop", start: false, foremanTemplate: "website-builder" });
   assert.equal("specialist" in result.project, false);
+});
+
+test("a specialist hired on its own is told its folder is not a project of the person's", () => {
+  const base = { id: "billing", name: "Billing", path: `${OWN}/billing`, foremanTemplate: "billing" };
+  assert.match(foremanPrompt({ ...base, specialist: true }), /hired on your own: that repository is your working folder/);
+  assert.doesNotMatch(foremanPrompt(base), /hired on your own/);
 });
 
 test("a specialist's own folder has a specialist and is never attached to another", () => {
