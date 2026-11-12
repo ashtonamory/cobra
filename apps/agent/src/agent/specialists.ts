@@ -185,15 +185,24 @@ export function isRepository(project: Pick<Project, "parent" | "lead" | "foreman
 }
 
 /**
+ * A project a specialist can be attached to: one of the person's. Another
+ * specialist's own working folder (Project.specialist, hire.ts) is never
+ * one: its records and files are that specialist's, not a project to share.
+ */
+export function isAttachable(project: Pick<Project, "parent" | "lead" | "foreman" | "specialist">): boolean {
+  return isRepository(project) && !project.specialist;
+}
+
+/**
  * The repositories a specialist is attached to, as they are now: each id
  * that is still a repository here and not its own project. One whose project
  * is gone is left out, so it gives nothing.
  */
-export function attachedRepos<T extends Pick<Project, "id" | "parent" | "lead" | "foreman">>(id: string, projects: readonly T[], path = SPECIALISTS_PATH): T[] {
+export function attachedRepos<T extends Pick<Project, "id" | "parent" | "lead" | "foreman" | "specialist">>(id: string, projects: readonly T[], path = SPECIALISTS_PATH): T[] {
   const ids = readSpecialist(id, path)?.repos ?? [];
   if (ids.length === 0) return [];
   return ids.flatMap((repo) => {
-    const project = repo === id ? undefined : projects.find((candidate) => candidate.id === repo && isRepository(candidate));
+    const project = repo === id ? undefined : projects.find((candidate) => candidate.id === repo && isAttachable(candidate));
     return project ? [project] : [];
   });
 }
@@ -271,6 +280,7 @@ export function specialistViews(
       {
         id: project.id,
         project: project.name,
+        ...(project.specialist ? { standalone: true as const } : {}),
         name: crew.name,
         look: crew.look,
         hat: crew.hat,
@@ -280,7 +290,7 @@ export function specialistViews(
         ...(project.foremanTemplate ? { trade: project.foremanTemplate } : {}),
         ...(company ? { company } : {}),
         repos: (record?.repos ?? []).flatMap((repo) => {
-          const attached = repo === project.id ? undefined : repositories.find((candidate) => candidate.id === repo);
+          const attached = repo === project.id ? undefined : repositories.find((candidate) => candidate.id === repo && isAttachable(candidate));
           return attached ? [{ id: attached.id, name: attached.name, path: attached.path }] : [];
         }),
         ...(record ? { updatedAt: record.updatedAt, updatedBy: record.updatedBy } : {}),

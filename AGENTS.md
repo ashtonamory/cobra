@@ -5,8 +5,10 @@ computer: a Lead the person talks to, Foremen that plan, Workers that do the
 work. It keeps leads and customers (CRM), projects, money, email, websites
 and routines. A Foreman is a specialist: the person names it, gives it
 standing instructions, may talk to it directly (`specialists.ts`) and may
-attach it to other projects they already have (`specialistAttach.ts`); the
-code keeps the name Foreman. Read [docs/VISION.md](docs/VISION.md) for the principles and
+attach it to projects they already have (`specialistAttach.ts`). Hiring one
+makes no project of the person's: it gets a working folder of Cobra's own
+(`hire.ts`, `Project.specialist`), except a Website Builder or Designer,
+whose site or designs are the project. The code keeps the name Foreman. Read [docs/VISION.md](docs/VISION.md) for the principles and
 the roadmap, and [SECURITY.md](SECURITY.md) for the security model.
 
 ## Layout

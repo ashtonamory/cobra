@@ -129,6 +129,8 @@ export const OrchProject = z.object({
   id: z.string(),
   name: z.string(),
   path: z.string(),
+  /** A specialist hired on its own: the entry is the specialist, and `path` is its working folder, not a project of the person's. */
+  specialist: z.literal(true).optional(),
   /** "pr", or "local" for a repository with no origin; absent means "pr". */
   landing: z.string().optional(),
   /** Its Foreman; absent from older agents. */

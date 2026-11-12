@@ -25,10 +25,12 @@ export function AttachedList({ roster, id, name, picking, busy, onPick, onAttach
   const attached = attachedTo(roster, id);
   const choices = attachChoices(roster, id);
   const full = attached.length >= ATTACH_MAX;
+  // Hired on its own, it has no project until the person attaches one.
+  const standalone = roster.find((entry) => entry.id === id)?.standalone === true;
   return (
     <div className="org-attached">
-      <div className="caps dim">Also works on</div>
-      {attached.length === 0 && <p className="dim">Only its own project. Attach {name} to another project you already have, and it can work there too.</p>}
+      <div className="caps dim">{standalone ? "Works on" : "Also works on"}</div>
+      {attached.length === 0 && <p className="dim">{standalone ? `No project yet. Attach ${name} to a project you already have, and it can work there.` : `Only its own project. Attach ${name} to another project you already have, and it can work there too.`}</p>}
       {attached.map((repo) => (
         <div key={repo.id} className="org-attached-row">
           <span className="grow ellipsis" title={repo.path}>{repo.name}</span>

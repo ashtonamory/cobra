@@ -49,5 +49,4 @@ export * from "./spaceScreen.ts";
 export * from "./charts.ts";
 export * from "./boards.ts";
 export * from "./chartGeometry.ts";
-export * from "./voiceCall.ts";
 export * from "./notebook.ts";

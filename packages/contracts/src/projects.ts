@@ -36,6 +36,13 @@ export const Project = z.object({
   /** The specialist Foreman this project was created for, if any. */
   foremanTemplate: ForemanTemplateId.optional(),
   /**
+   * A specialist's own working folder, which Cobra made when it was hired;
+   * not one of the person's projects. The specialist, its conversation and
+   * its Workers are still found by this id; lists of the person's projects
+   * leave it out.
+   */
+  specialist: z.literal(true).optional(),
+  /**
    * Which registry the entry came from. Tracked entries live in the repo and
    * arrive by deploy; local ones were created from the phone and live outside
    * it. The app needs the difference because only a local entry can be removed

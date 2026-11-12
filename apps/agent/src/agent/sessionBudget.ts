@@ -44,22 +44,9 @@ export function budgetFor(totalBytes: number, written?: string): Budget {
   };
 }
 
-let openCalls: () => number = () => 0;
-
-/** How many voice calls are open (index.ts, voiceFront.ts): each warm voice front holds one Worker's room. */
-export function countVoiceCalls(count: () => number): void {
-  openCalls = count;
-}
-
-/** The budget now, less a Worker for each open call (never below one Worker). */
+/** The budget now. */
 export function liveBudget(): Budget {
-  return lessCalls(budgetFor(os.totalmem(), process.env.COBRA_SESSION_BUDGET), openCalls());
-}
-
-export function lessCalls(budget: Budget, calls: number): Budget {
-  if (calls <= 0 || budget.workers <= 1) return budget;
-  const workers = Math.max(1, budget.workers - calls);
-  return { ...budget, workers, why: `${budget.why}, less ${budget.workers - workers} for a call with Cobra` };
+  return budgetFor(os.totalmem(), process.env.COBRA_SESSION_BUDGET);
 }
 
 function clamp(value: number, low: number, high: number): number {

@@ -17,6 +17,7 @@ import { orchHeadless, orchLook, stopOrchHeadless } from "./orchHeadless.ts";
 import { freshConversation, promptViaFile, startHeadlessOrchestrator, tmuxHas, GITHUB_NOTE, LEAD_DIR, RESEARCH_NOTE, WORKER_RESEARCH_NOTE, LEAD_TOOLS, NO_WRITE_NOTE, localProjects, liveOrchFence, requireJail, requireOrchFence, allowedMcpTools, untrustedData, leadDenyRules, leadTools, envDenyRules, leadMcpConfig, logMcp, readRule, leadHome } from "./lead.ts";
 import { GITHUB, mcpServersFor, NO_MCP, type McpMerge } from "./mcp.ts";
 import { STATE_DIR } from "./paths.ts";
+import { CODE_TRADES } from "./hire.ts";
 import { foremanLineName, lineDir, orchLines } from "./orchSocket.ts";
 import { explainedRequest } from "./permissionRequest.ts";
 import { writePrivateFile } from "./private.ts";
@@ -221,7 +222,7 @@ export function standingInstructions(self: ForemanSelf | undefined): string {
 }
 
 /** `web`: it has WebSearch and WebFetch (foreman.webTools, on unless the owner turns it off). `designer`: a Designer's folders and tools, from this computer (designer.ts designerNote). `self`: its title and standing instructions (specialists.ts). */
-export function foremanPrompt(project: Pick<Project, "id" | "name" | "path" | "crew" | "foremanTemplate">, mcpNames: readonly string[] = [], engine: SessionEngine = "claude", web = true, designer = "", self?: ForemanSelf): string {
+export function foremanPrompt(project: Pick<Project, "id" | "name" | "path" | "crew" | "foremanTemplate" | "specialist">, mcpNames: readonly string[] = [], engine: SessionEngine = "claude", web = true, designer = "", self?: ForemanSelf): string {
   // Codex has no AskUserQuestion: its questions go through ask_person (asks.ts), which the phone draws the same way.
   const ask = engine === "codex" ? "ask_person" : "AskUserQuestion";
   const github = `${mcpNames.includes(GITHUB) ? ` ${GITHUB_NOTE}` : ""}${designer ? ` ${designer}` : ""}`;
@@ -229,8 +230,10 @@ export function foremanPrompt(project: Pick<Project, "id" | "name" | "path" | "c
   // Its name (crew.ts), as the person sees it on the desk.
   const you = project.crew ? `${project.crew.name}, the Foreman` : "the Foreman";
   const title = self?.title.replace(/\s+/g, " ").trim();
+  // Hired on its own (hire.ts): what it calls its project is a folder of Cobra's, and the person was never shown one.
+  const alone = project.specialist ? " You were hired on your own: that repository is your working folder, which Cobra keeps for you, and not one of the person's projects, so never call it a project to them or name its folder. To work on a project the person already has, you are attached to it (they do it in the desk app, or Cobra asks them); you cannot attach yourself." : "";
   const named = project.crew ? ` The person knows you as ${project.crew.name}${title ? ` (${title})` : ""}, and the Lead as Cobra. They see you by that name and may write to you here themselves, not only through Cobra.` : "";
-  return `You are ${you} for one project in Cobra: ${project.name} (project id ${project.id}), whose repository is at ${project.path}.${named} You run this project's work: you plan it, delegate it to Workers, review what they made and ask the person to merge it. You never edit code or run commands yourself; you have no Bash and no Edit. ${NO_WRITE_NOTE} Read the repository with Read, Grep and Glob at ${project.path}.
+  return `You are ${you} for one project in Cobra: ${project.name} (project id ${project.id}), whose repository is at ${project.path}.${named}${alone} You run this project's work: you plan it, delegate it to Workers, review what they made and ask the person to merge it. You never edit code or run commands yourself; you have no Bash and no Edit. ${NO_WRITE_NOTE} Read the repository with Read, Grep and Glob at ${project.path}.
 
 Where work comes from: most often a brief from the Lead, the orchestrator over all of the person's projects, typed into this conversation as a line that starts with "${BRIEF_PREFIX}". A brief gives the goal and the context; the plan is yours. When your project works for a company in the person's My Organization (a client or business, such as Happy Tails), a brief starts with "[Company: …]", naming it and the other projects whose Foremen work for it: their work is related to yours, but you never reach them yourself, so say in your report what of theirs your work touches, and Cobra takes it to them. The person may also talk to you directly. A line that starts with "Routine <name>:" is a routine, scheduled work the person set up and allowed, typed in by the agent when it is due: do it as a brief, and end that turn's report by naming the routine (routine_set proposes a new one for the person to allow, routine_list and routine_remove show and remove this project's).
 
@@ -326,7 +329,7 @@ export async function companyFolders(project: Pick<Project, "id" | "path">): Pro
 }
 
 /** The trades whose Foreman works on a repository (a site's code, a Designer's files): they keep GitHub and the owner's own CLAUDE.md, as a Foreman with no trade does. */
-export const CODE_TRADES: ReadonlySet<string> = new Set(["website-builder", DESIGNER]);
+export { CODE_TRADES };
 
 /** Whether a Foreman works on code: no trade, or one of CODE_TRADES. A Space's trade (Outreach, People, Money, a defined one) keeps records, not a repository. */
 export function worksOnCode(project: Pick<Project, "foremanTemplate">): boolean {

@@ -28,9 +28,13 @@ by an attacker. These are the protections that are in place now:
   Lead cannot make or change a specialist, or define a trade, in a
   conversation that read text from outside. The instructions never override
   the rules here: approvals, outside text as data, and secrets.
-- **A specialist works only where you put it.** A specialist has its own
-  project. You can attach it to up to 8 other projects you already have,
-  and detach it again. Attached, it reads that project's files and starts
+- **A specialist works only where you put it.** A specialist that keeps
+  records is hired on its own: it gets a working folder that Cobra keeps
+  outside your project folders, with no copy online, and that folder is
+  never offered to another specialist. Only a Website Builder or a Designer
+  makes a project when it is hired, because the site or the designs are
+  the project. You can attach a specialist to up to 8 projects you already
+  have, and detach it again. Attached, it reads that project's files and starts
   Workers that change them; each change still comes to you on a card
   before it is published. It gets nothing else of that project: not its
   records, its mail and calendar reads, its routines or its memory. In a

@@ -188,6 +188,7 @@ export interface RowInit {
   lead?: boolean;
   worker?: Dict | null;
   foreman?: boolean;
+  specialist?: boolean;
   givenTitle?: string | null;
 }
 
@@ -214,6 +215,8 @@ export class Row {
   worker: Dict | null;
   /** A project's Foreman, listed under its project. */
   foreman: boolean;
+  /** A specialist hired on its own (the agent's Project.specialist): the row is the specialist, not a project of the person's. */
+  specialist: boolean;
   /** The agent's short name for an extra session, when it made one. */
   givenTitle: string | null;
 
@@ -233,6 +236,7 @@ export class Row {
     this.lead = o.lead ?? false;
     this.worker = o.worker ?? null;
     this.foreman = o.foreman ?? false;
+    this.specialist = o.specialist ?? false;
     this.givenTitle = o.givenTitle ?? null;
   }
 
@@ -264,6 +268,9 @@ export class Row {
     if (this.lead || (this.foreman && truthy(this.crew))) return this.title;
     const suffix = ` · ${this.branch}`;
     if (this.isExtra && this.name.endsWith(suffix)) return `${this.name.slice(0, -suffix.length)} · ${this.title}`;
+    // Hired on its own, the row is the specialist: its name first, then what the person calls its work.
+    const crew = this.crew;
+    if (this.specialist && this.parent === null && crew && truthy(crew)) return `${crew.name} · ${this.name}`;
     return this.name;
   }
 
@@ -317,6 +324,7 @@ export function rowForProject(p: Dict, machine: string, now?: number | null): Ro
     lead: get(p, "lead") === true,
     worker: isDict(get(p, "worker")) ? p.worker : null,
     foreman: get(p, "foreman") === true,
+    specialist: get(p, "specialist") === true,
     givenTitle: typeof title === "string" && title.trim() ? title : null,
   });
 }
@@ -437,6 +445,24 @@ export function nest(rows: readonly Row[]): Row[] {
 
 /** Whether a project or any of its extra sessions is running, for a row of either: a family is
  * listed together, under Active when any of it is. */
+/**
+ * Whether a row belongs to a specialist hired on its own: the specialist's
+ * row, or its conversation and helpers under it. Such a family is listed
+ * with the specialists, never among the person's projects.
+ */
+export function ofSpecialist(r: Row, rows: readonly Row[]): boolean {
+  if (r.parent === null) return r.specialist;
+  return rows.some((p) => p.parent === null && p.specialist && p.id === r.parent && p.machine === r.machine);
+}
+
+/** The person's projects among these rows, and the specialists hired on their own (with their conversations and helpers). */
+export function splitSpecialists(rows: readonly Row[]): { projects: Row[]; specialists: Row[] } {
+  const projects: Row[] = [];
+  const specialists: Row[] = [];
+  for (const r of rows) (ofSpecialist(r, rows) ? specialists : projects).push(r);
+  return { projects, specialists };
+}
+
 export function familyActive(r: Row, rows: readonly Row[]): boolean {
   let root = r;
   if (r.parent !== null) {

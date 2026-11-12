@@ -131,6 +131,7 @@ import { handleRead, liveReadDeps, READ_BODY_LIMIT, READ_ROUTES, type ReadDeps }
 import { liveTradeDeps, proposeTrade, type TradeDeps } from "./tradeRoutes.ts";
 import { createTitle, liveSpecialistDeps, proposeSpecialist, type SpecialistDeps } from "./specialistRoutes.ts";
 import { attachedRepos, setSpecialist } from "./specialists.ts";
+import { hirePlace } from "./hire.ts";
 import { detach as detachSpecialist, liveAttachDeps, proposeAttach, type AttachDeps } from "./specialistAttach.ts";
 import { testModeOn, withTestLane } from "./apiTest.ts";
 import { factsHere } from "./morning.ts";
@@ -511,7 +512,7 @@ export async function orchStatus(configPath: string): Promise<OrchStatus> {
           projectKeyFor(project).catch(() => undefined),
         ]);
         const maxWorkers = perProject(loadRoles({ computer, project: key }));
-        return { id: project.id, name: project.name, path: project.path, ...(landing === "local" ? { landing } : {}), foreman, maxWorkers, ...rosterOf(project, roster) };
+        return { id: project.id, name: project.name, path: project.path, ...(project.specialist ? { specialist: true as const } : {}), ...(landing === "local" ? { landing } : {}), foreman, maxWorkers, ...rosterOf(project, roster) };
       }),
     ),
     workers,
@@ -1539,12 +1540,17 @@ export async function handleOrch(
       const gh = await findGh();
       const auth = gh === null ? { authed: false } : await ghAuth(gh);
       const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || template!;
-      const directory = text("directory") ?? (hired ? slug : undefined);
+      // A records specialist is hired on its own, in a folder of Cobra's; only a code trade makes a project of the person's (hire.ts).
+      const place = hirePlace(template!, { remote: body.remote === true, directory: text("directory"), root: text("root") }, slug, hired ? SPACES_DIR : null);
+      if ("error" in place) return send(response, 400, { error: place.error });
+      const directory = place.directory;
       // An opened Space's folder is a place projects may be made in: put it back on the list if folders.json lost it.
       if (hired) await ensureFolder(SPACES_DIR, readFolders(), registry.roots, writeFolders);
-      const roots = hired ? (await loadRegistry(io.configPath)).roots : registry.roots;
+      // Cobra's own folder for specialists is the one place such a hire may land, and never one of the person's project folders.
+      const roots = hired ? (await loadRegistry(io.configPath)).roots : place.specialist ? [place.root] : registry.roots;
       const result = await createProject(liveCreateDeps({ machine: os.hostname(), roots, registered: registry.projects, gh, githubAuth: auth.authed }), {
-        mode: "init", name, directory, root: hired ? SPACES_DIR : text("root"), remote: body.remote === true, start: false, foremanTemplate: template,
+        mode: "init", name, directory, root: place.root, remote: place.remote, start: false, foremanTemplate: template,
+        ...(place.specialist ? { specialist: true } : {}),
         ...(hired && directory ? { under: hired.id, idHint: `${hired.id}-${directory}` } : {}),
       });
       // A seat of the Space's kind (People, Outreach, Money) also gets its first job, which a Space no longer starts

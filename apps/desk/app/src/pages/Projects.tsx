@@ -38,7 +38,10 @@ export function ProjectsPage({ newProjectAsk }: { newProjectAsk: number }) {
   }, [newProjectAsk]);
 
   // The Lead is listed with the projects so its questions reach you; Chat pins it.
-  const rows = model.filterRows(fleet.rows, text).filter((r) => !r.lead);
+  const all = model.filterRows(fleet.rows, text).filter((r) => !r.lead);
+  // A specialist hired on its own is not one of your projects: it is listed apart, with its conversation and helpers,
+  // so they stay one click away here as well as in My Organization.
+  const { projects: rows, specialists } = model.splitSpecialists(all);
   const pins = allPins();
   const root = (r: model.Row) =>
     r.parent ? rows.find((p) => p.parent === null && p.id === r.parent && p.machine === r.machine) ?? r : r;
@@ -49,6 +52,7 @@ export function ProjectsPage({ newProjectAsk }: { newProjectAsk: number }) {
     ["Pinned", rows.filter((r) => pinned.has(key(r)))],
     ["Active", rest.filter((r) => live.get(key(r)))],
     ["Not started", rest.filter((r) => !live.get(key(r)))],
+    ["Specialists", specialists],
   ];
 
   return (
@@ -65,7 +69,7 @@ export function ProjectsPage({ newProjectAsk }: { newProjectAsk: number }) {
       </div>
       <div className="page board-page">
         <div className="col" style={{ gap: 18 }}>
-          {rows.length > 0 && <BoardHead item="PROJECT" />}
+          {all.length > 0 && <BoardHead item="PROJECT" />}
           {groups.map(([title, items]) =>
             items.length ? (
               <div className="col" style={{ gap: 6 }} key={title}>
@@ -76,7 +80,7 @@ export function ProjectsPage({ newProjectAsk }: { newProjectAsk: number }) {
               </div>
             ) : null,
           )}
-          {!rows.length && <div className="dim">{text ? "Nothing matches." : "Asking the fleet…"}</div>}
+          {!all.length && <div className="dim">{text ? "Nothing matches." : "Asking the fleet…"}</div>}
         </div>
       </div>
       {verbs.node}

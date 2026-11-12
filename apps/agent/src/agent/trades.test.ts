@@ -139,7 +139,7 @@ test("the Lead's prompt names every trade, from the contract's list", () => {
   for (const trade of FOREMAN_TEMPLATES) {
     assert.ok(lead.LEAD_PROMPT.includes(trade.name), `the Lead knows ${trade.name}`);
   }
-  assert.ok(lead.LEAD_PROMPT.includes(`${trades.tradeNamesSentence()} project, use foreman_create with that saved trade`));
+  assert.ok(lead.LEAD_PROMPT.includes(`${trades.tradeNamesSentence()} specialist, use foreman_create with that saved trade`));
   assert.equal(trades.tradeNamesSentence(), "Website Builder, Payroll Manager, Lead Outreach, Billing, My day, Inbox, Sign-ups, Projects, Outreach, People, Money or Designer");
 });
 
