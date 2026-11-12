@@ -32,12 +32,6 @@ export type DesignFile = z.infer<typeof DesignFile>;
  * - `digest`: what happened while the person was away.
  * - `designs`: images a Designer made for the person to look at and save
  *   (`files`; `text` is its caption). Apps before 2026-11 skip it.
- *
- * `via: "voice"` marks a turn that was spoken (Talk or Call, contracts
- * voiceCall.ts): the person's words with the `[voice] ` prefix taken off, or
- * a reply the voice front spoke. `quick` marks a reply of the voice front, a
- * lighter Cobra that answers fast; the apps tag it QUICK_TAG. Apps before
- * 2026-11 ignore both.
  */
 export const ThreadEntry = z.object({
   /** Increasing from 1 on the hub; `before` and `after` page by it. */
@@ -51,8 +45,6 @@ export const ThreadEntry = z.object({
   answers: z.record(z.string(), z.string()).optional(),
   reason: z.string().optional(),
   files: z.array(DesignFile).optional(),
-  via: z.literal("voice").optional(),
-  quick: z.boolean().optional(),
 });
 export type ThreadEntry = z.infer<typeof ThreadEntry>;
 

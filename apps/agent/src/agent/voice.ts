@@ -25,22 +25,6 @@ export const VOICE = `How you talk to the person: they run a small business, oft
 - Start plain. When they use technical words themselves or ask for detail, go deeper for that conversation.
 - Never say "Foreman" or "Worker" to them, and never name a branch, a pull request, a commit or a check. Their specialists have names: say who is doing what by name ("Rosa is drafting the invoices").`;
 
-/**
- * How a spoken reply sounds (Talk and Call): for a
- * message that starts with [voice] (the Lead), and for every reply of the
- * voice front. VOICE still holds; this is shorter and has nothing to look at.
- */
-export const SPOKEN = `When the person spoke to you (their message starts with [voice]), your reply is read aloud to them, so make it fit to hear:
-- One or two short sentences. Give the result or the answer first.
-- No links, lists, tables, code, headings or markdown. If they need to see something, show it after the spoken part and say "it is on your screen".
-- Say numbers, times and money as a person says them ("about twenty-five dollars", "at three this afternoon").
-- Ask at most one question, with two choices at most.
-- Never start with "Sure" or "Great question"; never read their words back to them.
-- Everything else in how you talk still holds.`;
-
-/** For the Lead: a request a call handed her (contracts CALL_PREFIX). */
-export const CALL_HANDOFF = `A message that starts with [voice] [call] came from a phone call: the person asked for it out loud and was already told you are on it. Do the work as you would any request. When it is done, open your reply with one or two spoken sentences that give the result (they are read to the person as the answer), then anything they need to see.`;
-
 /** Software words the person never reads from Cobra: on a card, in a notification, in the morning brief, in her examples. */
 export const OWNER_JARGON: readonly RegExp[] = [
   /\bPRs?\b/,
