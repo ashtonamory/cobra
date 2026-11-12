@@ -177,7 +177,7 @@ import { startRates } from "./fxLive.ts";
 import { settleBudgetApproval } from "./budgetCard.ts";
 import { chooseSkips, proposeBillsCard, settleBillsApproval } from "./billsCard.ts";
 import { findBillsIn, findBillsWeekly, type FinderDeps } from "./billFinder.ts";
-import { addReceipt, chooseAccounts, liveRead, settleExpensesApproval, startReading, type ReceiptDeps } from "./receipts.ts";
+import { addReceipt, chooseAccounts, liveRead, RECEIPT_MAX_BYTES, settleExpensesApproval, startReading, type ReceiptDeps } from "./receipts.ts";
 import { addStatement, livePdfText, PDF_SYSTEM, readStatement, READ_TIMEOUT_MS as STATEMENT_READ_TIMEOUT_MS, STATEMENT_MAX_BYTES, type StatementDeps } from "./statements.ts";
 import { subscriptionHeld } from "./subscriptionHeld.ts";
 import { liveSpaceDeps } from "./spaceLive.ts";
@@ -731,7 +731,7 @@ function sendsMorning(): boolean {
 function orgDeps(): OrgDeps {
   return liveOrgDeps({ home: sendsMorning, approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) }, notify: notifyApproval, tell: tellLine, log: (line) => console.log(`[${SERVICE}] ${line}`) });
 }
-/** Receipts scanned on the phone (receipts.ts): read here, proposed in the Space's Money, one card to allow. */
+/** Receipts added in the desk app (receipts.ts): read here, proposed in the Space's Money, one card to allow. */
 function receiptDeps(): ReceiptDeps {
   return {
     spacesRoot: SPACES_DIR,
@@ -3026,14 +3026,14 @@ const server = http.createServer((request, response) => {
         return sendJson(response, reply.status, reply.body);
       }
 
-      // Receipts scanned on the phone (receipts.ts): a photo into the Space's receipts folder, then read into Money. A phone's or desk's key only.
+      // Receipts added in the desk app (receipts.ts): a photo into the Space's receipts folder, then read into Money. The person's own key only.
       if (route === "/receipts/add" || route === "/receipts/read") {
         if (!PERSON_KINDS.has(caller.kind)) return sendJson(response, 403, { error: "only the desk app you linked sends receipts" });
         if (request.method !== "POST") return sendJson(response, 405, { error: "POST only" });
         const project = url.searchParams.get("project") ?? "";
         if (route === "/receipts/add") {
           const declared = declaredLength(request);
-          if (declared !== null && declared > 20 * 1024 * 1024) return sendJson(response, 413, { error: "the photo is over 20 MB" });
+          if (declared !== null && declared > RECEIPT_MAX_BYTES) return sendJson(response, 413, { error: "the photo is over 20 MB" });
           const reply = await addReceipt(project, request, receiptDeps());
           return sendJson(response, reply.status, reply.body);
         }

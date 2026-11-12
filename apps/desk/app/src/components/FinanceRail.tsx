@@ -7,7 +7,8 @@
  * row's page, a chart's list, See all) and runs the buttons, so the rail draws and reads only. Lists show
  * their Allow all (one passcode for the rows shown) and their row buttons, Trust among them; the
  * Transactions page takes a bank statement, dropped or chosen (CSV or PDF), and asks which account
- * when the agent cannot tell.
+ * when the agent cannot tell. Under it, receipts: photos dropped or chosen, which the agent reads and
+ * puts to the person on one card before any is recorded (lib/receipts.ts).
  */
 import { useEffect, useRef, useState } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -17,6 +18,8 @@ import { batchIds, batchTotal, formatCell, isEmptyRead, parseViewResult } from "
 import type { PublicView, ViewList, ViewResult } from "../../../../../packages/contracts/src/views.ts";
 import * as api from "../lib/api.ts";
 import { isStatementFile, pageIsMonthly, pageViews } from "../lib/finance.ts";
+import * as receipts from "../lib/receipts.ts";
+import { APP_NAME } from "../lib/appName.ts";
 import { useApp } from "../app/context.ts";
 import { ChartBody, type Drill, type Draw, type Read } from "./BoardCharts.tsx";
 import { Body, Tiles, type Ctx } from "./Dashboard.tsx";
@@ -93,6 +96,7 @@ export function FinanceRail(props: RailProps) {
         </div>
         <div className="fin-grid">
           {page === "Transactions" && <StatementDrop machine={machine} project={project} onRead={props.onChanged} />}
+          {page === "Transactions" && <ReceiptDrop machine={machine} project={project} />}
           {views.filter(there).map((view) => (
             <Card key={view.id} view={view} read={reads[view.id]} props={props} wide={wide(view)}
               q={q[view.id] ?? ""} onQ={(text) => setQ((cur) => ({ ...cur, [view.id]: text }))} />
@@ -210,7 +214,9 @@ function StatementDrop({ machine, project, onRead }: { machine: string; project:
     getCurrentWebview()
       .onDragDropEvent((e) => {
         // Only while this page is on screen.
-        if (e.payload.type === "drop" && e.payload.paths.length && root.current?.offsetParent) void take(e.payload.paths[0]!);
+        // A photo is a receipt: ReceiptDrop takes those.
+        const dropped = e.payload.type === "drop" ? e.payload.paths.filter((p) => !receipts.isReceiptFile(p)) : [];
+        if (dropped.length && root.current?.offsetParent) void take(dropped[0]!);
       })
       .then((f) => (gone ? f() : (off = f)))
       .catch(() => {});
@@ -246,6 +252,93 @@ function StatementDrop({ machine, project, onRead }: { machine: string; project:
           </div>
         </Dialog>
       )}
+    </div>
+  );
+}
+
+/**
+ * Receipts in: photos dropped on the page or chosen, sent to the Space, then read. Nothing is
+ * recorded here: the agent proposes each expense and asks the person once, on a card.
+ */
+function ReceiptDrop({ machine, project }: { machine: string; project: string }) {
+  const app = useApp();
+  const root = useRef<HTMLDivElement | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  // A second drop while the first is going would send two reads for one stack.
+  const working = useRef(false);
+
+  const take = async (paths: readonly string[]) => {
+    if (working.current) return app.toast("The last receipts are still being sent. Add these when they are done.");
+    const { send, refused } = receipts.plan(paths);
+    for (const why of refused) app.toast(why);
+    if (send.length === 0) return;
+    working.current = true;
+    const kept: string[] = [];
+    try {
+      for (const [i, path] of send.entries()) {
+        setBusy(receipts.sendingLine(i, send.length));
+        try {
+          const added = (await api.addReceipt(machine, project, path)) as { file?: string } | null;
+          if (!added?.file) throw new Error("the computer did not keep it");
+          kept.push(added.file);
+        } catch (e) {
+          const status = e instanceof api.ApiError ? e.status : 0;
+          app.toast(`${receipts.baseName(path)} was not sent: ${receipts.failure(status, msg(e))}`);
+          // No Money here: the others would be refused the same way.
+          if (status === 404) return;
+        }
+      }
+      // The same photo chosen twice is one file on the computer.
+      const files = [...new Set(kept)];
+      if (files.length === 0) return;
+      setBusy("Starting…");
+      try {
+        await api.readReceipts(machine, project, files);
+        app.toast(receipts.readingLine(files.length));
+      } catch (e) {
+        app.toast(`The receipts were sent but not read: ${receipts.failure(e instanceof api.ApiError ? e.status : 0, msg(e))}`);
+      }
+    } finally {
+      working.current = false;
+      setBusy(null);
+    }
+  };
+
+  useEffect(() => {
+    let off: (() => void) | null = null;
+    let gone = false;
+    getCurrentWebview()
+      .onDragDropEvent((e) => {
+        // Only while this page is on screen, and only photos: a CSV or PDF is a statement.
+        const dropped = e.payload.type === "drop" ? e.payload.paths.filter(receipts.isReceiptFile) : [];
+        if (dropped.length && root.current?.offsetParent) void take(dropped);
+      })
+      .then((f) => (gone ? f() : (off = f)))
+      .catch(() => {});
+    return () => {
+      gone = true;
+      off?.();
+    };
+  }, [machine, project]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const choose = async () => {
+    try {
+      const picked = await openDialog({ title: "Add receipts", multiple: true, directory: false, filters: [{ name: "Photos", extensions: receipts.EXTENSIONS.flatMap((x) => [x, x.toUpperCase()]) }] });
+      const paths = Array.isArray(picked) ? picked : picked ? [picked] : [];
+      if (paths.length) void take(paths);
+    } catch (e) {
+      app.toast(msg(e));
+    }
+  };
+
+  return (
+    <div ref={root} className="fin-card wide fin-drop">
+      <span className="fin-drop-icon" aria-hidden>＋</span>
+      <span className="grow">
+        <b>{busy ?? "Drop receipts here"}</b>
+        <span className="dim">Photos (PNG or JPEG), up to {receipts.READ_MAX} at a time. {APP_NAME} reads each one, then a card asks you before anything is recorded.</span>
+      </span>
+      <Button small kind="primary" disabled={busy !== null} onClick={() => void choose()}>Add receipts</Button>
     </div>
   );
 }
