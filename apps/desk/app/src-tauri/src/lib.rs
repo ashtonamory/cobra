@@ -33,7 +33,7 @@ pub const LEAD_NAME: &str = app_name!();
 fn lead_name() -> &'static str {
     LEAD_NAME
 }
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
@@ -186,61 +186,6 @@ async fn design_save(handle: AppHandle, app: State<'_, App>, machine: String, pa
             Err(e) => return Err(api::ApiError::new(0, format!("{}: {e}", target.display()))),
         }
     }
-}
-
-/// A terminal on a session. On Linux, a real terminal attached to the
-/// session's tmux, through cobra-launch as the desk did; otherwise (macOS, or
-/// no launcher installed) the agent's terminal gateway page (xterm.js over a
-/// WebSocket on loopback) in a window of its own, opened with a single-use
-/// ticket.
-#[tauri::command]
-async fn open_terminal(handle: AppHandle, app: State<'_, App>, machine: String, session: String, cwd: String, title: Option<String>) -> Result<(), api::ApiError> {
-    let m = self::machine(&app, &machine)?;
-    if let Some(launch) = host::launcher() {
-        // The socket is what agent.env says now.
-        let socket = host::read_agent_env().tmux_socket;
-        let label = title.clone().unwrap_or_else(|| session.clone());
-        let args = [socket.as_str(), session.as_str(), cwd.as_str(), label.as_str()];
-        let done = host::run(&launch.to_string_lossy(), &args, Duration::from_secs(15)).await.map_err(|e| api::ApiError::new(0, e))?;
-        if done.code != 0 {
-            let line = done.stderr.lines().find(|l| !l.is_empty() && !l.starts_with("warn:")).unwrap_or("").to_string();
-            return Err(api::ApiError::new(0, if line.is_empty() { format!("cobra-launch failed (exit {})", done.code) } else { line }));
-        }
-        return Ok(());
-    }
-    if m.term_base.is_empty() {
-        return Err(api::ApiError::new(0, "The agent's terminal gateway has no address."));
-    }
-    let ticket = app
-        .api
-        .request(&app.store, &m, "POST", "/ticket", Some(json!({ "session": session, "cwd": cwd })), 10_000)
-        .await?;
-    let ticket = ticket["ticket"].as_str().ok_or_else(|| api::ApiError::new(0, "no ticket in the agent's answer"))?;
-    let url = format!("{}/term/?ticket={}", m.term_base, urlencode(ticket));
-    let url = url.parse().map_err(|_| api::ApiError::new(0, "bad terminal address"))?;
-    let label = format!("term-{}", sanitize(&session));
-    if let Some(w) = handle.get_webview_window(&label) {
-        let _ = w.close();
-    }
-    WebviewWindowBuilder::new(&handle, label, WebviewUrl::External(url))
-        .title(title.unwrap_or_else(|| format!("{session} · {}", m.label)))
-        .inner_size(980.0, 640.0)
-        .build()
-        .map_err(|e| api::ApiError::new(0, e.to_string()))?;
-    Ok(())
-}
-
-fn urlencode(s: &str) -> String {
-    s.bytes()
-        .map(|b| match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => (b as char).to_string(),
-            _ => format!("%{b:02X}"),
-        })
-        .collect()
-}
-
-fn sanitize(s: &str) -> String {
-    s.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' }).collect()
 }
 
 // -- this desktop's files ------------------------------------------------------------
@@ -606,7 +551,7 @@ const PICKER_SHORTCUT: &str = "CommandOrControl+Shift+Space";
 const BOX_SHORTCUT: &str = "CommandOrControl+Shift+J";
 
 /// What a launch asks for, from its arguments. The first launch does it on
-/// start; a later one (the bar, SUPER+P, a notification, a terminal) is
+/// start; a later one (the bar, SUPER+P, a notification) is
 /// forwarded to the running app by the single-instance plugin and exits.
 #[derive(Debug, PartialEq)]
 enum Launch {
@@ -744,7 +689,6 @@ pub fn run() {
             passcode_status, passcode_set, passcode_unlock, passcode_lock, passcode_clear,
             api_upload,
             design_image, design_save,
-            open_terminal,
             pins,
             toggle_pin,
             settings,

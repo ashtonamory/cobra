@@ -215,10 +215,10 @@ export function Assistant({ body, onCopy }: { body: string; onCopy: (value: stri
 
 // -- the dock: whatever is waiting on you ----------------------------------------------------------
 
-export function DockView({ entries, screen, nonce, onAllow, onAct, onAnswer, onTerminal }: {
+export function DockView({ entries, screen, nonce, onAllow, onAct, onAnswer }: {
   entries: Dict[]; screen: Dict | null; nonce: number;
   /** Allow once (choice null), or for one of the request's scopes (lib/allowScope.ts). */
-  onAllow: (key: string, choice: ScopeChoice | null) => void; onAct: (action: string) => void; onAnswer: (answers: Dict[]) => void; onTerminal: () => void;
+  onAllow: (key: string, choice: ScopeChoice | null) => void; onAct: (action: string) => void; onAnswer: (answers: Dict[]) => void;
 }) {
   const d = dockOf(entries, screen);
   if (!d.dialog) return null;
@@ -246,7 +246,6 @@ export function DockView({ entries, screen, nonce, onAllow, onAct, onAnswer, onT
           <div className="heading">{APP_NAME} asks whether to trust this folder</div>
           <div className="row">
             <Button kind="primary" onClick={() => onAct("trust")}>Trust folder</Button>
-            <Button onClick={onTerminal}>Open terminal</Button>
           </div>
         </div>
       </div>
@@ -264,7 +263,6 @@ export function DockView({ entries, screen, nonce, onAllow, onAct, onAnswer, onT
       <div className="dialog-banner col">
         <div className="heading">A dialog is open that this view can't drive.</div>
         <div className="row">
-          <Button onClick={onTerminal}>Open terminal</Button>
           <Button onClick={() => onAct("deny")}>Dismiss</Button>
         </div>
       </div>

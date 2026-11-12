@@ -11,7 +11,6 @@
 # no cargo needed). It puts these in place, touching nothing else of yours:
 #
 #   ~/.local/bin/cobra-desktop                         the app
-#   ~/.local/bin/cobra-launch                          opens a terminal on a session's tmux
 #   ~/.local/share/applications/cobra-desktop.desktop  the launcher entry (+ its icon)
 #   ~/.config/systemd/user/cobra-desktop.service       enabled and (re)started: `cobra-desktop --hidden`
 #   ~/.config/hypr/cobra.lua                           window rules and the SUPER+P bind,
@@ -167,7 +166,7 @@ elif [ ! -f "$binary" ]; then
 elif [ ! -x "$binary" ]; then
   say "$binary is not executable (copied without its execute bit?); it is installed 0755 all the same"
 fi
-for f in "$src/bin/cobra-launch" "$src/systemd/$unit" "$src/hypr/cobra.lua" "$src/bar/manifest.json" "$app/src-tauri/icons/128x128.png"; do
+for f in "$src/systemd/$unit" "$src/hypr/cobra.lua" "$src/bar/manifest.json" "$app/src-tauri/icons/128x128.png"; do
   [ -f "$f" ] || die "missing $f: copy the whole apps/desk folder (only node_modules and target can stay behind)"
 done
 
@@ -179,7 +178,8 @@ if pgrep -x cobra-desktop >/dev/null 2>&1 && ! systemctl --user is-active -q "$u
 fi
 
 install -Dm755 "$binary" "$bin/cobra-desktop" && say "installed $bin/cobra-desktop"
-install -Dm755 "$src/bin/cobra-launch" "$bin/cobra-launch" && say "installed $bin/cobra-launch"
+# An older desk put a terminal launcher here; the desk opens no terminal now.
+if [ -e "$bin/cobra-launch" ]; then rm -f "$bin/cobra-launch"; say "removed $bin/cobra-launch (the desk opens no terminal now)"; fi
 install -Dm644 "$src/applications/cobra-desktop.desktop" "$apps/cobra-desktop.desktop" && say "installed $apps/cobra-desktop.desktop"
 install -Dm644 "$app/src-tauri/icons/128x128.png" "$icons/cobra-desktop.png" && say "installed $icons/cobra-desktop.png"
 have update-desktop-database && update-desktop-database "$apps" >/dev/null 2>&1 || true

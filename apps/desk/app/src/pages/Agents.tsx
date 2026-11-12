@@ -45,7 +45,7 @@ let kept: Target | null = null;
 let seenOpen = 0;
 
 export function AgentsPage({ open }: { open: { machine: string; session: string; n: number } | null }) {
-  const { toast, actions } = useApp();
+  const { toast } = useApp();
   const fleet = useFleet();
   const showCrew = useShowCrew();
   const places = usePlaces(fleet.rows, fleet.orch);
@@ -219,8 +219,6 @@ export function AgentsPage({ open }: { open: { machine: string; session: string;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // -- verbs ---------------------------------------------------------------
-  const rowNow = () => (targetRef.current ? fleet.row(targetRef.current[0], targetRef.current[1]) : undefined);
-
   const act = async (action: string, extra: Dict = {}) => {
     const t = targetRef.current;
     if (!t) return;
@@ -254,11 +252,6 @@ export function AgentsPage({ open }: { open: { machine: string; session: string;
   const answer = (answers: Dict[]) => {
     setDockNonce((n) => n + 1);
     act("answer", { answers });
-  };
-
-  const terminal = () => {
-    const row = rowNow();
-    if (row) actions.terminal(row);
   };
 
   const startLead = async (machine: string) => {
@@ -481,7 +474,6 @@ export function AgentsPage({ open }: { open: { machine: string; session: string;
                     </button>
                   )}
                   <Button kind="flat" disabled={!screen?.working} onClick={() => act("interrupt")}>Interrupt</Button>
-                  <Button kind="flat" onClick={terminal}>Terminal</Button>
                 </div>
                 {compact && (
                   <button className="btn icon flat" title="Sessions" onClick={() => setBrowsing(true)}>☰</button>
@@ -494,7 +486,7 @@ export function AgentsPage({ open }: { open: { machine: string; session: string;
               </div>
               <DockView
                 entries={entries} screen={screen} nonce={dockNonce}
-                onAllow={(key, choice) => void allow(key, choice)} onAct={(a) => act(a)} onAnswer={answer} onTerminal={terminal}
+                onAllow={(key, choice) => void allow(key, choice)} onAct={(a) => act(a)} onAnswer={answer}
               />
               <div className="compose">
                 {image && (

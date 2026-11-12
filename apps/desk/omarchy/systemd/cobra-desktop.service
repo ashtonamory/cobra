@@ -9,11 +9,10 @@ Type=simple
 ExecStart=%h/.local/bin/cobra-desktop --hidden
 Restart=on-failure
 RestartSec=3
-# Only the app itself stops on a restart. A terminal the desk opened, and a
-# tmux server that terminal started, sit in this unit's cgroup; with the
-# default (control-group) a reinstall would kill them, and with them every
-# session on that tmux server. cobra-launch also puts each terminal in a
-# scope of its own; this is the second line of defence.
+# Only the app itself stops on a restart. An older desk opened terminals,
+# and a tmux server one of them started sits in this unit's cgroup on a
+# computer that was updated; with the default (control-group) a reinstall
+# would kill it, and with it every session on that tmux server.
 KillMode=process
 
 [Install]

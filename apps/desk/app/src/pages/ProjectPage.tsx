@@ -204,7 +204,6 @@ function Panel({ r, verbs }: { r: model.Row; verbs: Verbs }) {
       <>
         <Button kind="primary" onClick={() => void a.start(r)}>▶ Start {APP_NAME}</Button>
         <Button onClick={() => verbs.askPrompt(r)}>With a prompt…</Button>
-        <Button title="A shell in the project" onClick={() => void a.terminal(r)}>Terminal</Button>
         {template}
       </>
     );
@@ -213,7 +212,6 @@ function Panel({ r, verbs }: { r: model.Row; verbs: Verbs }) {
     btns = (
       <>
         <Button kind="primary" onClick={chat}>Chat</Button>
-        <Button onClick={() => void a.terminal(r)}>Terminal</Button>
         {template}
         <Button title={`Esc to ${APP_NAME}`} onClick={() => void a.interrupt(r)}>Interrupt</Button>
       </>
@@ -222,14 +220,13 @@ function Panel({ r, verbs }: { r: model.Row; verbs: Verbs }) {
     [word, tone] = activity === "busy" ? [`RUNNING ${p.command || ""}`.trim(), "muted"] : ["SHELL OPEN", "muted"];
     btns = (
       <>
-        <Button kind="primary" onClick={() => void a.terminal(r)}>Terminal</Button>
+        <Button kind="primary" onClick={chat}>As chat</Button>
         {activity === "idle" ? (
           <Button title="claude --continue" onClick={() => void a.resumeClaude(r)}>Resume {APP_NAME}</Button>
         ) : (
           <Button title="Ctrl-C" onClick={() => void a.interrupt(r)}>Interrupt</Button>
         )}
         {template}
-        <Button onClick={chat}>As chat</Button>
       </>
     );
   }

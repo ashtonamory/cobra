@@ -19,11 +19,11 @@ const actions = (r: model.Row, pinned: boolean | null = false) => model.choicesF
 
 describe("Menu", () => {
   it("test_not_started_offers_start_and_no_kill", () => {
-    expect(actions(row())).toEqual(["open-page", "pin", "new-session", "start", "prompt", "open-terminal", "templates"]);
+    expect(actions(row())).toEqual(["open-page", "pin", "new-session", "start", "prompt", "templates"]);
   });
 
-  it("test_running_claude_offers_terminal_interrupt_and_kill_last", () => {
-    expect(actions(row("agent-idle"))).toEqual(["open-page", "pin", "new-session", "open-terminal", "interrupt", "new-window", "templates", "kill"]);
+  it("test_running_claude_offers_chat_interrupt_and_kill_last", () => {
+    expect(actions(row("agent-idle"))).toEqual(["open-page", "pin", "new-session", "open-chat", "interrupt", "new-window", "templates", "kill"]);
     expect(model.choicesFor(row("agent-idle"), false).at(-1)!.destructive).toBe(true);
   });
 
@@ -31,7 +31,7 @@ describe("Menu", () => {
     // Its screen is Pi's TUI: no resume, no shell window (it would start claude), no templates.
     const pi = row("agent-idle", { id: "cobra_7", session: "cobra_7", parent: "cobra", branch: "feat/x", command: "pi",
       worker: { owner: "you", task: "", model: "local:q" } });
-    expect(actions(pi)).toEqual(["open-page", "pin", "open-terminal", "interrupt", "kill"]);
+    expect(actions(pi)).toEqual(["open-page", "pin", "open-chat", "interrupt", "kill"]);
   });
 
   it("test_a_headless_worker_has_no_terminal_shell_or_resume", () => {

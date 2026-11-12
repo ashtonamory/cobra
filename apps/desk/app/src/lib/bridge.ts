@@ -39,8 +39,6 @@ export const bridge = {
   designImage: (machine: string, path: string) => invoke<string>("design_image", { machine, path }),
   /** That design saved into Pictures/Cobra; where it went. */
   designSave: (machine: string, path: string, name: string) => invoke<string>("design_save", { machine, path, name }),
-  openTerminal: (machine: string, session: string, cwd: string, title?: string) =>
-    invoke<void>("open_terminal", { machine, session, cwd, title: title ?? null }),
   pins: () => invoke<string[]>("pins"),
   togglePin: (key: string) => invoke<boolean>("toggle_pin", { key }),
   settings: () => invoke<Record<string, Json>>("settings"),

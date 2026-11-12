@@ -1,7 +1,7 @@
 /**
  * Ctrl+Shift+Space (⌘⇧Space on a Mac) — the agents first (the Lead, Foremen,
- * Workers), then every project on every machine; type to filter, Enter for a
- * terminal, Ctrl+Enter for the chat. Its own small window over everything (the
+ * Workers), then every project on every machine; type to filter, Enter for its
+ * chat. Its own small window over everything (the
  * desk's ui/picker.py, a layer-shell overlay there). It owns no polling: rows
  * come from the main window's Fleet as `fleet-snapshot` events, so it opens
  * with nothing to wait for.
@@ -15,7 +15,6 @@ import type { Dict } from "../lib/json.ts";
 import { bridge } from "../lib/bridge.ts";
 import { onSnapshot, toMain } from "../lib/surfaces.ts";
 import { countText, lineName, lineWord, nextMachine, STATE_TONE } from "../lib/pickerRows.ts";
-import * as act from "../lib/windowActions.ts";
 import { isCrew, useShowCrew } from "../lib/crewVisibility.ts";
 import { Chip, cls, Pill } from "../components/ui.tsx";
 import "../styles/surfaces.css";
@@ -67,12 +66,11 @@ export function PickerSurface() {
     list.current?.querySelector(".picker-row.sel")?.scrollIntoView({ block: "nearest" });
   }, [rows, at]);
 
-  const launch = useCallback(async (chat: boolean, index = at) => {
+  const launch = useCallback(async (index = at) => {
     const r = rows[index];
     if (!r) return;
     await getCurrentWindow().hide();
-    if (chat && r.project) await toMain({ kind: "open-chat", machine: r.machine, session: r.session });
-    else await act.terminal(r);
+    await toMain({ kind: "open-chat", machine: r.machine, session: r.session });
   }, [rows, at]);
 
   const move = (delta: number) => {
@@ -87,7 +85,7 @@ export function PickerSurface() {
     else if (e.key === "ArrowUp" || (ctrl && e.key === "p")) move(-1);
     else if (e.key === "Tab") {
       if (rows[at]) setAt(nextMachine(rows, at));
-    } else if (e.key === "Enter") launch(ctrl);
+    } else if (e.key === "Enter") launch();
     else done = false;
     if (done) e.preventDefault();
   };
@@ -122,9 +120,9 @@ export function PickerSurface() {
               <div
                 className={cls("picker-row", i === at && "sel")}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={(e) => {
+                onClick={() => {
                   setAt(i);
-                  launch(e.ctrlKey || e.metaKey, i);
+                  launch(i);
                 }}
               >
                 <Chip machine={r.machine} />
@@ -137,8 +135,7 @@ export function PickerSurface() {
         })}
       </div>
       <div className="picker-foot" data-tauri-drag-region>
-        <span>Enter  terminal</span>
-        <span>Ctrl+Enter  chat</span>
+        <span>Enter  chat</span>
         <span>Tab  next machine</span>
         <span>Esc  close</span>
       </div>

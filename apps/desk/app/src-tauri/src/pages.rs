@@ -1,6 +1,5 @@
 //! Where a window may go. Cobra's own windows (main, picker, popup, box) show
-//! only the app's bundled page; a terminal window shows only the agent's
-//! terminal page on loopback. A web link that would load inside a window opens
+//! only the app's bundled page. A web link that would load inside a window opens
 //! in the person's browser instead, and anything else (a `data:` or
 //! `javascript:` page, a file, another app's scheme) does not load. The email
 //! previews' frames are `about:srcdoc`, which stays allowed. Phase 2 step 5
@@ -18,13 +17,11 @@ pub enum Nav {
     Block,
 }
 
-fn loopback(url: &Url) -> bool {
-    matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"))
-}
-
-/// The decision for one navigation of the window `label`. `dev` is the dev
-/// server's address in a dev build (tauri.conf.json devUrl), None in a release.
-pub fn decide(label: &str, url: &Url, dev: Option<&Url>) -> Nav {
+/// The decision for one navigation. Every window is held to the same rule,
+/// so the window's label decides nothing; it is kept for the next window that
+/// needs a rule of its own. `dev` is the dev server's address in a dev build
+/// (tauri.conf.json devUrl), None in a release.
+pub fn decide(_label: &str, url: &Url, dev: Option<&Url>) -> Nav {
     let scheme = url.scheme();
     // The bundled page: tauri://localhost (Linux, macOS), http(s)://tauri.localhost (Windows).
     if scheme == "tauri" || (matches!(scheme, "http" | "https") && url.host_str() == Some("tauri.localhost")) {
@@ -38,9 +35,6 @@ pub fn decide(label: &str, url: &Url, dev: Option<&Url>) -> Nav {
         if url.origin() == dev.origin() {
             return Nav::Stay;
         }
-    }
-    if label.starts_with("term-") && scheme == "http" && loopback(url) {
-        return Nav::Stay;
     }
     if matches!(scheme, "http" | "https") {
         return Nav::Browser;
@@ -95,10 +89,10 @@ mod tests {
     }
 
     #[test]
-    fn a_terminal_window_stays_on_loopback() {
-        assert_eq!(decide("term-s1", &at("http://127.0.0.1:8788/term/?ticket=t"), None), Nav::Stay);
-        assert_eq!(decide("term-s1", &at("https://example.com/"), None), Nav::Browser);
-        assert_eq!(decide("main", &at("http://127.0.0.1:8788/term/"), None), Nav::Browser);
+    fn a_loopback_page_never_loads_in_a_window() {
+        // Cobra once showed the agent's terminal page in a window named term-*: no window loads loopback now.
+        assert_eq!(decide("term-s1", &at("http://127.0.0.1:8788/term/?ticket=t"), None), Nav::Browser);
+        assert_eq!(decide("main", &at("http://127.0.0.1:8787/"), None), Nav::Browser);
     }
 
     #[test]

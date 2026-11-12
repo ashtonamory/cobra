@@ -20,9 +20,8 @@ itself; the desk shows them in its popup and its sidebar.
   `packages/contracts` by relative path. `src-tauri/` is the Rust side, which
   holds the agent's desk key and makes every request to the agent.
 - `omarchy/` — the Hyprland rules (`hypr/cobra.lua`), the systemd user unit
-  (`cobra-desktop.service`), the `.desktop` entry, the bar plugin
-  (`cobra.desk`) and `cobra-launch`, which opens a terminal on a session's
-  tmux (socket `cobra`).
+  (`cobra-desktop.service`), the `.desktop` entry and the bar plugin
+  (`cobra.desk`).
 - `scripts/install-omarchy.sh` — builds and installs all of that.
 
 It is outside the pnpm workspace and keeps its own npm lockfile

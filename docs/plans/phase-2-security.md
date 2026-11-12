@@ -190,7 +190,9 @@ Since then: Cobra's own Google code is gone (the token broker path could
 never get a token): no Gmail send or read, no Calendar read, no Drive save
 with its standing consent, no Google Sheet copy of a database. Google is
 reached only through the person's connectors ([google.md](../google.md)),
-and the table and the gate above say what holds now.
+and the table and the gate above say what holds now. The terminal is gone
+too: no terminal gateway, no terminal page or window, no `ticket.key`, and
+no `terminal` scope on a key.
 
 Deviations and choices:
 

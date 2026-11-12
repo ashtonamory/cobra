@@ -100,8 +100,8 @@ by an attacker. These are the protections that are in place now:
   has a strict policy: no eval, no inline or remote script, no frames, no
   plugins, and it reaches the agent only through the app. Chat text is
   escaped and links only to http(s). A web link opens in your browser; no
-  desk window ever loads another page. The agent's terminal page and the
-  files it serves carry a strict policy, `nosniff` and no referrer. Its
+  desk window ever loads another page. The files the agent serves carry a
+  strict policy, `nosniff` and no referrer. Its
   limits: links inside an email preview do nothing; the desk still allows
   inline styles.
 - **No secrets in model context.** The Lead and each Foreman reach the

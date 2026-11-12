@@ -91,7 +91,7 @@ function put(st: Stack, card: PopupCard): Stack {
   };
 }
 
-/** The card's dialog was answered (here, on the phone, in a terminal): it goes for good. */
+/** The card's dialog was answered (here or in the main window): it goes for good. */
 function drop(st: Stack, key: string): Stack {
   if (!(key in st.sent)) return st;
   const sent = { ...st.sent };
@@ -299,7 +299,7 @@ function build(sent: PopupCard, then: (key: string, fn: () => void) => () => voi
   } else {
     compactActions.push(["Open chat", openChat, "primary"]);
   }
-  actions.push(["Open chat", openChat, undefined], ["Terminal", then(key, () => act.terminal(row)), "flat"]);
+  actions.push(["Open chat", openChat, undefined]);
   return {
     // With the crew hidden (lib/crewVisibility.ts) the Space and skill that asks, or Cobra, never a Foreman or Worker.
     key, kind: needsKind(row.dialog), signal: false, title: !showCrew && sent.who ? sent.who : row.displayName, machine, line: needsLine(row),

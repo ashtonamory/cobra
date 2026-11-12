@@ -25,7 +25,7 @@ phone app. Nothing listens on a network address other than `127.0.0.1`.
 
 | Part | What it is |
 | --- | --- |
-| `apps/agent` | The daemon (`cobra-agent`): an HTTP API on `127.0.0.1:8787`, a terminal gateway on `:8788` and a model gateway on `:8789`. It runs the agents in tmux sessions. |
+| `apps/agent` | The daemon (`cobra-agent`): an HTTP API on `127.0.0.1:8787` and a model gateway on `:8789`. It runs the agents in tmux sessions. |
 | `apps/desk` | The desktop app (Tauri 2 + React). It is how you talk to your Lead and allow or refuse what the agents propose. |
 | `packages/contracts` | The shapes (zod) that the agent and the desk share. |
 | `packages/ste` | Plain-language checks for the text the agents write. |
