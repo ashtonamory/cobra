@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import os from "node:os";
 import { join } from "node:path";
 
-import type { Approval, ApprovalAction, ApprovalBoard, ApprovalEmailTemplate, ApprovalBrand, ApprovalExpenses, ApprovalBudget, ApprovalBills, ApprovalImport, ApprovalLand, ApprovalOrg, ApprovalPlan, ApprovalPr, ApprovalRoutine, ApprovalSite, ApprovalSpace, ApprovalSpecialist, ApprovalTrade, ApprovalTrust, ApprovalTrusted, McpPin } from "@cobra/contracts";
+import type { Approval, ApprovalAction, ApprovalBoard, ApprovalEmailTemplate, ApprovalBrand, ApprovalExpenses, ApprovalBudget, ApprovalBills, ApprovalImport, ApprovalLand, ApprovalOrg, ApprovalPlan, ApprovalPr, ApprovalRoutine, ApprovalSite, ApprovalSpace, ApprovalSpecialist, ApprovalSpecialistAttach, ApprovalTrade, ApprovalTrust, ApprovalTrusted, McpPin } from "@cobra/contracts";
 
 import { audit, recipients, type AuditFields } from "./auditTrail.ts";
 import { landLine, landOne, type LandDeps } from "./landing.ts";
@@ -47,6 +47,8 @@ export const PENDING_MS: Record<string, number> = {
   trade: 3 * 24 * 60 * 60_000,
   // A change to a specialist (specialistRoutes.ts) is read with care, every word of it: three days, as a trade.
   specialist: 3 * 24 * 60 * 60_000,
+  // Attaching a specialist to a project (specialistAttach.ts) gives it that project's files: read at leisure, as a change to it.
+  "specialist-attach": 3 * 24 * 60 * 60_000,
   // A move in My Organization (orgRoutes.ts) is never urgent: three days.
   org: 3 * 24 * 60 * 60_000,
   // A new Space (spaceCreate.ts) opens with its folder, profile and brain: read at leisure, as a trade.
@@ -237,6 +239,7 @@ export type NewApproval = {
   trusted?: ApprovalTrusted;
   trade?: ApprovalTrade;
   specialist?: ApprovalSpecialist;
+  attach?: ApprovalSpecialistAttach;
   org?: ApprovalOrg;
   space?: ApprovalSpace;
   imports?: ApprovalImport;
@@ -276,6 +279,7 @@ export function makeApproval(
     ...(input.trust ? { trust: input.trust } : {}),
     ...(input.trade ? { trade: input.trade } : {}),
     ...(input.specialist ? { specialist: input.specialist } : {}),
+    ...(input.attach ? { attach: input.attach } : {}),
     ...(input.org ? { org: input.org } : {}),
     ...(input.space ? { space: input.space } : {}),
     ...(input.imports ? { imports: input.imports } : {}),

@@ -211,6 +211,11 @@ export const org = (m: M) => get(m, "/org", 8);
 export const orgChange = (m: M, change: Dict, revision?: number) => post(m, "/org", { change, ...(revision !== undefined ? { revision } : {}) }, 15);
 /** A Foreman's name or look (agent crew.ts): `{name: string | null}` or `{look: "next" | "reset"}`. */
 export const crew = (m: M, project: string, change: Dict) => post(m, "/crew", { project, ...change }, 10);
+/** The roster (agent specialists.ts): each project's specialist, with the projects it is attached to. */
+export const specialists = (m: M) => get(m, "/specialists", 8);
+/** Attach a specialist to a project the person already has, or take it off (agent specialistAttach.ts): the person's own act, no card. */
+export const specialistAttach = (m: M, id: string, project: string) => post(m, "/specialists/attach", { id, project }, 10);
+export const specialistDetach = (m: M, id: string, project: string) => post(m, "/specialists/detach", { id, project }, 10);
 
 export const trust = (m: M, project?: string) => get(m, project ? `/trust?project=${q(project)}` : "/trust", 10);
 export const trustRevoke = (m: M, key: string) => post(m, "/trust/revoke", { key }, 20);

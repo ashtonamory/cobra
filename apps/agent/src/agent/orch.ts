@@ -130,7 +130,8 @@ import { DB_POSTS, DB_ROUTES, handleDb, liveDbDeps } from "./dbRoutes.ts";
 import { handleRead, liveReadDeps, READ_BODY_LIMIT, READ_ROUTES, ROUTE_READS, type ReadDeps } from "./readRoutes.ts";
 import { liveTradeDeps, proposeTrade, type TradeDeps } from "./tradeRoutes.ts";
 import { createTitle, liveSpecialistDeps, proposeSpecialist, type SpecialistDeps } from "./specialistRoutes.ts";
-import { setSpecialist } from "./specialists.ts";
+import { attachedRepos, setSpecialist } from "./specialists.ts";
+import { detach as detachSpecialist, liveAttachDeps, proposeAttach, type AttachDeps } from "./specialistAttach.ts";
 import { testModeOn, withTestLane } from "./apiTest.ts";
 import { factsHere } from "./morning.ts";
 import { handleOrgOrch, liveOrgDeps, loadOrg, ORCH_ORG_POSTS, ORCH_ORG_ROUTES, saveOrg, type OrgDeps } from "./orgRoutes.ts";
@@ -245,6 +246,8 @@ export const ORCH_ROUTES: ReadonlySet<string> = new Set([
   ...ORCH_FORM_ROUTES,
   "/orch/trade/define",
   "/orch/specialist/set",
+  "/orch/specialist/attach",
+  "/orch/specialist/detach",
   "/orch/morning",
   "/orch/memory/file",
   "/orch/memory/slice",
@@ -291,6 +294,8 @@ const POSTS = new Set([
   ...ORCH_FORM_ROUTES,
   "/orch/trade/define",
   "/orch/specialist/set",
+  "/orch/specialist/attach",
+  "/orch/specialist/detach",
   "/orch/memory/ask",
   "/orch/memory/remember",
   "/orch/notify",
@@ -531,17 +536,19 @@ function codexStatus(): Pick<OrchStatus, "codex" | "workerDefault"> {
 
 /**
  * What a Foreman's key sees of the status: its project, its Workers, its
- * queue; for a Website Builder also the site someone else coded it is linked
- * to (outsideSite.ts), with the Workers it started there.
+ * queue; also the projects it works in besides its own (a Website Builder's
+ * linked site, outsideSite.ts; the repositories it is attached to,
+ * specialistAttach.ts), with the Workers it started there and no one else's.
  */
-export function scopeStatus(status: OrchStatus, only: string | undefined, linked: string | null = null): OrchStatus {
+export function scopeStatus(status: OrchStatus, only: string | undefined, linked: string | null | ReadonlySet<string> = null): OrchStatus {
   if (only === undefined) return status;
-  const mine = (project: string) => project === only || (linked !== null && project === linked);
+  const also: ReadonlySet<string> = linked === null ? new Set() : typeof linked === "string" ? new Set([linked]) : linked;
+  const mine = (project: string) => project === only || also.has(project);
   return {
     ...status,
     projects: status.projects.filter((project) => mine(project.id)),
-    workers: status.workers.filter((worker) => worker.parent === only || (linked !== null && worker.parent === linked && worker.owner === only)),
-    ...(status.queue ? { queue: status.queue.filter((item) => item.project === only || (linked !== null && item.project === linked && item.owner === only)) } : {}),
+    workers: status.workers.filter((worker) => worker.parent === only || (also.has(worker.parent) && worker.owner === only)),
+    ...(status.queue ? { queue: status.queue.filter((item) => item.project === only || (also.has(item.project) && item.owner === only)) } : {}),
   };
 }
 
@@ -905,6 +912,10 @@ export async function handleOrch(
     trades?: TradeDeps;
     /** specialist_set's deps (specialistRoutes.ts); the live ones when absent. Tests pass their own. */
     specialists?: SpecialistDeps;
+    /** specialist_attach's and specialist_detach's deps (specialistAttach.ts); the live ones when absent. Tests pass their own. */
+    attach?: AttachDeps;
+    /** The repositories a specialist is attached to, by project id (specialists.ts attachedRepos); the live record when left out. */
+    attachedOf?: (id: string, projects: readonly Project[]) => string[];
     /** Trust (trustRoutes.ts): whether an action runs on trust, and the agent's own carrying out of an allowed action (index.ts carryOutAction). */
     trust?: { deps: TrustDeps; carryOut: (approval: StoredApproval) => void };
     /** The taint in force for a session (`lead`, `foreman:<project>`, `worker:<id>`) (taint.ts); the live file when left out. */
@@ -980,19 +991,36 @@ export async function handleOrch(
       const deps = io.site ?? liveSiteDeps(io);
       return readLink(siteFolders(project, deps.stateDir, deps.place(project).space).state)?.project ?? null;
     })());
-  /** The projects a Foreman's Workers may live in: its own, and a Website Builder's linked site. */
+  /**
+   * The projects a Foreman works in besides its own: a Website Builder's
+   * linked site, and the repositories the person attached it to
+   * (specialistAttach.ts). Read from the record on each request, so a detach
+   * holds from the next call. There it starts Workers and sees the ones it
+   * started; the project's store, reads, routines and memory stay that
+   * project's own (inScope).
+   */
+  let alsoMemo: Promise<ReadonlySet<string>> | undefined;
+  const alsoIn = (): Promise<ReadonlySet<string>> =>
+    (alsoMemo ??= (async () => {
+      if (only === undefined) return new Set<string>();
+      const projects = await registered(io.configPath);
+      const attached = io.attachedOf ? io.attachedOf(only, projects) : attachedRepos(only, projects).map((project) => project.id);
+      const linked = await linkedSite();
+      return new Set([...attached.filter((id) => id !== only), ...(linked === null ? [] : [linked])]);
+    })());
+  /** The projects a Foreman's Workers may live in: its own, and the ones alsoIn names. */
   const workScope = async (): Promise<Project[]> => {
     const projects = await registered(io.configPath);
     if (only === undefined) return projects;
-    const linked = await linkedSite();
-    return projects.filter((project) => project.id === only || (linked !== null && project.id === linked));
+    const also = await alsoIn();
+    return projects.filter((project) => project.id === only || also.has(project.id));
   };
   const scopedWorker = async (id: unknown): Promise<Extra> => {
     // The Lead and Foremen never see your own Pi sessions; the desk see every session (Tidy's Delete).
     const extra = await findWorker(id, isLead ? orchWorkerRecords : workerRecords);
     if (only !== undefined && extra.parent !== only) {
-      const linked = await linkedSite();
-      if (linked === null || extra.parent !== linked || extra.worker?.owner !== only) throw new SessionError(`no Worker ${String(id)} in ${only}`, 404);
+      // In a project it only works in, a Worker is its own when it started it: another specialist's there is not.
+      if (!(await alsoIn()).has(extra.parent) || extra.worker?.owner !== only) throw new SessionError(`no Worker ${String(id)} in ${only}`, 404);
     }
     return extra;
   };
@@ -1009,11 +1037,11 @@ export async function handleOrch(
       if (only !== undefined) return send(response, 403, { error: "a Foreman's key does not read the API spend" });
       return send(response, 200, { machine: io.machineLabel, ...monthSpendHere() });
     }
-    if (route === "/orch/status") return send(response, 200, scopeStatus(await orchStatus(io.configPath), only, await linkedSite()));
+    if (route === "/orch/status") return send(response, 200, scopeStatus(await orchStatus(io.configPath), only, await alsoIn()));
     if (route === "/orch/policy") {
       const limit = Math.min(1000, Math.max(1, Number(url.searchParams.get("limit") ?? 200) || 200));
-      const linked = await linkedSite();
-      const mine = only === undefined ? null : new Set((await orchWorkerRecords()).filter((extra) => extra.parent === only || (linked !== null && extra.parent === linked && extra.worker?.owner === only)).map((extra) => extra.id));
+      const also = await alsoIn();
+      const mine = only === undefined ? null : new Set((await orchWorkerRecords()).filter((extra) => extra.parent === only || (also.has(extra.parent) && extra.worker?.owner === only)).map((extra) => extra.id));
       return send(response, 200, { machine: os.hostname(), entries: readPolicyLog(limit).filter((entry) => !mine || mine.has(entry.worker)) });
     }
     if (route === "/orch/history") {
@@ -1046,12 +1074,12 @@ export async function handleOrch(
       if ("error" in timing) return send(response, 400, timing);
       const { since } = timing;
       const projects = await workScope();
-      const linked = await linkedSite();
+      const also = await alsoIn();
       const audience = audienceOf(io.caller);
       // A new finish (finishes.ts), not a state: a Worker already idle, or
       // still on a question already reported, does not come back again.
       const reply = await holdOpen(request, timing.seconds, async (last) => {
-        const workers = (await describeAll(projects, ids)).filter((worker) => only === undefined || worker.parent === only || (linked !== null && worker.parent === linked && worker.owner === only));
+        const workers = (await describeAll(projects, ids)).filter((worker) => only === undefined || worker.parent === only || (also.has(worker.parent) && worker.owner === only));
         if (workers.length === 0) return { status: 404, body: { error: "none of those Workers is on this computer" } };
         const fresh = finishes.claim(workers.map((worker) => worker.id), audience, since);
         if (fresh.length > 0) {
@@ -1426,6 +1454,26 @@ export async function handleOrch(
         tradeName: (id) => allTrades().find((trade) => trade.id === id)?.name,
       });
       const outcome = await proposeSpecialist(deps, io.caller.id, body);
+      return send(response, outcome.status, outcome.body);
+    }
+
+    // Cobra attaches a specialist to a project the person already has (specialistAttach.ts): a card, and only the person's Allow attaches. Detaching only takes access away, so it applies at once.
+    if (route === "/orch/specialist/attach" || route === "/orch/specialist/detach") {
+      if (!isLead || only !== undefined || io.caller.worker !== undefined) return send(response, 403, { error: "only the Lead attaches a specialist to a project, or detaches it" });
+      // What she read from outside may have planted either: one gives a specialist a project's files, the other takes its work away.
+      if (taintOf(who)) return send(response, 409, { error: ROSTER_TAINTED });
+      const deps = io.attach ?? liveAttachDeps({
+        approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) },
+        notify: io.notify,
+        tell: tellLine,
+        log: io.log,
+        projects: () => inScope(),
+        workers: async () => {
+          const running = await runningSessions();
+          return (await orchWorkerRecords()).map((extra) => ({ id: extra.id, name: extra.id, parent: extra.parent, ...(extra.worker?.owner ? { owner: extra.worker.owner } : {}), running: running.has(extra.session) }));
+        },
+      });
+      const outcome = route === "/orch/specialist/attach" ? await proposeAttach(deps, io.caller.id, body) : await detachSpecialist(deps, body, "lead", io.caller.id, { specialist: "specialist", repo: "project" });
       return send(response, outcome.status, outcome.body);
     }
 
