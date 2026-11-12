@@ -28,6 +28,21 @@ by an attacker. These are the protections that are in place now:
   Lead cannot make or change a specialist, or define a trade, in a
   conversation that read text from outside. The instructions never override
   the rules here: approvals, outside text as data, and secrets.
+- **A specialist works only where you put it.** A specialist has its own
+  project. You can attach it to up to 8 other projects you already have,
+  and detach it again. Attached, it reads that project's files and starts
+  Workers that change them; each change still comes to you on a card
+  before it is published. It gets nothing else of that project: not its
+  records, its mail and calendar reads, its routines or its memory. In a
+  project it is only attached to, it sees and controls the Workers it
+  started, never another specialist's. You attach one yourself in the desk,
+  or the Lead proposes it on a card that names the specialist, the project
+  and its folder; only your own Allow attaches, and exactly that pair. The
+  Lead can detach without a card, since that only takes access away, but
+  not while that specialist's Workers still run there. The Lead can do
+  neither in a conversation that read text from outside, and a specialist
+  cannot attach itself. Its Workers may live there from the moment you
+  allow it; its own reads of the files change at its next conversation.
 - **Contained Workers.** Workers run in Cobra's sandbox, with no access to
   your home directory outside their project and no network but their line
   to the agent: under bubblewrap on Linux, under a `sandbox-exec` profile

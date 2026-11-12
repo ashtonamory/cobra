@@ -182,6 +182,34 @@ const BASE_TOOLS: Tool[] = [
     },
   },
   {
+    name: "specialist_attach",
+    description:
+      "Attach one specialist to a project the person already has on this computer (as the status tool lists it), so it can work there too: it reads that project's files and starts Workers that change them, and every change still comes to the person before it is published. Use it when the person wants one of their specialists to work on a project they already have (\"have Rosa look after my shop's website too\"), instead of hiring a new specialist for it with foreman_create. The person sees one card naming the specialist, the project and its folder, and nothing changes until they allow it. It gives nothing else of that project: not its records, its routines or its memory. Up to 8 projects for one specialist. Refused in a conversation where you read text from outside (an email, a web page, a connected app): tell the person, who can ask again in a new conversation or attach it themselves in the desk app.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        specialist: { type: "string", description: "Its name (\"Rosa\") or its project id, from the status tool." },
+        project: { type: "string", description: "The project to attach it to: its id from the status tool, or its name." },
+      },
+      required: ["specialist", "project"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "specialist_detach",
+    description:
+      "Detach one specialist from a project it was attached to with specialist_attach, when the person asks. It only takes access away, so it needs no card and applies now; the specialist stops reading that project's files from its next conversation. Refused while a Worker that specialist started there still runs: tell the person which, and brief the specialist to finish or stop it first. Never detaches a specialist from its own project. Refused in a conversation where you read text from outside.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        specialist: { type: "string", description: "Its name (\"Rosa\") or its project id, from the status tool." },
+        project: { type: "string", description: "The project to detach it from: its id from the status tool, or its name." },
+      },
+      required: ["specialist", "project"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "trade_define",
     description:
       "Define a new trade (a manager the shipped trades do not cover, such as dog walking or a tutoring roster) for the person, as data only. Never one for money: Money keeps a Space's books, budget and accounts (cash, bank, cards with balances, income and transfers), and its records are the ones boards, receipts and the Finance charts read. The person sees it in words on one card and allows it once; then foreman_create takes its id. It has the same tools and gates as every trade: it sends, pays and files nothing itself. Calling it again with the same id updates it on a new card: it may add tables, columns, mutations and templates, change the brief, and never drops or changes a table or column (the person's records are in them). A service Cobra has no connection for goes in needs with a fallback the person can do by hand (a file to import or export, or a short checklist); never pretend a connection exists.",
@@ -1424,6 +1452,8 @@ export const ROLE_TOOLS: Readonly<Record<OrchRole, readonly string[]>> = {
     "form_unlink",
     "trade_define",
     "specialist_set",
+    "specialist_attach",
+    "specialist_detach",
     "org_read",
     "org_set",
     "org_propose",
@@ -2033,6 +2063,16 @@ export async function runTool(name: string, args: Json, computers: OrchAgent[], 
       const reply = (await call(home, "/orch/specialist/set", { method: "POST", body }, fetcher)) as { unchanged?: boolean; name?: string; approval?: string; fields?: string[] };
       if (reply.unchanged) return `${reply.name ?? "It"} is set exactly so already; nothing to allow.`;
       return `Asked the person to allow the change to ${reply.name ?? "it"} (${(reply.fields ?? []).join(", ")}; approval ${reply.approval}). Nothing has changed yet. A [cobra] line tells you their answer; approval_status shows it meanwhile. It applies from ${reply.name ?? "its"} next conversation.`;
+    }
+    case "specialist_attach": {
+      const reply = (await call(home, "/orch/specialist/attach", { method: "POST", body: { specialist: str("specialist") ?? "", project: str("project") ?? "" } }, fetcher)) as { unchanged?: boolean; name?: string; approval?: string; project?: string };
+      if (reply.unchanged) return `${reply.name ?? "It"} is attached to ${reply.project ?? "that project"} already; nothing to allow.`;
+      return `Asked the person to allow attaching ${reply.name ?? "it"} to ${reply.project ?? "the project"} (approval ${reply.approval}). Nothing has changed yet. A [cobra] line tells you their answer; approval_status shows it meanwhile. Once allowed it may start Workers there at once, and reads the project's files from its next conversation.`;
+    }
+    case "specialist_detach": {
+      const reply = (await call(home, "/orch/specialist/detach", { method: "POST", body: { specialist: str("specialist") ?? "", project: str("project") ?? "" } }, fetcher)) as { unchanged?: boolean; name?: string; project?: string };
+      if (reply.unchanged) return `${reply.name ?? "It"} was not attached to ${reply.project ?? "that project"}; nothing changed.`;
+      return `Detached ${reply.name ?? "it"} from ${reply.project ?? "the project"}. It starts no Workers there from now, and stops reading its files from its next conversation.`;
     }
     case "trade_define": {
       if (typeof args.definition !== "object" || args.definition === null) throw new AgentError("definition is required");

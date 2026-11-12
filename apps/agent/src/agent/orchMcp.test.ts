@@ -76,6 +76,8 @@ test("initialize, tools/list and a notification", async () => {
     "form_unlink",
     "trade_define",
     "specialist_set",
+    "specialist_attach",
+    "specialist_detach",
     "org_read",
     "org_set",
     "org_propose",
@@ -254,6 +256,18 @@ test("trade_define posts the definition and says the person was asked", async ()
   assert.match(text, /^Asked the person to add the Dog walking trade \(approval ap_1\)\. Cobra has no connection for Stripe/);
   assert.match(text, /foreman_create with template dog-walking/);
   await assert.rejects(mcp.runTool("trade_define", {}, [computer], fetcher), /definition is required/);
+});
+
+test("specialist_attach asks the person and says nothing changed yet; specialist_detach says what stops", async () => {
+  const { fetcher, seen } = agent({ "/orch/specialist/attach": { approval: "ap_8", specialist: "invoicing", name: "Rosa", project: "shop" } }, 202);
+  const text = await mcp.runTool("specialist_attach", { specialist: "Rosa", project: "shop" }, [computer], fetcher);
+  assert.equal(seen[0]?.url, "http://127.0.0.1:8797/orch/specialist/attach");
+  assert.deepEqual(seen[0]?.body, { specialist: "Rosa", project: "shop" });
+  assert.match(text, /^Asked the person to allow attaching Rosa to shop \(approval ap_8\)\. Nothing has changed yet\./);
+  const same = agent({ "/orch/specialist/attach": { unchanged: true, name: "Rosa", project: "shop" } });
+  assert.equal(await mcp.runTool("specialist_attach", { specialist: "Rosa", project: "shop" }, [computer], same.fetcher), "Rosa is attached to shop already; nothing to allow.");
+  const off = agent({ "/orch/specialist/detach": { specialist: "invoicing", name: "Rosa", project: "shop", repos: [] } });
+  assert.match(await mcp.runTool("specialist_detach", { specialist: "Rosa", project: "shop" }, [computer], off.fetcher), /^Detached Rosa from shop\. It starts no Workers there from now/);
 });
 
 test("specialist_set posts only the fields that change and says nothing changed yet", async () => {

@@ -21,6 +21,7 @@ import { spaceSkillsLine, spacesSummary, useShowCrew, visibleChart } from "../li
 import { runningLine, seatMachines, spaceCard, spaceLetter } from "../lib/spaceScreen.ts";
 import { Button, Switch, cls } from "../components/ui.tsx";
 import { Sprite } from "../components/Sprite.tsx";
+import { AttachedProjects } from "../components/AttachedProjects.tsx";
 import { SpaceScreen } from "../components/SpaceScreen.tsx";
 import { useNow, useRoutines } from "../components/useSpaceData.ts";
 import { AgentsPage } from "./Agents.tsx";
@@ -208,6 +209,7 @@ function OrgChart({ switcher }: { switcher: ReactNode }) {
               <Button kind="flat" onClick={() => crew(seat, { look: "next" }, "changed")}>New look</Button>
             </div>
           )}
+          <AttachedProjects machine={seat.machine} id={seat.project} name={seat.name} toast={(text) => app.toast(text)} />
           <div className="org-actions">
             <Button kind="flat" onClick={() => setPanel({ kind: "move", key: seat.key })}>Move…</Button>
             {seat.retired

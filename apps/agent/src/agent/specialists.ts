@@ -32,6 +32,8 @@ export const SPECIALIST_PROPOSALS_DIR = join(STATE_DIR, "specialist-proposals");
 
 export const TITLE_MAX = 120;
 export const INSTRUCTIONS_MAX = 8000;
+/** How many repositories one specialist may be attached to: enough for a person's projects, few enough to keep track of. */
+export const REPOS_MAX = 8;
 
 /** The models a Foreman may run on: Claude Code's own names. A Codex Foreman keeps the Codex account's model. */
 export const SPECIALIST_MODELS: readonly string[] = CLAUDE_MODELS;
@@ -43,6 +45,12 @@ export type SpecialistRecord = {
   instructions?: string;
   /** Absent: the Foremen's own (orchModels.ts). */
   model?: string;
+  /**
+   * The repositories it is attached to besides its own project, by project
+   * id (specialistAttach.ts). Its Workers may live there and it reads their
+   * files; nothing else of those projects is its own.
+   */
+  repos?: string[];
   updatedAt: string;
   updatedBy: "person" | "lead";
 };
@@ -58,6 +66,7 @@ function isRecord(value: unknown): value is SpecialistRecord {
   if (v.updatedBy !== "person" && v.updatedBy !== "lead") return false;
   if (v.title !== undefined && (typeof v.title !== "string" || v.title.length > TITLE_MAX)) return false;
   if (v.instructions !== undefined && (typeof v.instructions !== "string" || v.instructions.length > INSTRUCTIONS_MAX)) return false;
+  if (v.repos !== undefined && (!Array.isArray(v.repos) || v.repos.length > REPOS_MAX || v.repos.some((repo) => typeof repo !== "string" || !repo))) return false;
   return v.model === undefined || typeof v.model === "string";
 }
 
@@ -140,6 +149,8 @@ export function withChange(current: SpecialistRecord | null, change: SpecialistC
     ...(merged.title ? { title: merged.title } : {}),
     ...(merged.instructions ? { instructions: merged.instructions } : {}),
     ...(merged.model ? { model: merged.model } : {}),
+    // Not a field a change sets: attaching has its own routes and its own card (specialistAttach.ts).
+    ...(current?.repos?.length ? { repos: current.repos } : {}),
     updatedAt: new Date(now).toISOString(),
     updatedBy: by,
   };
@@ -168,6 +179,62 @@ export function setSpecialist(id: string, change: SpecialistChange, by: Speciali
   return next;
 }
 
+/** A project that can have a specialist, or be attached to one: a repository here, never a session under one. */
+export function isRepository(project: Pick<Project, "parent" | "lead" | "foreman">): boolean {
+  return project.parent === undefined && !project.lead && !project.foreman;
+}
+
+/**
+ * The repositories a specialist is attached to, as they are now: each id
+ * that is still a repository here and not its own project. One whose project
+ * is gone is left out, so it gives nothing.
+ */
+export function attachedRepos<T extends Pick<Project, "id" | "parent" | "lead" | "foreman">>(id: string, projects: readonly T[], path = SPECIALISTS_PATH): T[] {
+  const ids = readSpecialist(id, path)?.repos ?? [];
+  if (ids.length === 0) return [];
+  return ids.flatMap((repo) => {
+    const project = repo === id ? undefined : projects.find((candidate) => candidate.id === repo && isRepository(candidate));
+    return project ? [project] : [];
+  });
+}
+
+/**
+ * Attaches or detaches one repository, and writes the audit line (ids only).
+ * `known` is every repository here: an id no longer among them is dropped
+ * from the list on this write. Throws in words when the list would be over
+ * REPOS_MAX; attaching one already there, or detaching one that is not,
+ * changes nothing and still answers the record.
+ */
+export function setAttached(
+  id: string,
+  repo: string,
+  attach: boolean,
+  known: ReadonlySet<string>,
+  by: SpecialistRecord["updatedBy"],
+  actor: string,
+  now = Date.now(),
+  path = SPECIALISTS_PATH,
+): SpecialistRecord {
+  if (attach && repo === id) throw new Error("a specialist already works on its own project");
+  const file = loadSpecialists(path);
+  const current = file.specialists[id] ?? null;
+  const kept = [...new Set(current?.repos ?? [])].filter((other) => other !== id && other !== repo && known.has(other));
+  const repos = attach ? [...kept, repo] : kept;
+  if (repos.length > REPOS_MAX) throw new Error(`a specialist is attached to at most ${REPOS_MAX} projects: detach one first`);
+  const next: SpecialistRecord = {
+    ...(current?.title ? { title: current.title } : {}),
+    ...(current?.instructions ? { instructions: current.instructions } : {}),
+    ...(current?.model ? { model: current.model } : {}),
+    ...(repos.length ? { repos } : {}),
+    updatedAt: new Date(now).toISOString(),
+    updatedBy: by,
+  };
+  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+  writePrivateFile(path, `${JSON.stringify({ specialists: { ...file.specialists, [id]: next } }, null, 2)}\n`);
+  audit(attach ? "specialist.attach" : "specialist.detach", { actor, subject: { project: id }, detail: { by, repo, attached: repos.length } });
+  return next;
+}
+
 /** The model a Foreman starts on: its record's when Claude Code can run it, else null (the Foremen's own). */
 const warned = new Set<string>();
 export function specialistModel(id: string, path = SPECIALISTS_PATH, log: (line: string) => void = (line) => console.log(line)): string | null {
@@ -192,7 +259,7 @@ export function specialistViews(
   tradeName: (id: string) => string | undefined,
   options: { path?: string; crewPath?: string; companyOf?: (project: Project) => { id: string; name: string } | undefined } = {},
 ): SpecialistView[] {
-  const repositories = projects.filter((project) => project.parent === undefined && !project.lead && !project.foreman);
+  const repositories = projects.filter(isRepository);
   const crews = crewFor(repositories, options.crewPath);
   const records = loadSpecialists(options.path).specialists;
   return repositories.flatMap((project) => {
@@ -212,6 +279,10 @@ export function specialistViews(
         ...(record?.model ? { model: record.model } : {}),
         ...(project.foremanTemplate ? { trade: project.foremanTemplate } : {}),
         ...(company ? { company } : {}),
+        repos: (record?.repos ?? []).flatMap((repo) => {
+          const attached = repo === project.id ? undefined : repositories.find((candidate) => candidate.id === repo);
+          return attached ? [{ id: attached.id, name: attached.name, path: attached.path }] : [];
+        }),
         ...(record ? { updatedAt: record.updatedAt, updatedBy: record.updatedBy } : {}),
       },
     ];

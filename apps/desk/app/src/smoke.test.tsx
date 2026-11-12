@@ -795,6 +795,8 @@ function apiAnswer(machine: string, method: string, path: string, body: Dict | n
         spaces: laptop ? [{ id: "paws", name: "Happy Tails", box: "b1" }] : [],
       };
       case "/routines": return laptop ? ROUTINES : { routines: [] };
+      // The roster a specialist's panel reads for the projects it is attached to (components/AttachedProjects.tsx).
+      case "/specialists": return { specialists: [], models: [] };
       case "/trust": return laptop && (params.get("project") ?? "paws") === "paws" ? TRUST : { grants: [], always: [], receipts: [] };
       case "/db/journal": return params.get("project") === "paws" ? JOURNAL : { project: params.get("project"), entries: [] };
       case "/mcp": return laptop ? { ...MCP, machine } : { ...MCP, machine, github: { binary: null, pin: null }, entries: [],
