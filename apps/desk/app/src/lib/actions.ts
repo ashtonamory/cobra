@@ -8,7 +8,6 @@ import { APP_NAME } from "./appName.ts";
 import * as api from "./api.ts";
 import * as config from "./config.ts";
 import * as model from "./model.ts";
-import { bridge } from "./bridge.ts";
 import type { Fleet } from "./fleet.ts";
 import { isDict, type Dict, type Json } from "./json.ts";
 import { allowOffer, allowWithScope, type ScopeChoice } from "./allowScope.ts";
@@ -28,31 +27,6 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export class Actions {
   constructor(private app: ActionHost) {}
-
-  // -- terminal ------------------------------------------------------------
-  /**
-   * A terminal on the row's session (src-tauri open_terminal): on Omarchy a
-   * real terminal on the session's tmux, here or over SSH, through
-   * cobra-launch; on Windows and macOS, and for a computer reached only
-   * through the relay, the agent's terminal page with a single-use ticket in
-   * a window of its own, the way the phone opens one.
-   */
-  async terminal(row: model.Row): Promise<void> {
-    const m = config.machine(row.machine);
-    if (!row.session || !m) return;
-    // A headless Worker has no tmux session; opening one would start a plain shell under its name.
-    if (row.project?.headless) {
-      this.app.toast("This Worker runs headless: it has no terminal. Open its conversation instead.");
-      return;
-    }
-    const cwd = row.path || (row.project?.path as string) || "/";
-    try {
-      await bridge.openTerminal(m.machine, row.session, cwd, `${row.displayName} · ${m.label}`);
-    } catch (e) {
-      const err = e as { message?: string };
-      this.app.toast(`Couldn't open a terminal: ${err?.message ?? msg(e)}`);
-    }
-  }
 
   // -- sessions ------------------------------------------------------------
   async session(row: model.Row, action: string, ok = "", extra: Dict = {}): Promise<Json> {

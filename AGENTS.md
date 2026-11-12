@@ -15,10 +15,9 @@ the roadmap, and [SECURITY.md](SECURITY.md) for the security model.
 
 - `apps/agent`: the daemon, `cobra-agent`. TypeScript run directly by Node
   (type stripping, no build). The entry point is `src/agent/index.ts` (the
-  HTTP API on `127.0.0.1:8787`); `src/gateway` is the terminal gateway
-  (`:8788`); `src/agent/modelGateway.ts` is the model gateway (`:8789`).
-  `src/agent/cli.ts` is the `cobra-agent` command. `install.sh` installs the
-  systemd user services in `systemd/`.
+  HTTP API on `127.0.0.1:8787`); `src/agent/modelGateway.ts` is the model
+  gateway (`:8789`). `src/agent/cli.ts` is the `cobra-agent` command.
+  `install.sh` installs the systemd user service in `systemd/`.
 - `apps/desk`: the desktop app, Tauri 2 + React + Vite. It is an npm package
   of its own, not part of the pnpm workspace.
 - `packages/contracts`: zod schemas shared by the agent and the desk.

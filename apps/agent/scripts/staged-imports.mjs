@@ -73,7 +73,7 @@ if (missing.length) {
 // 3. Every package imported by name loads from the package's own node_modules.
 const BARE = /^\s*(import|export)\s+(type\s+)?(?:[^"';]*?\sfrom\s+)?["']([^."'/][^"']*)["']/gm;
 const unshipped = [];
-// The agent's and gateway's own sources and the shared packages; site-template is the websites'
+// The agent's own sources and the shared packages; site-template is the websites'
 // code, built on its own. A `scheme:` name (node:, or cloudflare: in the Worker code siteDeploy.ts
 // writes out as text) is not looked up in node_modules.
 const RUN = ["apps", "packages"].map((dir) => join(stage, dir)).filter((dir) => existsSync(dir));

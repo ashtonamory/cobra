@@ -11,7 +11,7 @@ import { dirname } from "node:path";
  */
 
 /** The keys of a desk line computers.json keeps (computers.rs DESK_LINE_KEYS). */
-export const DESK_LINE_KEYS = ["machine", "label", "loopback", "tmuxSocket", "id", "key", "termPort"] as const;
+export const DESK_LINE_KEYS = ["machine", "label", "loopback", "tmuxSocket", "id", "key"] as const;
 
 export type DeskLine = Partial<Record<(typeof DESK_LINE_KEYS)[number], string>>;
 

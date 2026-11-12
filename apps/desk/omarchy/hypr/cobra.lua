@@ -45,11 +45,6 @@ o.window({ class = "^cobra-desktop$", title = "^Cobra needs you$" }, {
   move = { "(monitor_w-window_w-16)", "44" },
 })
 
--- A terminal cobra-launch opened on a session (its app id), opaque like the
--- main window so the session's text is readable over any wallpaper.
-o.window("^cobra-terminal$", { tag = "-default-opacity" })
-o.window("^cobra-terminal$", { opacity = "1 1" })
-
 -- SUPER+P opens the picker. Omarchy binds SUPER+P to "Pseudo window" by
 -- default, and a user bind stacks on a default rather than replacing it, so
 -- the default is unbound first. To keep Pseudo, give it another key here:

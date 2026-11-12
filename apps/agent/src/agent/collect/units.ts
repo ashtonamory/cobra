@@ -15,7 +15,7 @@ const run = promisify(execFile);
 export type UnitState = { unit: string; enabled: boolean; active: boolean };
 
 /** The user units this project installs. */
-export const COBRA_UNITS = ["cobra-agent", "cobra-term"] as const;
+export const COBRA_UNITS = ["cobra-agent"] as const;
 
 /**
  * systemctl exits non-zero to *report* a state — is-active returns 3 for an

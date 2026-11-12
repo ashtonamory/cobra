@@ -64,7 +64,6 @@ export function useVerbs(): Verbs {
     if (action === "start") return void a.start(r);
     if (action === "prompt") return askPrompt(r);
     if (action === "templates") return pickTemplate(r);
-    if (action === "open-terminal") return void a.terminal(r);
     if (action === "open-chat") return app.openChat(r.machine, r.session);
     if (action === "resume-claude") return void a.resumeClaude(r);
     if (action === "approve") return void a.allow(r);

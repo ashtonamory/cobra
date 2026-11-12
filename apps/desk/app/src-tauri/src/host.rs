@@ -201,28 +201,6 @@ pub async fn host_state() -> HostState {
     s
 }
 
-/// Linux: `cobra-launch` (apps/desk/omarchy/bin), which opens a real terminal
-/// on a session's tmux: beside this binary (the installer puts both in
-/// ~/.local/bin), then in ~/.local/bin, then, for a dev build, in the checkout.
-pub fn launcher() -> Option<PathBuf> {
-    if !cfg!(target_os = "linux") {
-        return None;
-    }
-    let mut found = vec![];
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            found.push(dir.join("cobra-launch"));
-        }
-    }
-    if let Some(h) = home() {
-        found.push(h.join(".local/bin/cobra-launch"));
-    }
-    if cfg!(debug_assertions) {
-        found.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../omarchy/bin/cobra-launch"));
-    }
-    found.into_iter().find(|p| p.is_file())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

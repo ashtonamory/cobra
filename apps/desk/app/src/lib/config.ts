@@ -15,7 +15,6 @@ export interface Machine {
   title: string;
   /** Where its agent answers (http://127.0.0.1:<port>). */
   base: string;
-  termBase: string;
   tmuxSocket: string;
   /** Always true: the agent is on this computer. */
   local: boolean;
@@ -54,7 +53,7 @@ export function hue(name: string): string {
 export function testMachine(name: string, extra: Partial<Machine> = {}): Machine {
   return {
     machine: name, label: name, title: name.slice(0, 1).toUpperCase() + name.slice(1),
-    base: "http://127.0.0.1:8787", termBase: "http://127.0.0.1:8788",
+    base: "http://127.0.0.1:8787",
     tmuxSocket: "cobra", local: true, hue: "blue", ...extra,
   };
 }

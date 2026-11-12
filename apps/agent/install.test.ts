@@ -22,7 +22,6 @@ const LAPTOP = [
 
 const DEFAULTS = {
   AGENT_PORT: "8787",
-  TERM_PORT: "8788",
   MODEL_PORT: "8789",
   MACHINE_NAME: "",
   GIT_SYNC: "1",
@@ -163,12 +162,11 @@ test("a bare re-run keeps the saved settings", () => {
     assert.deepEqual(result.config, {
       ...DEFAULTS,
       AGENT_PORT: "8797",
-      TERM_PORT: "8798",
       MODEL_PORT: "8799",
       MACHINE_NAME: "laptop",
       GIT_SYNC: "0",
       TMUX_SOCKET: "default",
-      KEPT: "agent port,terminal port,name,tmux socket,git sync",
+      KEPT: "agent port,name,tmux socket,git sync",
     });
     // Nothing was written: no data folder, agent.env as it was.
     assert.equal(existsSync(join(home, "data")), false);
@@ -181,21 +179,23 @@ test("an update with only --name keeps everything else (the Laptop outage)", () 
     const { status, config } = run("--name", "laptop");
     assert.equal(status, 0);
     assert.equal(config.AGENT_PORT, "8797");
-    assert.equal(config.TERM_PORT, "8798");
+    // A saved terminal port is from when Cobra served a terminal: read, and dropped.
+    assert.equal(config.TERM_PORT, undefined);
     assert.equal(config.TMUX_SOCKET, "default");
     assert.equal(config.GIT_SYNC, "0");
-    assert.equal(config.KEPT, "agent port,terminal port,tmux socket,git sync");
+    assert.equal(config.KEPT, "agent port,tmux socket,git sync");
   });
 });
 
 test("flags win over the saved settings", () => {
   withHome(LAPTOP, (run) => {
-    const { status, config } = run("--agent-port", "8787", "--term-port", "8789", "--name", "office", "--tmux-socket", "cobra");
+    // --term-port is still accepted, with its value, and ignored: an older command line runs.
+    const { status, config, stderr } = run("--agent-port", "8787", "--term-port", "8789", "--name", "office", "--tmux-socket", "cobra");
     assert.equal(status, 0);
+    assert.match(String(stderr), /--term-port is ignored/);
     assert.deepEqual(config, {
       ...DEFAULTS,
       AGENT_PORT: "8787",
-      TERM_PORT: "8789",
       MODEL_PORT: "8789",
       MACHINE_NAME: "office",
       GIT_SYNC: "0",
@@ -215,7 +215,7 @@ test("--git-sync undoes a kept switch", () => {
     assert.equal(run().config.GIT_SYNC, "0");
     const undone = run("--git-sync").config;
     assert.equal(undone.GIT_SYNC, "1");
-    assert.equal(undone.KEPT, "agent port,terminal port,name,tmux socket");
+    assert.equal(undone.KEPT, "agent port,name,tmux socket");
   });
 });
 
@@ -266,9 +266,8 @@ test("junk lines are skipped, other COBRA_* keys kept, and nothing in agent.env 
     assert.equal(result.status, 0, String(result.stderr));
     assert.deepEqual(result.config, {
       ...DEFAULTS,
-      TERM_PORT: "8798",
       MACHINE_NAME: "laptop",
-      KEPT: "terminal port,name,git sync",
+      KEPT: "name,git sync",
       EXTRA: "COBRA_AGENT_PORT_OLD,COBRA_UNKNOWN",
     });
     assert.equal(existsSync(marker), false);
@@ -382,7 +381,6 @@ test("a saved value is checked like a flag, and the refusal names agent.env", ()
     ["COBRA_MACHINE_NAME=my laptop\n", ["--name", "laptop"]],
     ["COBRA_AGENT_PORT=80\n", ["--agent-port", "8787"]],
     ["COBRA_AGENT_PORT=eighty\n", ["--agent-port", "8787"]],
-    ["COBRA_AGENT_PORT=8790\nCOBRA_TERM_PORT=8790\n", ["--term-port", "8791"]],
   ];
   for (const [agentEnv, fix] of refusals) {
     withHome(agentEnv, (run) => {
@@ -400,7 +398,6 @@ test("a bad flag is still refused", () => {
     assert.equal(run("--agent-port", "80").status, 1);
     assert.equal(run("--name", "two words").status, 1);
     assert.equal(run("--tmux-socket", "a/b").status, 1);
-    assert.equal(run("--agent-port", "8790", "--term-port", "8790").status, 1);
   });
 });
 
@@ -446,14 +443,13 @@ test("Pi is pinned by its real file and version, never mise's latest link; too o
 const SS = (port: number, program: string, pid = 777) => `${port} LISTEN 0 4096 127.0.0.1:${port} 0.0.0.0:* users:(("${program}",pid=${pid},fd=7))`;
 const BUSY_443 = { TCP: { "443": { HTTPS: true } }, Web: { "box.example.ts.net:443": { Handlers: { "/grafana": { Proxy: "http://127.0.0.1:3000" } } } } };
 
-test("a first install takes the next free set of ports and says why; flags and saved ports still win", () => {
+test("a first install takes the next free pair of ports and says why; flags and saved ports still win", () => {
   withHome(null, (run) => {
     const { status, config } = run();
     assert.equal(status, 0);
     assert.equal(config.AGENT_PORT, "8797");
-    assert.equal(config.TERM_PORT, "8798");
     assert.equal(config.MODEL_PORT, "8799");
-    assert.equal(config.PORTS_WHY, "the usual ports are taken: 8789 (searxng); using 8797, 8798 and 8799 instead");
+    assert.equal(config.PORTS_WHY, "the usual ports are taken: 8789 (searxng); using 8797 and 8799 instead");
     // Explicit ports are used as given (the install itself then refuses a taken one).
     assert.equal(run("--agent-port", "8787", "--term-port", "8788").config.AGENT_PORT, "8787");
   }, { ss: [SS(8789, "searxng")] });
@@ -490,19 +486,17 @@ test("the agent's own ports held by this install's own agent are not taken", () 
 
 /**
  * A package laid out as package.sh lays it out, small enough for a test: the
- * real install.sh and units, the test's node as bin/node, a node-pty that
- * loads, and a cobra-agent that logs how it was called.
+ * real install.sh and unit, the test's node as bin/node, and a cobra-agent
+ * that logs how it was called.
  */
 function fakePackage(home: string): string {
   const pkg = join(home, "pkg", "cobra-agent-0.0.0-linux-x64");
   mkdirSync(join(pkg, "bin"), { recursive: true });
-  mkdirSync(join(pkg, "node_modules", "node-pty"), { recursive: true });
   copyFileSync(INSTALL, join(pkg, "install.sh"));
   cpSync(new URL("./systemd", import.meta.url).pathname, join(pkg, "systemd"), { recursive: true });
   writeFileSync(join(pkg, "VERSION"), "0.0.0\n");
   writeFileSync(join(pkg, "BUILD"), "testbuild\n");
   symlinkSync(process.execPath, join(pkg, "bin", "node"));
-  writeFileSync(join(pkg, "node_modules", "node-pty", "index.js"), "module.exports = {};\n");
   writeFileSync(
     join(pkg, "bin", "cobra-agent"),
     `#!/bin/sh\necho "cobra-agent $*" >> "${join(home, "calls.log")}"\n`,
@@ -554,4 +548,58 @@ test("given ports whose model gateway port is taken are refused before anything 
     assert.equal(existsSync(join(home, "data", "cobra-agent")), false);
     assert.deepEqual(calls.filter((call) => call.startsWith("tailscale serve --bg")), []);
   }, { ss: [SS(8799, "searxng")] });
+});
+
+// Cobra once installed a second service, cobra-term. An update takes it out,
+// and never by a stop that would end the sessions under it (install.sh retire_term).
+const units = (home: string) => join(home, "config", "systemd", "user");
+function oldTerm(home: string): void {
+  mkdirSync(units(home), { recursive: true });
+  writeFileSync(join(units(home), "cobra-term.service"), "[Unit]\n");
+  mkdirSync(join(home, "config", "cobra-agent"), { recursive: true });
+  writeFileSync(join(home, "config", "cobra-agent", "ticket.key"), "k\n", { mode: 0o600 });
+}
+
+test("a first install writes one unit and never names the terminal service to systemd", () => {
+  withHome(null, (_run, home) => {
+    const { status, out, calls } = install(home);
+    assert.equal(status, 0, out);
+    assert.deepEqual(readdirSync(units(home)), ["cobra-agent.service"]);
+    assert.ok(calls.includes("systemctl --user restart cobra-agent.service"));
+    assert.deepEqual(calls.filter((call) => /systemctl .*(stop|disable|restart|enable).*cobra-term/.test(call)), []);
+    assert.doesNotMatch(readFileSync(join(home, "config", "cobra-agent", "agent.env"), "utf8"), /TERM_PORT/);
+  });
+});
+
+test("an update removes an old terminal service that is not running, with its ticket key and saved port", () => {
+  withHome("COBRA_AGENT_PORT=8797\nCOBRA_TERM_PORT=8798\n", (_run, home) => {
+    oldTerm(home);
+    const { status, out, calls } = install(home);
+    assert.equal(status, 0, out);
+    assert.match(out, /removed the old terminal service/);
+    assert.match(out, /dropped COBRA_TERM_PORT/);
+    assert.ok(calls.includes("systemctl --user disable cobra-term.service"));
+    assert.ok(calls.includes("systemctl --user stop cobra-term.service"));
+    assert.equal(existsSync(join(units(home), "cobra-term.service")), false);
+    assert.equal(existsSync(join(home, "config", "cobra-agent", "ticket.key")), false);
+    assert.doesNotMatch(readFileSync(join(home, "config", "cobra-agent", "agent.env"), "utf8"), /TERM_PORT/);
+  });
+});
+
+test("an old terminal service that may hold Cobra's sessions is switched off and never stopped", () => {
+  withHome(null, (_run, home) => {
+    oldTerm(home);
+    // Running, and its cgroup cannot be read here: it cannot be shown to hold nothing.
+    writeFileSync(
+      join(home, "bin", "systemctl"),
+      `#!/bin/sh\necho "systemctl $*" >> "${join(home, "calls.log")}"\ncase "$*" in\n  *"is-active --quiet cobra-term.service"*) exit 0 ;;\n  *is-active*) exit 3 ;;\n  *"MainPID --value cobra-term.service"*) echo 4242 ;;\n  *"ControlGroup --value cobra-term.service"*) echo /no/such/cgroup ;;\nesac\nexit 0\n`,
+      { mode: 0o755 },
+    );
+    const { status, out, calls } = install(home);
+    assert.equal(status, 0, out);
+    assert.match(out, /old terminal service is switched off but still running/);
+    assert.ok(calls.includes("systemctl --user disable cobra-term.service"));
+    assert.deepEqual(calls.filter((call) => /systemctl .*(stop|restart|kill).*cobra-term/.test(call)), []);
+    assert.equal(existsSync(join(units(home), "cobra-term.service")), false);
+  });
 });

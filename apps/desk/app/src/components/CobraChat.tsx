@@ -45,7 +45,6 @@ export interface CobraEnv {
   refresh: () => void;
   /** The full conversation, on the Org page. */
   openChat: (machine: string, session: string) => void;
-  terminal: (row: model.Row) => void;
   /** Labels of the computers that do not answer. */
   away: ReadonlySet<string>;
   /** The fleet's rows and /orch/status, for the activity line and the Space chip while the crew is hidden. */
@@ -337,8 +336,7 @@ export function CobraChat({ lead, env, shown = 200, head, under, input }: {
             onAnswer={(answers) => {
               setNonce((n) => n + 1);
               void act("answer", { answers });
-            }}
-            onTerminal={() => env.terminal(lead)} />
+            }} />
           {under}
           {!show && (
             <SpaceBar activity={activityLine(places.working)} choices={spaceChoices(places.org)} picked={space}

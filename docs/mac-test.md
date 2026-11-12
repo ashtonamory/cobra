@@ -37,11 +37,8 @@ xattr -dr com.apple.quarantine cobra-agent-*-darwin-arm64
 cd cobra-agent-*-darwin-arm64 && ./install.sh
 ```
 
-The build is unsigned, and Linux cannot run the Mac Node in it, so
-`pty.node` was checked by its file type only: test 2.7's terminal is the
-first time it runs. A build on the Mac itself
-(`bash apps/agent/scripts/package.sh` from a clone) checks it at build
-time.
+The build is unsigned, and Linux cannot run the Mac Node in it: the
+install on the Mac is the first time it runs.
 
 The desk app cannot be built on Linux. Use the `.dmg` from a release, or
 build it on the Mac: `cd apps/desk/app && npm ci && npx tauri build`
@@ -54,8 +51,8 @@ signed by Apple. Each needs one step, once:
 
 - **The agent package.** Fetched with `curl` or `scp`: nothing. Downloaded
   in a browser or sent by AirDrop: `xattr -dr com.apple.quarantine` on the
-  unpacked folder, before `./install.sh`. Without it, macOS stops `node` or
-  `pty.node` with "cannot be opened because the developer cannot be
+  unpacked folder, before `./install.sh`. Without it, macOS stops `node`
+  with "cannot be opened because the developer cannot be
   verified".
 - **The desk app.** Drag Cobra to Applications and open it. macOS says it
   "could not verify" it: click Done, then System Settings → Privacy &
@@ -120,7 +117,7 @@ agent first (`cobra-agent uninstall`) and drag the old Cobra app to the Bin.
 | 4.2 | Open the `.dmg`, drag Cobra to Applications, open it | It opens with no warning about an unidentified developer and no "move to Bin". At most: "Cobra is an app downloaded from the internet. Open?" |
 | 4.3 | `spctl --assess --type execute --verbose /Applications/Cobra.app` | "accepted" and "source=Notarized Developer ID". |
 | 4.4 | Unpack the agent package (`tar -xzf cobra-agent-…-darwin-arm64.tar.gz`), then `./install.sh` in it | It ends with "Done". No dialog says a file "cannot be opened because the developer cannot be verified". |
-| 4.5 | `codesign --verify --strict --verbose=2 <package>/node_modules/node-pty/prebuilds/darwin-arm64/pty.node` | "valid on disk" and "satisfies its Designated Requirement". The same for `spawn-helper` beside it. |
-| 4.6 | `cobra-agent desk`, connect the desk, open a terminal session in it | The terminal opens and takes typing (node-pty and its helper run). |
+| 4.5 | `find <package>/site-template/node_modules -name '*.node' \| head -1 \| xargs codesign --verify --strict --verbose=2` | "valid on disk" and "satisfies its Designated Requirement". |
+| 4.6 | `cobra-agent desk`, connect the desk, write to your Lead | The Lead answers in the desk. |
 | 4.7 | Settings → This app → Updates → Check for updates | "This is version x. It is the newest." |
 | 4.8 | After the next release is published: Check for updates again, then Install and restart | It asks first, installs, and comes back on the new version. Settings shows it. |

@@ -1,7 +1,7 @@
 /**
  * Projects — every project on every machine, running or not, drawn as the
  * phone's board: a time, a name with its machine's dot, one status word. The
- * everyday verbs (Allow, Chat, ▶ Cobra, Terminal) show on the row under the
+ * everyday verbs (Allow, Chat, ▶ Cobra) show on the row under the
  * pointer; the rest of the phone's hold sheet is behind ⋯ and on a
  * right-click (Verbs). A click on a Claude row opens its chat, on any other
  * project its page (ProjectPage). Pinned projects come first. New project…
@@ -111,7 +111,6 @@ function ProjectRow({ r, verbs }: { r: model.Row; verbs: Verbs }) {
       ) : !r.active && r.project ? (
         <Button kind="flat" small title={`Start ${APP_NAME} in this project`} onClick={() => void a.start(r)}>▶ {APP_NAME}</Button>
       ) : null}
-      <Button kind="flat" small onClick={() => void a.terminal(r)}>Terminal</Button>
       <MenuDots onOpen={(x, y) => verbs.menuAt(r, x, y)} />
     </>
   );

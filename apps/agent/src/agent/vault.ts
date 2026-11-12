@@ -44,10 +44,7 @@ const SCRYPT_MAXMEM = 256 * 1024 * 1024;
  * The secret files the vault seals, by name: the ones only the agent reads.
  * github-pat is one since the GitHub launcher gets its token from the agent
  * (githubMcp.ts); github-auth.json holds no token, only how it was made, but
- * goes with it. Not ticket.key: the agent and the terminal gateway need it to
- * start, and a locked vault must not stop them; it signs short-lived tickets
- * on loopback, of no use to anyone not already on this computer as this user.
- * The Lead's and Foremen's keys are in no file: only the agent holds them
+ * goes with it. The Lead's and Foremen's keys are in no file: only the agent holds them
  * (orchSocket.ts).
  */
 export const SEALED_NAMES: ReadonlySet<string> = new Set(["anthropic-api-key", "claude-token", "cloudflare.json", "mailboxes.json", "github-pat", "github-auth.json"]);

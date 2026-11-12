@@ -209,15 +209,15 @@ test("evaluate skips units this machine does not install", () => {
 test("a down unit fires and a running one does not", () => {
   const down = evaluate({
     stats: stats({}),
-    units: [{ unit: "cobra-term", enabled: true, active: false }],
-  }).find((entry) => entry.id === "unit:cobra-term");
+    units: [{ unit: "cobra-agent", enabled: true, active: false }],
+  }).find((entry) => entry.id === "unit:cobra-agent");
   assert.ok(down);
   assert.equal(step(new Map(), [down], 0).length, 1);
 
   const up = evaluate({
     stats: stats({}),
-    units: [{ unit: "cobra-term", enabled: true, active: true }],
-  }).find((entry) => entry.id === "unit:cobra-term");
+    units: [{ unit: "cobra-agent", enabled: true, active: true }],
+  }).find((entry) => entry.id === "unit:cobra-agent");
   assert.ok(up);
   assert.equal(step(new Map(), [up], 0).length, 0);
 });

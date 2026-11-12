@@ -38,7 +38,7 @@ export const PushData = z.object({
  */
 export const AlertPushData = z.object({
   machine: z.string(),
-  /** Stable condition id, e.g. "disk:/home" or "unit:cobra-term". */
+  /** Stable condition id, e.g. "disk:/home" or "unit:cobra-agent". */
   alert: z.string(),
   level: z.enum(["warn", "critical"]),
   kind: z.enum(["fired", "cleared"]),

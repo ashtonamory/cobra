@@ -448,7 +448,7 @@ export function HomePage() {
     <div className={cls("home", compact && "compact")}>
       <div className="home-chat">
         <CobraChat lead={lead} env={{ toast: app.toast, refresh: () => f.refresh(), openChat: app.openChat,
-          terminal: (row) => void app.actions.terminal(row), away, rows: f.rows, orch: f.orch }} />
+          away, rows: f.rows, orch: f.orch }} />
       </div>
       {side}
     </div>

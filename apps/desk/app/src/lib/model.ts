@@ -749,7 +749,7 @@ export function choicesFor(r: Row, pinned: boolean | null | undefined): Choice[]
   const p = r.project;
   if (p === null) {
     // A loose tmux session: no project, so no page, git or templates.
-    return [new Choice("open-terminal", "Open terminal"), new Choice("open-chat", "Open as chat"),
+    return [new Choice("open-chat", "Open as chat"),
       new Choice("interrupt", "Interrupt"), new Choice("new-window", "New shell window"),
       new Choice("kill", "Kill session…", true)];
   }
@@ -766,9 +766,9 @@ export function choicesFor(r: Row, pinned: boolean | null | undefined): Choice[]
   const activity = get(p, "activity") || "none";
   if (activity === "none") {
     return [...head, new Choice("start", `Start ${APP_NAME}`), new Choice("prompt", "Start with a prompt…"),
-      new Choice("open-terminal", "Open a terminal"), ...templates, ...sync, ...forget];
+      ...templates, ...sync, ...forget];
   }
-  const out = [...head, r.isAgent ? new Choice("open-terminal", "Open terminal") : new Choice("open-chat", "Open as chat")];
+  const out = [...head, new Choice("open-chat", "Open as chat")];
   // A Pi session's screen is Pi's, not Claude Code's: no resume, shell window or template is typed into it.
   const pi = isPi(p);
   if (activity === "idle" && !pi) {

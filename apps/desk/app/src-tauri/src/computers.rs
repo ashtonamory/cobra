@@ -22,8 +22,6 @@ pub struct Machine {
     pub title: String,
     /// Where its agent answers: always http://127.0.0.1:<port>.
     pub base: String,
-    /// Where its terminal gateway answers (`/term/`): the agent's port + 1 unless the line says.
-    pub term_base: String,
     pub tmux_socket: String,
     /// Always true: the agent is on this computer. Kept for the web side's shape.
     pub local: bool,
@@ -33,7 +31,7 @@ pub struct Machine {
 }
 
 /// The keys of a desk line kept in computers.json (`cobra-agent desk` prints them).
-pub const DESK_LINE_KEYS: [&str; 7] = ["machine", "label", "loopback", "tmuxSocket", "id", "key", "termPort"];
+pub const DESK_LINE_KEYS: [&str; 6] = ["machine", "label", "loopback", "tmuxSocket", "id", "key"];
 
 pub struct Store {
     pub dir: PathBuf,
@@ -187,9 +185,6 @@ pub fn machine(e: &Value) -> Option<Machine> {
         return None;
     }
     let base = base.trim_end_matches('/').to_string();
-    // The terminal gateway is on the agent's port + 1 (install.sh's defaults: 8787 and 8788).
-    let term = e.get("termPort").and_then(|v| v.as_u64()).or_else(|| base.rsplit(':').next().and_then(|p| p.parse::<u64>().ok()).map(|p| p + 1));
-    let term_base = term.map(|p| format!("http://127.0.0.1:{p}")).unwrap_or_default();
     let label = Some(s(e, "label")).filter(|l| !l.is_empty()).unwrap_or_else(|| name.clone());
     let mut title = label.clone();
     if let Some(f) = title.get(0..1) {
@@ -200,7 +195,6 @@ pub fn machine(e: &Value) -> Option<Machine> {
         label,
         title,
         base,
-        term_base,
         tmux_socket: Some(s(e, "tmuxSocket")).filter(|t| !t.is_empty()).unwrap_or_else(|| crate::host::DEFAULT_TMUX_SOCKET.into()),
         local: true,
         hue: String::new(),
@@ -319,9 +313,9 @@ mod tests {
         let m = machine(&json!({"machine": "box", "key": "k", "loopback": "http://127.0.0.1:8787/"})).unwrap();
         assert!(m.local);
         assert_eq!(m.base, "http://127.0.0.1:8787");
-        assert_eq!(m.term_base, "http://127.0.0.1:8788");
+        // A line kept from when Cobra served a terminal still reads; its terminal port is not used.
         let m = machine(&json!({"machine": "box", "key": "k", "loopback": "http://127.0.0.1:8797", "termPort": 9000})).unwrap();
-        assert_eq!(m.term_base, "http://127.0.0.1:9000");
+        assert_eq!(m.base, "http://127.0.0.1:8797");
         // The web side never gets the key or the desk id.
         let shown = serde_json::to_value(&m).unwrap();
         assert!(shown.get("key").is_none() && shown.get("id").is_none());

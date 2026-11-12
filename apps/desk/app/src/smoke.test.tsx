@@ -890,7 +890,7 @@ tauri.route = (cmd, args) => {
     case "link_agent": return "Linked laptop.";
     case "desk_name": return "laptop desktop";
     case "unlink_agent": return "Unlinked the agent.";
-    default: return null; // set_setting, open_terminal, set_tray, popup_layout, show_main, …
+    default: return null; // set_setting, set_tray, popup_layout, show_main, …
   }
 };
 

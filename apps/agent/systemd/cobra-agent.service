@@ -31,7 +31,7 @@ NoNewPrivileges=true
 # The default KillMode (control-group) then killed that server, and every
 # session on it, Claude included, whenever the agent restarted: on each
 # install.sh update, and on every crash restart. `process` signals only the
-# node process, the same as cobra-term.service. Restart freely; never `stop`
+# node process. Restart freely; never `stop`
 # it while sessions matter.
 KillMode=process
 

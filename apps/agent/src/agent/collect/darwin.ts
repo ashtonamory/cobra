@@ -104,4 +104,4 @@ export function launchdState(text: string): { enabled: boolean; active: boolean 
 }
 
 /** Cobra's launchd labels, by the systemd unit name each stands for. */
-export const LAUNCHD_LABEL: Readonly<Record<string, string>> = { "cobra-agent": "app.cobra.agent", "cobra-term": "app.cobra.term" };
+export const LAUNCHD_LABEL: Readonly<Record<string, string>> = { "cobra-agent": "app.cobra.agent" };

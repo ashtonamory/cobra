@@ -78,7 +78,6 @@ export function CobraBoxSurface() {
       void toMain({ kind: "open-chat", machine, session }).catch(() => {});
       hide();
     },
-    terminal: (row) => void act.terminal(row),
     away: NOBODY_AWAY,
     rows,
   };

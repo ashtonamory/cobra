@@ -47,9 +47,9 @@ What was built:
 ## Step 2: the agent on macOS (built; passes when docs/mac-test.md step 2 does)
 
 - **`install.sh` runs on macOS** (arm64 and x64). macOS ships bash 3.2, so
-  the script starts itself again under Homebrew's bash. The agent and the
-  terminal gateway are launchd user agents (`launchd/app.cobra.agent.plist`,
-  `app.cobra.term.plist`, in `~/Library/LaunchAgents`); `AbandonProcessGroup`
+  the script starts itself again under Homebrew's bash. The agent is a
+  launchd user agent (`launchd/app.cobra.agent.plist`, in
+  `~/Library/LaunchAgents`; the terminal gateway that had one too is gone); `AbandonProcessGroup`
   does what `KillMode=process` does, so an update never ends a session.
   agent.env is sourced by the shell that starts node. Ports are found with
   `lsof` and `ps` where Linux uses `ss` and `/proc`; the link swap uses
