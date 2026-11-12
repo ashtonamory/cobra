@@ -26,15 +26,12 @@ const { saveExtras } = await import("./extras.ts");
 const { noteRead } = await import("./taint.ts");
 const { openProjectDb } = await import("./db.ts");
 const { tradeSchema } = await import("./trades.ts");
-const { configureMirror } = await import("./mirror.ts");
 
 type ProxyDeps = import("./workerProxy.ts").ProxyDeps;
 type SpaceWorker = import("./workerSpace.ts").SpaceWorker;
 type SpaceCall = import("./workerSpace.ts").SpaceCall;
 type StoredApproval = import("./approvals.ts").StoredApproval;
 
-// No Google here: a write's sheet push only notes that it waits.
-configureMirror({ grantEmail: async () => Promise.reject(new Error("no Google in tests")), debounceMs: 1, log: () => undefined });
 
 const acme: Project = { id: "acme-billing", name: "Acme Billing", machine: hostname(), path: join(ROOT, "acme"), session: "acme-billing", foremanTemplate: "billing" };
 const beta: Project = { id: "beta-billing", name: "Beta Billing", machine: hostname(), path: join(ROOT, "beta"), session: "beta-billing", foremanTemplate: "billing" };

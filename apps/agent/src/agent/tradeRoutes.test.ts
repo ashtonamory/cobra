@@ -65,7 +65,7 @@ test("propose a trade, replace its card, allow it: installed and known everywher
   assert.ok(trades.allTrades().some((trade) => trade.id === "dog-walking" && trade.source === "defined" && trade.records));
   assert.deepEqual(trades.allTrades().filter((trade) => trade.records).map((trade) => trade.id), ["payroll-manager", "billing", "outreach", "people", "money", "dog-walking"]);
   assert.match(trades.tradeBrief("dog-walking"), /^\nYour trade is Dog walking, which Cobra defined/);
-  assert.deepEqual(trades.tradeReads("dog-walking"), ["calendar"]);
+  assert.deepEqual(trades.tradeReads("dog-walking"), ["mail"]);
   assert.deepEqual(Object.keys(trades.tradeSchema("dog-walking")!.tables), ["owners", "dogs", "walks"]);
   assert.equal(trades.defaultProjectName("dog-walking", []), "Dog walking");
   const templates = defined.definedTemplatesDir("dog-walking")!;

@@ -27,7 +27,6 @@ import { TMUX_SOCKET } from "./tmuxHost.ts";
  *   cobra-agent audit verify | tail [n]    check the audit log's hash chain and anchors; its newest entries (auditCli.ts)
  *   cobra-agent policy-log verify          the old name of audit verify
  *   cobra-agent vault status | init | unlock | lock | seal   the vault that seals secret files (vaultCli.ts)
- *   cobra-agent sheet status|unlink        the Google Sheet each project's database mirrors into (mirror.ts)
  *   cobra-agent models                     whether Claude, Codex and Ollama are ready here (modelSources.ts)
  *
  * Cobra runs on one computer: there is no phone to link, no relay and no
@@ -477,53 +476,6 @@ async function accounts(args: string[]): Promise<void> {
 }
 
 
-/**
- * `sheet status [<project>]` | `unlink <project>`: the Google Sheet each
- * project's database mirrors into (mirror.ts). Cobra makes the sheet itself,
- * in the person's Drive, on the first write after Google is connected in the
- * app; status says which sheet, the Google address it was made under, the
- * last push and the last error, and whether the connection works from here.
- * unlink forgets the sheet (it stays in the Drive) and the next write makes a
- * fresh one. The phone and the desk show the same; this is the terminal's way.
- */
-async function sheet(action: string | undefined, projectId: string | undefined): Promise<void> {
-  const { mirrorStatus, mirrorStatusLine, setMirrorSheet } = await import("./mirror.ts");
-  const { loadRegistry } = await import("./registry.ts");
-  const { DEFAULT_CONFIG_PATH } = await import("./collect/projects.ts");
-  const { tradeSchema } = await import("./trades.ts");
-  const { googleGrantFor, SCOPE_DRIVE_FILE } = await import("./googleAuth.ts");
-  const usage = "Use: cobra-agent sheet status [<project>] | unlink <project>";
-  const registry = await loadRegistry(process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH);
-  const find = (id: string | undefined) => {
-    if (!id) fail(usage);
-    const found = registry.projects.find((project) => project.id === id);
-    if (!found) fail(`no project "${id}" on this computer; the ids here are ${registry.projects.map((project) => project.id).join(", ")}`);
-    return found;
-  };
-  switch (action) {
-    case "status": {
-      try {
-        const grant = await googleGrantFor(SCOPE_DRIVE_FILE);
-        process.stdout.write(`Google: connected as ${grant.email}; Cobra reaches the sheets it made and the ones the person picked.\n`);
-      } catch (caught) {
-        process.stdout.write(`Google: not usable from here: ${caught instanceof Error ? caught.message : String(caught)}\n`);
-      }
-      const projects = projectId ? [find(projectId)] : registry.projects.filter((project) => tradeSchema(project.foremanTemplate) !== null);
-      if (projects.length === 0) process.stdout.write("No project here keeps a database yet: a trade with one (Payroll Manager) gets a sheet to mirror into.\n");
-      for (const project of projects) process.stdout.write(`${mirrorStatusLine(await mirrorStatus(project.id), project.name)}\n`);
-      break;
-    }
-    case "unlink": {
-      const project = find(projectId);
-      setMirrorSheet(project.id, null);
-      process.stdout.write(`${project.name} forgets its sheet; the sheet itself stays in your Google Drive. The next change to its database makes a fresh one.\n`);
-      break;
-    }
-    default:
-      fail(usage);
-  }
-}
-
 const [command, argument] = process.argv.slice(2);
 switch (command) {
   case "keys":
@@ -581,9 +533,6 @@ switch (command) {
     runCostCommand(process.argv.slice(3), fail);
     break;
   }
-  case "sheet":
-    await sheet(argument, process.argv[4]);
-    break;
   case "models": {
     const { liveSources, sourceLines } = await import("./modelSources.ts");
     process.stdout.write(`${sourceLines(await liveSources()).join("\n")}\n`);
@@ -618,7 +567,6 @@ switch (command) {
         "cobra-agent cost [--space <id>] [--since <day or time>] [--until <…>] [--lane subscription|api|all] [--unit <n>] [--csv <file>] [--json]  what work cost here on the key, and on the subscription at API prices: by lane, role, what woke each turn, session and Worker task, tokens, context's share, and per unit",
         "cobra-agent space get <space>|set <space> foremen on-call|standing  how a Space's Foremen work: standing (every task through them) or on-call (Cobra starts one Worker herself for a light task)",
         "cobra-agent models                 whether Claude, Codex and Ollama are ready here, and what to do for one that is not",
-        "cobra-agent sheet status [<project>]|unlink <project>  the Google Sheet each project's database mirrors into (made by Cobra on the first write), and the Google connection",
         "cobra-agent uninstall [--purge] [--yes]  remove the agent from this computer (--purge: its settings, keys and memory too)",
         "",
       ].join("\n"),

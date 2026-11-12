@@ -1,16 +1,11 @@
 /**
- * Settings → Integrations → GOOGLE: per computer, whether its agent can use the account's Google
- * connection (`GET /integrations/google`; design: Connect for everyone). Connected: as whom, and what the connection allows. Not: why, in
- * plain words, with the fix — add Google's MCP connector, Connect
- * Google (the account page in the browser: this desk holds a desk key, not an account session, so
- * it cannot connect Google itself), or try again shortly. After Connect Google the desk reads the
- * computer again every few seconds for a few minutes, until it is connected. Under a connected
- * computer, Calendar and Mail (Connected reads): on, or Turn on, which opens the account page the
- * same way and watches until that read is on. Words in lib/google.ts.
+ * Settings → Integrations → GOOGLE: which of Gmail, Google Calendar and Google Drive the Claude
+ * account on this computer has connected (`GET /integrations/google`). Cobra has no Google sign-in
+ * of its own, so nothing is connected here: the button opens claude.ai's connector settings, and
+ * Refresh asks the agent again. Words in lib/google.ts.
  */
 import * as api from "../../lib/api.ts";
 import * as config from "../../lib/config.ts";
-import { APP_NAME } from "../../lib/appName.ts";
 import * as google from "../../lib/google.ts";
 import type { Dict } from "../../lib/json.ts";
 import { Board, BoardRow, Button } from "../ui.tsx";
@@ -20,8 +15,6 @@ export class GoogleController extends Controller {
   status: Record<string, Dict> = {};    // machine → GoogleIntegration
   failed: Record<string, string> = {};  // machine → why it did not answer
   reading = new Set<string>();          // computers with a read in flight
-  watching: Record<string, { since: number; read: google.ReadName | null }> = {};  // machine → when Connect Google or Turn on was pressed (ms), and which read
-  timer: ReturnType<typeof setInterval> | null = null;
   generation = 0;
 
   reload() {
@@ -32,7 +25,7 @@ export class GoogleController extends Controller {
     for (const m of config.MACHINES) this.read(m.machine);
   }
 
-  /** One computer, read again (Refresh, or the watch after Connect Google). */
+  /** One computer, read again (Refresh). */
   read(machine: string) {
     const gen = this.generation;
     this.reading.add(machine);
@@ -44,7 +37,6 @@ export class GoogleController extends Controller {
         delete this.failed[machine];
         this.status[machine] = reply || {};
         this.draw();
-        this.keepWatching();
       },
       (e) => {
         if (gen !== this.generation) return;
@@ -55,49 +47,8 @@ export class GoogleController extends Controller {
     );
   }
 
-  /** The account page the agent names, in the browser; `read` is a Turn on. */
-  async connect(machine: string, read: google.ReadName | null = null) {
-    const page = google.accountPage(this.status[machine]?.accountUrl ?? null);
-    if (page === null) {
-      this.app.toast(`${config.label(machine)}'s agent has no Google sign-in page yet.`);
-      return;
-    }
-    openUri(page);
-    if (read === null ? google.googleView(this.status[machine], "").fix === "none" : google.readOn(this.status[machine], read)) return;
-    this.app.toast(google.watchToast(read));
-    this.watching[machine] = { since: Date.now(), read };
-    this.keepWatching();
-    this.draw();
-  }
-
-  keepWatching() {
-    const now = Date.now();
-    let ended = false;
-    for (const [machine, { since, read }] of Object.entries(this.watching)) {
-      if (!google.keepWatching(this.status[machine], since, now, read)) {
-        delete this.watching[machine];
-        ended = true;
-      }
-    }
-    if (ended) this.draw();
-    const busy = Object.keys(this.watching).length > 0;
-    if (busy && !this.timer) {
-      this.timer = setInterval(() => {
-        for (const machine of Object.keys(this.watching)) if (!this.reading.has(machine)) this.read(machine);
-        this.keepWatching();
-      }, google.WATCH_EVERY_MS);
-    } else if (!busy) this.stopTimer();
-  }
-
-  stopTimer() {
-    if (this.timer) clearInterval(this.timer);
-    this.timer = null;
-  }
-
-  stop() {
-    this.stopTimer();
-    this.watching = {};
-  }
+  /** Nothing runs between reads; kept so the page that owns this controller can stop it as it does the others. */
+  stop() {}
 }
 
 export function GoogleSection({ c, only }: { c: GoogleController; only: string | null }) {
@@ -130,9 +81,6 @@ function Machine({ c, m }: { c: GoogleController; m: config.Machine }) {
     );
   }
   const view = google.googleView(status, computer);
-  const checked = google.checkedLine(status.checkedAt);
-  const watching = c.watching[m.machine];
-  const reads = google.readRows(status);
   return (
     <Group title="Google" note={google.BLURB}>
       <Board>
@@ -144,43 +92,12 @@ function Machine({ c, m }: { c: GoogleController; m: config.Machine }) {
           {view.allows.map((line) => <span key={line} className="dim">{line}</span>)}
         </div>
       )}
-      {reads.length > 0 && (
-        <>
-          <span className="caps">What {APP_NAME} can read</span>
-          <Board>
-            {reads.map((row) => (
-              <BoardRow key={row.name} time={null} title={row.title} word={row.word} tone={row.tone}
-                detail={row.note ? <>{row.line}<br />{row.note}</> : row.line}
-                keepActions
-                actions={row.on ? null : (
-                  <Button kind="flat" small title="Opens a page in the browser, where you turn it on"
-                    onClick={() => void c.connect(m.machine, row.name)}>Turn on</Button>
-                )} />
-            ))}
-          </Board>
-          <div className="dim">{google.READS_NOTE}</div>
-        </>
-      )}
       <div className="row wrap">
-        {view.fix === "connect" && (
-          <Button kind="primary" title="Opens a page in the browser, where you sign in to Google"
-            onClick={() => void c.connect(m.machine)}>Connect Google</Button>
-        )}
-        {view.fix === "connectors" && (
-          <Button kind="flat" title="Opens claude.ai's connector settings in the browser"
-            onClick={() => openUri(google.CONNECTORS_PAGE)}>Claude connectors</Button>
-        )}
-        {view.fix === "none" && (
-          <Button kind="flat" title="Change or disconnect Google, in the browser"
-            onClick={() => void c.connect(m.machine)}>Manage</Button>
-        )}
-        {view.fix === "retry" ? (
-          <Button kind="primary" disabled={busy} onClick={() => c.read(m.machine)}>Try again</Button>
-        ) : refresh}
-        {(busy || watching) && <Spinner />}
-        {watching && !busy && <span className="dim">{google.watchLine(watching.read)}</span>}
+        <Button kind="flat" title="Opens claude.ai's connector settings in the browser"
+          onClick={() => openUri(google.CONNECTORS_PAGE)}>Claude connectors</Button>
+        {refresh}
+        {busy && <Spinner />}
       </div>
-      {checked && <div className="dim">{checked}</div>}
     </Group>
   );
 }

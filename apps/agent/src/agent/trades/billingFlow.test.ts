@@ -111,7 +111,7 @@ test("Billing's done-when: an invoice is issued, rendered, marked sent by the ag
     for (const words of ["INV-1", "Ada Lovelace", "1 Analytical Row", "Group walk", "75.00", "12.00", "Sort 00-00-00, account 12345678", "GB123456789"]) assert.ok(html.includes(words), words);
 
     db.write("document_record", { kind: "invoice", invoice_id: invoice, path: file.path, sha256: file.sha256 }, "foreman");
-    const marked = markDocumentsSent({ schemaFor: () => BILLING_SCHEMA, open: () => openProjectDb("happy-tails", BILLING_SCHEMA, data), scheduleMirror: () => undefined }, project, { action: email(file), cardId: "card-1", at: "2026-10-01T10:00:00.000Z" });
+    const marked = markDocumentsSent({ schemaFor: () => BILLING_SCHEMA, open: () => openProjectDb("happy-tails", BILLING_SCHEMA, data) }, project, { action: email(file), cardId: "card-1", at: "2026-10-01T10:00:00.000Z" });
     assert.ok(marked);
     assert.equal(one("SELECT card_id FROM documents WHERE invoice_id = ?", [invoice]).card_id, "card-1");
     assert.equal(db.journal(1)[0]!.by, BY_AGENT);

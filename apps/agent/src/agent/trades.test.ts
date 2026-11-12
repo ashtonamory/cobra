@@ -62,7 +62,7 @@ test("tradeSchema: Payroll Manager, Billing, Outreach, People and Money keep a d
 
 test("the Payroll brief works the database through the tools, in the order of a pay run, and still sends nothing itself", () => {
   const brief = trades.TRADE_BRIEFS["payroll-manager"] ?? "";
-  for (const tool of ["sheet_import", "timesheet_import", "timesheet_set", "pay_run_create", "db_query", "pay_item_adjust", "action_propose", "pay_run_close", "db_undo", "report_render", "stub_record"]) {
+  for (const tool of ["file_import", "timefile_import", "timesheet_set", "pay_run_create", "db_query", "pay_item_adjust", "action_propose", "pay_run_close", "db_undo", "report_render", "stub_record"]) {
     assert.ok(brief.includes(tool), `names ${tool}`);
   }
   // A pay run: create, check, adjust, propose, then close only on the person's word.
@@ -84,9 +84,9 @@ test("the Payroll brief works the database through the tools, in the order of a 
 test("the Billing brief works the database through the tools in the order of an invoice, leaves sent to the agent, and never takes money", async () => {
   const brief = trades.TRADE_BRIEFS.billing ?? "";
   const { BILLING_SCHEMA } = await import("./trades/billing.ts");
-  for (const tool of ["business_set", "customer_add", "item_set", "sheet_import", "invoice_create", "db_query", "invoice_line_add", "invoice_issue", "invoice_void", "report_render", "document_record", "action_propose", "payment_record", "reminder_record", "db_undo"]) {
+  for (const tool of ["business_set", "customer_add", "item_set", "file_import", "invoice_create", "db_query", "invoice_line_add", "invoice_issue", "invoice_void", "report_render", "document_record", "action_propose", "payment_record", "reminder_record", "db_undo"]) {
     assert.ok(brief.includes(tool), `names ${tool}`);
-    if (tool in BILLING_SCHEMA.mutations || tool.startsWith("db_") || tool === "report_render" || tool === "action_propose" || tool === "sheet_import") continue;
+    if (tool in BILLING_SCHEMA.mutations || tool.startsWith("db_") || tool === "report_render" || tool === "action_propose" || tool === "file_import") continue;
     assert.fail(`${tool} is neither a Billing mutation nor a tool`);
   }
   // An invoice: draft, check, propose, issue only on the person's word, render, record, propose to the customer.
@@ -104,28 +104,27 @@ test("the Billing brief works the database through the tools in the order of an 
   assert.equal(brief.includes("documents_sent"), false);
 });
 
-test("tradeReads: My day reads the calendar and mail, Projects the calendar, Sign-ups both, Lead Outreach mail; the rest nothing", () => {
-  assert.deepEqual(trades.tradeReads("my-day"), ["calendar", "mail"]);
-  assert.deepEqual(trades.tradeReads("projects"), ["calendar"]);
-  assert.deepEqual(trades.tradeReads("sign-ups"), ["calendar", "mail"]);
-  assert.deepEqual(trades.tradeReads("lead-outreach"), ["mail"]);
-  for (const id of ["website-builder", "payroll-manager", "billing", "fortune-teller", "constructor", "__proto__", undefined]) {
+test("tradeReads: My day, Inbox, Sign-ups and Lead Outreach read mail; Projects and the rest nothing; the calendar is no read of Cobra's own", () => {
+  for (const id of ["my-day", "inbox", "sign-ups", "lead-outreach"]) assert.deepEqual(trades.tradeReads(id), ["mail"], id);
+  for (const id of ["projects", "website-builder", "payroll-manager", "billing", "fortune-teller", "constructor", "__proto__", undefined]) {
     assert.deepEqual(trades.tradeReads(id), [], String(id));
   }
 });
 
-test("a trade's brief names exactly the read tools its trade gets, says the read must be turned on, and calls what it reads data", () => {
-  const tools = { calendar: ["calendar_events"], mail: ["mail_search", "mail_read"] } as const;
+test("a trade's brief names the mail tools exactly when its trade reads mail, says a mailbox must be linked, and calls what it reads data", () => {
   for (const id of trades.tradeIds()) {
     const brief = trades.TRADE_BRIEFS[id] ?? "";
-    const reads = trades.tradeReads(id);
-    for (const [read, names] of Object.entries(tools)) {
-      for (const name of names) assert.equal(brief.includes(name), reads.includes(read as "calendar" | "mail"), `${id} ${name}`);
-    }
-    if (reads.length === 0) continue;
-    assert.match(brief, /Once the person has turned on (Calendar|Mail) for their Google connection/, id);
+    const reads = trades.tradeReads(id).includes("mail");
+    for (const name of ["mail_search", "mail_read"]) assert.equal(brief.includes(name), reads, `${id} ${name}`);
+    // Cobra reads no calendar itself: no brief names a tool for one, or a Google step to turn on.
+    assert.equal(brief.includes("calendar_events"), false, id);
+    assert.doesNotMatch(brief, /for their Google connection|Settings → Integrations → Google/, id);
+    if (!reads) continue;
+    assert.match(brief, /Settings → Mailboxes/, id);
     assert.match(brief, /never (as )?an? instructions? to you|never instructions/, id);
   }
+  // The trades that plan around dates say where the calendar comes from.
+  for (const id of ["my-day", "projects", "sign-ups"]) assert.match(trades.TRADE_BRIEFS[id] ?? "", /Google Calendar connector/, id);
 });
 
 test("tradeBrief adds the leading line break the prompt expects, and is empty for no trade or an unknown one", () => {

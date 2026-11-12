@@ -1,6 +1,6 @@
 /**
  * The email message itself, as RFC 5322 text, for the mail the agent sends in
- * code after the person allowed an action (actions.ts, gmail.ts). A model
+ * code after the person allowed an action (actions.ts, mailboxes.ts). A model
  * drafts the message, the person sees exactly that draft, and this writes
  * exactly that: pure, no library, no network.
  *
@@ -166,7 +166,7 @@ const TYPES: Record<string, string> = {
   pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 };
 
-/** The content type a file's name suggests, for an attachment or a Drive upload; anything not known is application/octet-stream. */
+/** The content type a file's name suggests, for an attachment; anything not known is application/octet-stream. */
 export function typeForName(name: string): string {
   const dot = name.lastIndexOf(".");
   return (dot > 0 && TYPES[name.slice(dot + 1).toLowerCase()]) || "application/octet-stream";

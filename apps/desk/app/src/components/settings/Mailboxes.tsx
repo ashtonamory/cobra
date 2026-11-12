@@ -1,7 +1,7 @@
 /**
  * Settings → Integrations → MAILBOXES: per computer, the
  * iCloud and Zoho boxes its Spaces can send branded email from, added with an app password the
- * computer checks by logging in, and the box each Space uses (Gmail when it names none). The
+ * computer checks by logging in, and the box each Space uses (none until it names one). The
  * phone's app/mailboxes.tsx shows the same, with the shared words in contracts mailboxes.ts:
  * change both together.
  */

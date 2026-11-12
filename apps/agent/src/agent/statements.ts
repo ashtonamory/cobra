@@ -244,7 +244,7 @@ export type StatementDeps = {
   pdfText: (path: string) => Promise<string>;
   /** One Haiku run over part of a PDF's text; resolves the model's text. */
   readPdf: (part: string) => Promise<string>;
-  /** After writes to a Space's store: its sheet is pushed (mirror.ts). */
+  /** After writes to a Space's store: the place for a follow-up (index.ts gives none now). */
   stored: (space: string) => void;
   log: (line: string) => void;
 };

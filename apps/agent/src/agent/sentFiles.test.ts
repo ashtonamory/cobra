@@ -22,9 +22,8 @@ const SCHEMA = { trade: "billing", version: 1, migrations: [], tables: {}, mutat
 
 type Call = { name: string; args: Args; by: string };
 
-function deps(write: (name: string, args: Args) => string, schema: TradeSchema | null = SCHEMA): { deps: MarkSentDeps; calls: Call[]; mirrored: string[]; closed: number[] } {
+function deps(write: (name: string, args: Args) => string, schema: TradeSchema | null = SCHEMA): { deps: MarkSentDeps; calls: Call[]; closed: number[] } {
   const calls: Call[] = [];
-  const mirrored: string[] = [];
   const closed: number[] = [];
   const db = {
     write(name: string, args: Args, by: string) {
@@ -35,7 +34,7 @@ function deps(write: (name: string, args: Args) => string, schema: TradeSchema |
       closed.push(1);
     },
   } as unknown as ProjectDb;
-  return { deps: { schemaFor: () => schema, open: () => db, scheduleMirror: (project) => mirrored.push(project) }, calls, mirrored, closed };
+  return { deps: { schemaFor: () => schema, open: () => db }, calls, closed };
 }
 
 const PROJECT = { id: "acme-billing", foremanTemplate: "billing" };
@@ -47,12 +46,11 @@ test("sentFiles: only an email's attachments count as sent; a note or a Drive co
   assert.deepEqual(sentFiles(undefined), []);
 });
 
-test("markDocumentsSent runs the trade's sent mutation as the agent with the files, the time and the card, then pushes the sheet", () => {
+test("markDocumentsSent runs the trade's sent mutation as the agent with the files, the time and the card", () => {
   const fake = deps(() => "1 document(s) sent");
   const summary = markDocumentsSent(fake.deps, PROJECT, { action: email([{ path: "out/invoice-1.pdf", sha256: SHA }]), cardId: "card-9", at: "2026-10-23T10:00:00.000Z" });
   assert.equal(summary, "1 document(s) sent");
   assert.deepEqual(fake.calls, [{ name: "documents_sent", args: { files: [{ path: "out/invoice-1.pdf", sha256: SHA }], sent_at: "2026-10-23T10:00:00.000Z", card_id: "card-9" }, by: BY_AGENT }]);
-  assert.deepEqual(fake.mirrored, ["acme-billing"]);
   assert.equal(fake.closed.length, 1);
 });
 
@@ -71,7 +69,6 @@ test("markDocumentsSent takes 'nothing matches' as nothing to mark, and throws a
     throw new Error("no recorded document matches those files");
   });
   assert.equal(markDocumentsSent(none.deps, PROJECT, { action: email([{ path: "notes.pdf", sha256: SHA }]), cardId: "c", at: "t" }), null);
-  assert.deepEqual(none.mirrored, []);
   const broken = deps(() => {
     throw new Error("sent_at must be an ISO time");
   });

@@ -18,9 +18,11 @@ import { writePrivateFile } from "./private.ts";
  *   web       a web search or page read that may run (gate.ts for a Worker,
  *             orchWeb.ts for the Lead and a Foreman), or a shell call to the
  *             internet the judge or a research run allowed.
- *   email     mail_search and mail_read (Gmail or a Space's own mailbox), and
+ *   email     mail_search and mail_read (a Space's own mailbox), a read
+ *             through the Gmail connector (orchWeb.ts), and
  *             a reply someone sent, summed up and told to its Foreman.
- *   calendar  calendar_read: invites carry other people's words.
+ *   calendar  a read through the Google Calendar connector (orchWeb.ts):
+ *             invites carry other people's words.
  *   records   a db_query that reads a Space's people or timeline when the
  *             store holds what people sent in (a website form, a waitlist
  *             sign-up, an email reply).

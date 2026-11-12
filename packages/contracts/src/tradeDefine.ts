@@ -10,7 +10,7 @@ export const ApprovalTrade = z.object({
   name: z.string(),
   summary: z.string(),
   brief: z.string(),
-  /** calendar, mail: what it reads once the person turns those on. */
+  /** mail: it reads the mailbox linked for its Space. */
   reads: z.array(z.string()),
   tables: z.array(z.object({ name: z.string(), describe: z.string(), columns: z.array(z.string()), added: z.boolean() })),
   mutations: z.array(z.object({ name: z.string(), describe: z.string() })),

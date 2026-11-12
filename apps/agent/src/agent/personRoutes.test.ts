@@ -4,7 +4,7 @@ import { mkdtempSync } from "node:fs";
 import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { GoogleIntegration, JournalEntry as JournalView, JournalReply, MirrorStatus as MirrorView, type Project } from "@cobra/contracts";
+import { GoogleIntegration, JournalEntry as JournalView, JournalReply, type Project } from "@cobra/contracts";
 
 // Before the agent's modules load: paths.ts reads these once.
 const ROOT = mkdtempSync(join(tmpdir(), "cobra-person-routes-"));
@@ -12,18 +12,16 @@ process.env.COBRA_AGENT_CONFIG_DIR = join(ROOT, "config");
 process.env.COBRA_AGENT_STATE_DIR = join(ROOT, "state");
 process.env.COBRA_AGENT_DATA_DIR = join(ROOT, "data");
 
-const { handlePerson, personEntry, emptyMirror, PERSON_ROUTES, PERSON_POSTS } = await import("./personRoutes.ts");
+const { handlePerson, personEntry, PERSON_ROUTES, PERSON_POSTS } = await import("./personRoutes.ts");
 const { BY_FOREMAN, BY_PERSON, handleDb } = await import("./dbRoutes.ts");
 const { openProjectDb } = await import("./db.ts");
 const { UNDO_DAYS } = await import("./dbTypes.ts");
-const { GoogleAuthError, configureGoogleAuth, googleGrant, googleStatus } = await import("./googleAuth.ts");
 const { authorize } = await import("./auth.ts");
 
 type PersonDeps = Parameters<typeof handlePerson>[5];
 type DbDeps = PersonDeps["db"];
 type TradeSchema = ReturnType<DbDeps["schemaFor"]> & object;
 type JournalEntry = Parameters<typeof personEntry>[0];
-type GoogleStatus = ReturnType<PersonDeps["status"]>;
 
 /** A small trade with a sensitive column, on the real engine in a folder of its own: masking and undo as a Foreman meets them. */
 const SCHEMA: TradeSchema = {
@@ -43,22 +41,16 @@ const SCHEMA: TradeSchema = {
 const payroll: Project = { id: "payroll", name: "Payroll", machine: hostname(), path: "/nowhere/payroll", session: "payroll", foremanTemplate: "payroll-manager" };
 const site: Project = { id: "site", name: "Site", machine: hostname(), path: "/nowhere/site", session: "site", foremanTemplate: "website-builder" };
 
-const CONNECTED: GoogleStatus = { connected: true, email: "owner@example.com", scopes: ["https://www.googleapis.com/auth/drive.file"], problem: null, checkedAt: 1_000 };
-
 let dirs = 0;
-function fakeDeps(overrides: Partial<PersonDeps> = {}, mirror: Record<string, unknown> = {}) {
+function fakeDeps(overrides: Partial<PersonDeps> = {}) {
   const dir = join(ROOT, `db-${(dirs += 1)}`);
-  const mirrored: string[] = [];
   const told: Array<{ owner: string; text: string }> = [];
   const logged: string[] = [];
   let listed = 0;
-  let granted = 0;
   const db: DbDeps = {
     schemaFor: (trade) => (trade === "payroll-manager" ? SCHEMA : null),
     open: (project, schema) => openProjectDb(project, schema, dir),
-    scheduleMirror: (project) => void mirrored.push(project),
-    mirrorStatus: async (project) => ({ project, spreadsheetId: null, lastSync: null, lastError: null, pending: false, ...mirror }) as Awaited<ReturnType<DbDeps["mirrorStatus"]>>,
-    importSheet: async () => {
+    importTable: async () => {
       throw new Error("not in these tests");
     },
     render: async () => {
@@ -71,11 +63,6 @@ function fakeDeps(overrides: Partial<PersonDeps> = {}, mirror: Record<string, un
       return [payroll, site];
     },
     db,
-    grant: async () => {
-      granted += 1;
-      return { accessToken: "ya29.never-in-a-reply", expiresAt: 2_000_000, email: "owner@example.com", scopes: [] };
-    },
-    status: () => CONNECTED,
     tell: (owner, text) => void told.push({ owner, text }),
     now: Date.now,
     log: (line) => void logged.push(line),
@@ -83,7 +70,7 @@ function fakeDeps(overrides: Partial<PersonDeps> = {}, mirror: Record<string, un
   };
   /** Writes through the Foreman's own route, so the journal holds what a Foreman's db_write leaves. */
   const write = async (args: Record<string, unknown>) => handleDb("/orch/db/write", url("/orch/db/write"), { mutation: "add_employee", args }, payroll, db, () => {});
-  return { deps, mirrored, told, logged, write, listed: () => listed, granted: () => granted };
+  return { deps, told, logged, write, listed: () => listed };
 }
 
 const url = (route: string, query = "") => new URL(`http://agent.invalid${route}${query}`);
@@ -93,7 +80,7 @@ const get = (route: string, query: string, deps: PersonDeps, caller = phone) => 
 const undo = (body: unknown, deps: PersonDeps, caller = phone) => handlePerson("/db/undo", "POST", url("/db/undo"), JSON.stringify(body), caller, deps);
 
 test("the routes and their one POST", () => {
-  assert.deepEqual([...PERSON_ROUTES], ["/integrations/google", "/db/journal", "/db/undo", "/db/mirror", "/views", "/view", "/view/write", "/view/reveal", "/boards", "/board/view", "/boards/remove"]);
+  assert.deepEqual([...PERSON_ROUTES], ["/integrations/google", "/db/journal", "/db/undo", "/views", "/view", "/view/write", "/view/reveal", "/boards", "/board/view", "/boards/remove"]);
   assert.deepEqual([...PERSON_POSTS], ["/db/undo", "/view/write", "/view/reveal", "/boards/remove"]);
   assert.equal(BY_PERSON, "person");
   assert.equal(BY_FOREMAN, "foreman");
@@ -104,17 +91,15 @@ test("a phone's and a desk's key are answered; a Lead's, a Foreman's, a widget's
     const { deps } = fakeDeps();
     assert.equal((await get("/integrations/google", "", deps, caller)).status, 200);
     assert.equal((await get("/db/journal", "?project=payroll", deps, caller)).status, 200);
-    assert.equal((await get("/db/mirror", "?project=payroll", deps, caller)).status, 200);
   }
   for (const kind of ["lead", "widget", "peer", "api"]) {
-    const { deps, listed, granted } = fakeDeps();
+    const { deps, listed } = fakeDeps();
     for (const route of PERSON_ROUTES) {
       const reply = PERSON_POSTS.has(route) ? await undo({ project: "payroll", journal: 1 }, deps, { kind }) : await get(route, "?project=payroll", deps, { kind });
       assert.equal(reply.status, 403, `${kind} ${route}`);
       assert.match((reply.body as { error: string }).error, /only the desk app you linked/);
     }
     assert.equal(listed(), 0);
-    assert.equal(granted(), 0);
   }
 });
 
@@ -137,52 +122,16 @@ test("each route takes its own method", async () => {
   assert.equal((await handlePerson("/integrations/google", "POST", url("/integrations/google"), "{}", phone, deps)).status, 405);
 });
 
-test("google: the status in the contract's shape after asking for a grant, never the token", async () => {
-  const { deps, granted } = fakeDeps();
-  const reply = await get("/integrations/google", "", deps);
-  assert.equal(reply.status, 200);
-  assert.equal(granted(), 1);
-  assert.deepEqual(GoogleIntegration.parse(reply.body), { cloudLinked: true, connected: true, email: "owner@example.com", scopes: CONNECTED.scopes, problem: null, checkedAt: 1_000 });
-  assert.doesNotMatch(JSON.stringify(reply.body), /ya29|accessToken/);
-});
-
-test("google: a refused grant answers 200 with the problem; no cloud link says the computer is not linked", async () => {
-  for (const problem of ["no_cloud_link", "google_not_connected", "google_reconnect", "google_unavailable"] as const) {
-    const status: GoogleStatus = { connected: false, email: null, scopes: [], problem, checkedAt: 5 };
-    const { deps, logged } = fakeDeps({
-      grant: async () => {
-        throw new GoogleAuthError(problem);
-      },
-      status: () => status,
-    });
-    const reply = await get("/integrations/google", "", deps);
-    assert.equal(reply.status, 200);
-    assert.deepEqual(GoogleIntegration.parse(reply.body), { cloudLinked: problem !== "no_cloud_link", connected: false, email: null, scopes: [], problem, checkedAt: 5 });
-    assert.deepEqual(logged, [], "the problem is the answer, not a log line");
-  }
-  // Anything else thrown is the agent's own trouble: logged, and the status still answers.
-  const { deps, logged } = fakeDeps({
-    grant: async () => {
-      throw new Error("boom");
-    },
-  });
-  assert.equal((await get("/integrations/google", "", deps)).status, 200);
-  assert.deepEqual(logged, ["google: boom"]);
-});
-
-test("google: through googleAuth.ts itself, the cloud's token stays out of the reply", async () => {
-  const fetcher = (async () =>
-    new Response(JSON.stringify({ accessToken: "ya29.from-the-cloud", expiresAt: Date.now() + 3_600_000, email: "owner@example.com", scopes: ["https://www.googleapis.com/auth/gmail.send"] }), {
-      status: 200,
-    })) as typeof fetch;
-  configureGoogleAuth({ readLink: () => ({ url: "https://cloud.example", deviceToken: `ovd_${"a".repeat(43)}`, deviceId: "device-1", name: "test", linkedAt: 1 }), fetcher });
-  const { deps } = fakeDeps({ grant: googleGrant, status: googleStatus });
-  const reply = await get("/integrations/google", "", deps);
-  const body = GoogleIntegration.parse(reply.body);
-  assert.equal(body.connected, true);
-  assert.equal(body.email, "owner@example.com");
-  assert.doesNotMatch(JSON.stringify(reply.body), /ya29/);
-  configureGoogleAuth({});
+test("google: only the Claude account's connectors, each signed in or not; nothing before the agent first looked", async () => {
+  const none = fakeDeps();
+  const before = await get("/integrations/google", "", none.deps);
+  assert.equal(before.status, 200);
+  assert.deepEqual(GoogleIntegration.parse(before.body), {});
+  const seen = fakeDeps({ connectors: () => [{ name: "Gmail", connected: true }, { name: "Google Calendar", connected: false }, { name: "Google Drive", connected: false }] });
+  const reply = await get("/integrations/google", "", seen.deps);
+  assert.deepEqual(GoogleIntegration.parse(reply.body), { connectors: [{ name: "Gmail", connected: true }, { name: "Google Calendar", connected: false }, { name: "Google Drive", connected: false }] });
+  // Cobra holds no Google sign-in of its own, so there is no token, address or scope to answer with.
+  assert.doesNotMatch(JSON.stringify(reply.body), /token|scopes|email|cloudLinked/);
 });
 
 test("journal: newest first, as the Foreman's route reads it, sensitive args masked, with undone and undoable", async () => {
@@ -223,17 +172,15 @@ test("personEntry: undoable only when not undone, not an undo, and within the da
   assert.deepEqual(view({}).args, { bank: "••••3000" });
 });
 
-test("undo: by the person, the mirror scheduled, the Foreman told, and the entry answered as it is now", async () => {
-  const { deps, write, mirrored, told, logged } = fakeDeps();
+test("undo: by the person, the Foreman told, and the entry answered as it is now", async () => {
+  const { deps, write, told, logged } = fakeDeps();
   await write({ name: "Ana", bank: "DE89370400440532013000" });
   await write({ name: "Bo" });
-  mirrored.splice(0); // the writes' own pushes
   const reply = await undo({ project: "payroll", journal: 1 }, deps);
   assert.equal(reply.status, 200);
   const entry = JournalView.parse(reply.body);
   assert.deepEqual([entry.id, entry.mutation, entry.undone, entry.undoable, entry.by], [1, "add_employee", true, false, "foreman"]);
   assert.doesNotMatch(JSON.stringify(reply.body), /DE89370400440532013000/);
-  assert.deepEqual(mirrored, ["payroll"]);
   assert.equal(told.length, 1);
   assert.equal(told[0]!.owner, "payroll");
   assert.match(told[0]!.text, /^The person undid journal 1 \(add_employee\) from the desk: /);
@@ -250,14 +197,13 @@ test("undo: by the person, the mirror scheduled, the Foreman told, and the entry
   assert.equal((await undo({ project: "payroll", journal: 99 }, deps)).status, 400);
   assert.equal((await undo({ project: "payroll" }, deps)).status, 400);
   assert.equal(told.length, 1);
-  assert.deepEqual(mirrored, ["payroll"]);
   assert.equal((await undo({ project: "payroll", journal: 2 }, deps, desk)).status, 200);
   assert.match(told[1]!.text, /^The person undid journal 2 \(add_employee\) from the desk: /);
 });
 
 test("an unknown project is a 404 in words on every route; none named, a 400; a body that is not JSON, a 400", async () => {
   const { deps } = fakeDeps();
-  for (const route of ["/db/journal", "/db/mirror"]) {
+  for (const route of ["/db/journal"]) {
     const reply = await get(route, "?project=nope", deps);
     assert.equal(reply.status, 404);
     assert.equal((reply.body as { error: string }).error, 'no project "nope" on this computer');
@@ -267,15 +213,11 @@ test("an unknown project is a 404 in words on every route; none named, a 400; a 
   assert.equal((await handlePerson("/db/undo", "POST", url("/db/undo"), "not json", phone, deps)).status, 400);
 });
 
-test("no database yet: a trade that keeps none answers an empty journal and an empty mirror, and a fresh database an empty journal", async () => {
+test("no database yet: a trade that keeps none answers an empty journal, and a fresh database an empty journal", async () => {
   const { deps, told } = fakeDeps();
   const journal = await get("/db/journal", "?project=site", deps);
   assert.equal(journal.status, 200);
   assert.deepEqual(JournalReply.parse(journal.body), { project: "site", entries: [] });
-  const mirror = await get("/db/mirror", "?project=site", deps);
-  assert.equal(mirror.status, 200);
-  assert.deepEqual(MirrorView.parse(mirror.body), { project: "site", spreadsheetId: null, url: null, createdBy: null, lastSync: null, lastError: null, pending: false });
-  assert.deepEqual(mirror.body, emptyMirror("site"));
   // There is nothing to undo there: the Foreman's own 409 in words.
   const refused = await undo({ project: "site", journal: 1 }, deps);
   assert.equal(refused.status, 409);
@@ -284,28 +226,8 @@ test("no database yet: a trade that keeps none answers an empty journal and an e
   assert.deepEqual(JournalReply.parse((await get("/db/journal", "?project=payroll", deps)).body), { project: "payroll", entries: [], records: true }, "a trade with a database says so before its first write");
 });
 
-test("mirror: the mirror's status with url and createdBy always present", async () => {
-  const older = fakeDeps({}, { spreadsheetId: "1abcdefghijk", lastSync: "2026-10-23T09:00:00Z" });
-  const reply = await get("/db/mirror", "?project=payroll", older.deps);
-  assert.deepEqual(MirrorView.parse(reply.body), {
-    project: "payroll",
-    spreadsheetId: "1abcdefghijk",
-    url: null,
-    createdBy: null,
-    lastSync: "2026-10-23T09:00:00Z",
-    lastError: null,
-    pending: false,
-  });
-  const newer = fakeDeps({}, { spreadsheetId: "1abcdefghijk", url: "https://docs.google.com/spreadsheets/d/1abcdefghijk/edit", createdBy: "owner@example.com", pending: true });
-  const body = MirrorView.parse((await get("/db/mirror", "?project=payroll", newer.deps)).body);
-  assert.equal(body.url, "https://docs.google.com/spreadsheets/d/1abcdefghijk/edit");
-  assert.equal(body.createdBy, "owner@example.com");
-  assert.equal(body.pending, true);
-});
-
 test("the contracts read what an older or a newer agent sends", () => {
-  // A fifth problem from a newer agent, and fields an older one never sent.
-  assert.equal(GoogleIntegration.parse({ cloudLinked: true, connected: false, problem: "google_quota" }).problem, "google_quota");
-  assert.deepEqual(MirrorView.parse({ project: "p" }), { project: "p" });
+  // What an older agent sent about a Google sign-in of its own is dropped, not refused.
+  assert.deepEqual(GoogleIntegration.parse({ cloudLinked: true, connected: false, problem: "no_cloud_link" }), {});
   assert.equal(JournalView.parse({ id: 1, at: "2026-10-23T09:00:00Z", by: "routine", mutation: "close_run", undone: false, undoable: true, extra: 1 }).by, "routine");
 });

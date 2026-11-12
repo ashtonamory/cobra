@@ -310,7 +310,7 @@ function localDate(now: Date): string {
 
 /**
  * RFC 4180 quoting. A text cell that starts like a formula gets a leading
- * apostrophe, as sheets.ts does: the CSV is opened in Excel or Sheets, where
+ * apostrophe: the CSV is opened in Excel or Sheets, where
  * "=HYPERLINK(...)" or "+cmd|..." in an imported name would run as a formula.
  * Money columns stay in cents: the CSV is data, not a document.
  */

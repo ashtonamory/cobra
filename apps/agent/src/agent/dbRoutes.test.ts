@@ -29,7 +29,6 @@ const site: Project = { id: "site", name: "Site", machine: hostname(), path: "/n
  */
 function fakeDeps(answers: Partial<Record<keyof ProjectDb, unknown>> = {}, rendered: unknown = undefined) {
   const calls: Array<{ fn: string; args: unknown[] }> = [];
-  const mirrored: string[] = [];
   const imports: unknown[] = [];
   const renders: unknown[] = [];
   let open = 0;
@@ -58,11 +57,9 @@ function fakeDeps(answers: Partial<Record<keyof ProjectDb, unknown>> = {}, rende
       open += 1;
       return db;
     },
-    scheduleMirror: (project) => void mirrored.push(project),
-    mirrorStatus: async (project) => ({ project, spreadsheetId: "1abc", url: null, createdBy: null, lastSync: null, lastError: null, pending: false }),
-    importSheet: async (project, schema, request, by) => {
+    importTable: async (project, schema, request, by) => {
       imports.push({ project, schema, request, by });
-      if (request.tab === "Missing") throw new Error('no tab "Missing" in the sheet');
+      if (request.file === "missing.csv") throw new Error('"missing.csv" has no header row');
       return { rows: 3, journal: 21, summary: "3 rows for October." };
     },
     render: async (project, given, request) => {
@@ -71,7 +68,7 @@ function fakeDeps(answers: Partial<Record<keyof ProjectDb, unknown>> = {}, rende
       return (rendered as ReturnType<DbDeps["render"]> extends Promise<infer R> ? R : never) ?? { files: [], template: { name: request.template, source: "shipped", sha256: "t".repeat(64) }, rows: 0 };
     },
   };
-  return { deps, calls, mirrored, imports, renders, opened: () => open };
+  return { deps, calls, imports, renders, opened: () => open };
 }
 
 const logged: string[] = [];
@@ -109,7 +106,6 @@ test("schema and journal: opened per request and closed after; the journal page 
   assert.deepEqual(fake.calls.at(-1), { fn: "journal", args: [50] });
   assert.equal((await handleDb("/orch/db/journal", url("/orch/db/journal", "?limit=soon"), {}, payroll, fake.deps, log)).status, 400);
   assert.equal(fake.opened(), 0, "every open was closed");
-  assert.deepEqual(fake.mirrored, [], "reads schedule no push");
 });
 
 test("query: the statement and params go to the engine with its limit; what the engine refuses is a 400 with its message; bad input never reaches it", async () => {
@@ -133,7 +129,7 @@ test("query: the statement and params go to the engine with its limit; what the 
   assert.equal(fake.opened() + refused.opened() + broken.opened(), 0);
 });
 
-test("write: one named mutation by the foreman, then the mirror is scheduled; the log says the mutation and journal, never the args", async () => {
+test("write: one named mutation by the foreman; the log says the mutation and journal, never the args", async () => {
   logged.length = 0;
   const written = { journal: 12, summary: "Pay run 7 created.", changes: [{ table: "pay_runs", id: 7, op: "insert", before: null, after: { id: 7 } }] };
   const fake = fakeDeps({ write: written });
@@ -141,14 +137,12 @@ test("write: one named mutation by the foreman, then the mirror is scheduled; th
   const reply = await handleDb("/orch/db/write", url("/orch/db/write"), { mutation: "pay_run_create", args }, payroll, fake.deps, log);
   assert.deepEqual(reply, { status: 200, body: written });
   assert.deepEqual(fake.calls.at(-1), { fn: "write", args: ["pay_run_create", args, BY_FOREMAN] });
-  assert.deepEqual(fake.mirrored, ["payroll"]);
   assert.equal(logged.length, 1);
   assert.match(logged[0] ?? "", /^db payroll: pay_run_create by foreman \(journal 12, 1 row\(s\)\)$/);
   assert.doesNotMatch(logged.join("\n"), /SECRET/);
-  // Validation errors from the engine (a RefusedError, bad args) are 400s, and nothing is mirrored.
+  // Validation errors from the engine (a RefusedError, bad args) are 400s.
   const refused = fakeDeps({ write: new Error("pay run 7 is closed") });
   assert.deepEqual(await handleDb("/orch/db/write", url("/orch/db/write"), { mutation: "pay_item_adjust", args: { run: 7 } }, payroll, refused.deps, log), { status: 400, body: { error: "pay run 7 is closed" } });
-  assert.deepEqual(refused.mirrored, []);
   for (const body of [{}, { mutation: "" }, { mutation: "x", args: [] }, { mutation: "x", args: "y" }]) {
     assert.equal((await handleDb("/orch/db/write", url("/orch/db/write"), body, payroll, fake.deps, log)).status, 400, JSON.stringify(body));
   }
@@ -156,48 +150,53 @@ test("write: one named mutation by the foreman, then the mirror is scheduled; th
   assert.equal(fake.opened(), 0);
 });
 
-test("undo: by journal id, by the foreman, mirrored after; refusals 400", async () => {
+test("undo: by journal id, by the foreman; refusals 400", async () => {
   logged.length = 0;
   const undone = { journal: 13, undid: 12, summary: "Undid pay run 7.", changes: [] };
   const fake = fakeDeps({ undo: undone });
   assert.deepEqual(await handleDb("/orch/db/undo", url("/orch/db/undo"), { journal: 12 }, payroll, fake.deps, log), { status: 200, body: undone });
   assert.deepEqual(fake.calls.at(-1), { fn: "undo", args: [12, BY_FOREMAN] });
-  assert.deepEqual(fake.mirrored, ["payroll"]);
   assert.match(logged[0] ?? "", /^db payroll: undid journal 12 by foreman \(journal 13, 0 row\(s\)\)$/);
   for (const body of [{}, { journal: 0 }, { journal: "12a" }, { journal: 1.5 }]) {
     assert.equal((await handleDb("/orch/db/undo", url("/orch/db/undo"), body, payroll, fake.deps, log)).status, 400, JSON.stringify(body));
   }
   const refused = fakeDeps({ undo: new Error("journal 12 was already undone (by 13)") });
   assert.deepEqual(await handleDb("/orch/db/undo", url("/orch/db/undo"), { journal: 12 }, payroll, refused.deps, log), { status: 400, body: { error: "journal 12 was already undone (by 13)" } });
-  assert.deepEqual(refused.mirrored, []);
   assert.equal(fake.opened(), 0);
 });
 
-test("import: the request goes to the mirror's importSheet by the foreman, then the mirror is scheduled; its errors are 400s", async () => {
+test("import: a .csv file's rows go to importTable by the foreman; its errors are 400s, and a Google Sheet is refused with the step", async () => {
+  const { mkdtempSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const home = mkdtempSync(join(tmpdir(), "cobra-import-"));
+  writeFileSync(join(home, "october.csv"), "Employee,Hours\nAna,7.5\n");
+  writeFileSync(join(home, "missing.csv"), "Employee,Hours\nAna,7.5\n");
   logged.length = 0;
   const fake = fakeDeps();
-  const body = { spreadsheetId: " 1abc ", tab: "October", table: "timesheets", mapping: { Employee: "employee_name", Hours: " hours " } };
+  fake.deps.importRoots = async () => [home];
+  const body = { file: join(home, "october.csv"), table: "timesheets", mapping: { Employee: "employee_name", Hours: " hours " } };
   const reply = await handleDb("/orch/db/import", url("/orch/db/import"), body, payroll, fake.deps, log);
   assert.deepEqual(reply, { status: 200, body: { rows: 3, journal: 21, summary: "3 rows for October." } });
-  assert.deepEqual(fake.imports, [{ project: "payroll", schema: SCHEMA, request: { spreadsheetId: "1abc", tab: "October", table: "timesheets", mapping: { Employee: "employee_name", Hours: "hours" } }, by: BY_FOREMAN }]);
-  assert.deepEqual(fake.mirrored, ["payroll"]);
-  assert.match(logged[0] ?? "", /^db payroll: imported 3 row\(s\) into timesheets from tab "October" \(journal 21\)$/);
-  assert.doesNotMatch(logged[0] ?? "", /1abc/);
-  const failed = await handleDb("/orch/db/import", url("/orch/db/import"), { ...body, tab: "Missing" }, payroll, fake.deps, log);
-  assert.deepEqual(failed, { status: 400, body: { error: 'no tab "Missing" in the sheet' } });
-  assert.deepEqual(fake.mirrored, ["payroll"], "a failed import schedules no push");
-  for (const bad of [{}, { ...body, table: "" }, { ...body, mapping: "x" }, { ...body, mapping: {} }, { ...body, mapping: { Employee: 3 } }, { ...body, mapping: { Employee: "" } }]) {
+  assert.deepEqual(fake.imports, [{ project: "payroll", schema: SCHEMA, request: { file: "october.csv", table: "timesheets", mapping: { Employee: "employee_name", Hours: "hours" }, grid: [["Employee", "Hours"], ["Ana", "7.5"]] }, by: BY_FOREMAN }]);
+  assert.match(logged[0] ?? "", /^db payroll: imported 3 row\(s\) into timesheets from file "october.csv" \(journal 21\)$/);
+  const failed = await handleDb("/orch/db/import", url("/orch/db/import"), { ...body, file: join(home, "missing.csv") }, payroll, fake.deps, log);
+  assert.deepEqual(failed, { status: 400, body: { error: '"missing.csv" has no header row' } });
+  for (const bad of [{}, { ...body, table: "" }, { ...body, file: "" }, { ...body, mapping: "x" }, { ...body, mapping: {} }, { ...body, mapping: { Employee: 3 } }, { ...body, mapping: { Employee: "" } }]) {
     assert.equal((await handleDb("/orch/db/import", url("/orch/db/import"), bad, payroll, fake.deps, log)).status, 400, JSON.stringify(bad));
   }
+  // Cobra has no Google connection of its own: a sheet is refused with what to do, and nothing is read.
+  for (const sheet of [{ spreadsheetId: "1abc", tab: "October", table: "timesheets", mapping: body.mapping }, { tab: "October", table: "timesheets", mapping: body.mapping }]) {
+    const refused = await handleDb("/orch/db/import", url("/orch/db/import"), sheet, payroll, fake.deps, log);
+    assert.equal(refused.status, 400);
+    assert.match(String((refused.body as { error: string }).error), /does not read a Google Sheet itself.*\.csv/);
+  }
   assert.equal(fake.imports.length, 2);
-  // Import never opens the database here: the mirror does, with its own journal entry.
+  // Import never opens the database here: tableImport.ts does, with its own journal entry.
   assert.equal(fake.calls.length, 0);
-});
-
-test("mirror status is the mirror's answer for the project", async () => {
-  const fake = fakeDeps();
-  assert.deepEqual(await handleDb("/orch/db/mirror", url("/orch/db/mirror"), {}, payroll, fake.deps, log), { status: 200, body: { project: "payroll", spreadsheetId: "1abc", url: null, createdBy: null, lastSync: null, lastError: null, pending: false } });
-  assert.equal(fake.calls.length, 0);
+  // Without the folders a file may lie in, there is no import.
+  const none = fakeDeps();
+  assert.equal((await handleDb("/orch/db/import", url("/orch/db/import"), body, payroll, none.deps, log)).status, 409);
 });
 
 test("report render: the request goes to the renderer whole, over an open database closed after; the log says the template and the count, never the SQL", async () => {
@@ -221,7 +220,6 @@ test("report render: the request goes to the renderer whole, over an open databa
     request: { template: "pay-stub", sql: "select * from pay_items where run_id = ? and bank_account = 'GB00SECRET1234'", params: [7], args: { title: "October" }, format: "pdf", split: "employee_id", name: "stubs-7" },
   }]);
   assert.equal(fake.opened(), 0, "the database was closed after the render");
-  assert.deepEqual(fake.mirrored, [], "a render changes nothing: no push");
   assert.deepEqual(logged, ["report payroll: pay-stub → 2 file(s)"]);
   assert.doesNotMatch(logged.join("\n"), /SECRET|select/);
   // The optional fields stay out of the request when left out.
@@ -322,7 +320,7 @@ test("through the routes: the Lead's key is refused with the usual message, a ph
     assert.match(JSON.stringify(files.body), /Site keeps no database/, route);
   }
   // The POSTs want a body, and refuse one that is not JSON; a GET asks for none.
-  assert.equal((await call("/orch/db/mirror", FOREMAN_PAYROLL)).status, 200);
+  assert.equal((await call("/orch/db/journal", FOREMAN_PAYROLL)).status, 200);
   const wrongMethod = { status: 0, body: null as unknown };
   await handleOrch("/orch/db/query", url("/orch/db/query"), { method: "GET", on: () => undefined } as never, {} as never, {
     send: (_response, status, sent) => void Object.assign(wrongMethod, { status, body: sent }),
@@ -337,7 +335,7 @@ test("through the routes: the Lead's key is refused with the usual message, a ph
   assert.equal(wrongMethod.status, 405);
 });
 
-test("import from a file: a CSV in a Worker's worktree is read here and its rows go to importSheet; one outside is refused", async () => {
+test("import from a file: a CSV in a Worker's worktree is read here and its rows go to importTable; one outside is refused", async () => {
   const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
@@ -350,9 +348,9 @@ test("import from a file: a CSV in a Worker's worktree is read here and its rows
   const body = { file: join(home, "repo.worktrees", "w9", "leads.csv"), table: "timesheets", mapping: { Employee: "employee_name", Hours: "hours" } };
   const reply = await handleDb("/orch/db/import", url("/orch/db/import"), body, payroll, fake.deps, log);
   assert.equal(reply.status, 200);
-  const sent = fake.imports[0] as { request: { grid?: string[][]; tab: string } } | undefined;
+  const sent = fake.imports[0] as { request: { grid: string[][]; file: string } } | undefined;
   assert.deepEqual(sent?.request.grid, [["Employee", "Hours"], ["Rao, Ana", "7.5"], ["Lee", "8"]]);
-  assert.equal(sent?.request.tab, "leads.csv");
+  assert.equal(sent?.request.file, "leads.csv");
   const outside = await handleDb("/orch/db/import", url("/orch/db/import"), { ...body, file: join(home, "elsewhere.csv") }, payroll, fake.deps, log);
   assert.equal(outside.status, 400);
   assert.match(String((outside.body as { error: string }).error), /not in this Foreman's company folders/);

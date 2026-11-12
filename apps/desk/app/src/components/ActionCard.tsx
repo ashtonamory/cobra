@@ -1,7 +1,7 @@
 /**
  * A Foreman's action, drawn wherever approvals are (Ops, the needs-you popup): exactly what Allow
  * sends. An email's To, Cc and Subject, its text (folded when long) and attachments; a file
- * action's destination (your Google Drive's Cobra/<project>, or a local folder) and its files; a
+ * action's destination (a local folder you set up) and its files; a
  * note's text and attachments. A routine approval is drawn the same way: when, the first run and
  * the project, then its brief (lib/routines.ts); a trust approval too: who it reaches, the templates,
  * how often you allowed it, then the cards it was (lib/trust.ts). The words are lib/approvalAction.ts's;

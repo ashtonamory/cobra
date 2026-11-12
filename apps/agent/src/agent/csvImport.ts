@@ -1,5 +1,5 @@
 // A CSV a Worker wrote, read into a table of the Foreman's database by the
-// agent (sheet_import with `file`), so rows move by code and never through a
+// agent (file_import), so rows move by code and never through a
 // model's context: a real run on 2026-11-03 had the Lead and a Foreman copy
 // 40 rows by hand, one db_write each.
 //

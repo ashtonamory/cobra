@@ -1,3 +1,5 @@
+import { NO_BOX } from "../../../../packages/contracts/src/mailboxes.ts";
+
 import { addMailbox, loadMailboxes, MAILBOX_PROVIDERS, MAILBOXES_PATH, MailboxError, PROVIDER_WORDS, publicMailbox, removeMailbox, setSpaceMailbox, ZOHO_REGIONS, type BoxChecks } from "./mailboxes.ts";
 
 /**
@@ -23,7 +25,7 @@ function listed(deps: MailboxRouteDeps): Reply {
       boxes: file.boxes.map((box) => publicMailbox(box, file)),
       providers: MAILBOX_PROVIDERS.map((id) => ({ id, ...PROVIDER_WORDS[id] })),
       regions: ZOHO_REGIONS,
-      spaces: deps.spaces().map((space) => ({ id: space.id, name: space.name, box: file.spaces[space.id] ?? "gmail" })),
+      spaces: deps.spaces().map((space) => ({ id: space.id, name: space.name, box: file.spaces[space.id] ?? NO_BOX })),
     },
   };
 }

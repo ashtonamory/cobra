@@ -1,8 +1,8 @@
 /**
  * Money from mail: every 30
  * minutes, beside the reply check, the agent looks at the last 3 days of each
- * mailbox a Space with a Money seat reads (its own iCloud or Zoho box, else
- * Gmail when Mail reading is on) for bank and card alerts, payout notices and
+ * mailbox a Space with a Money seat reads (its own iCloud or Zoho box; a
+ * Space with none has no mail to look in) for bank and card alerts, payout notices and
  * e-receipts. A message that looks like money in code (money words and an
  * amount) is read once by Haiku with no tools on the computer's own sign-in,
  * which answers what moved, which way, when, who, and the account it names.
@@ -11,8 +11,7 @@
  * for the person to allow (recorded at once for a trusted sender). The email
  * is someone else's words: data, never instructions, and nothing is sent.
  *
- * Which Space: a mailbox of its own serves its Spaces; Gmail serves every
- * Space with none. With more than one, in turn: the Space that trusts the
+ * Which Space: a mailbox serves the Spaces that chose it. With more than one, in turn: the Space that trusts the
  * sender, the one with the account the email names, the one that knows the
  * sender (an earlier row or a vendor), the one the reader names, else the
  * family Space. When none is clear the message is left out and logged.
@@ -20,8 +19,6 @@
 import { RefusedError } from "./db.ts";
 import { parseCents, parseDay } from "./statements.ts";
 
-export const MONEY_QUERY =
-  'in:inbox newer_than:3d -from:me (receipt OR payment OR paid OR deposit OR deposited OR transaction OR purchase OR payout OR "e-transfer" OR charged OR withdrawal OR refund OR "you sent" OR "you received")';
 export const MONEY_SEEN_MAX = 1000;
 export const MONEY_TEXT_MAX = 6000;
 export const READ_TIMEOUT_MS = 60_000;

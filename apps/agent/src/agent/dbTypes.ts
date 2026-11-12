@@ -10,7 +10,7 @@
  * model never sees a bank number and never writes free-form SQL.
  *
  * This file holds types only, so a trade's schema (trades/payroll.ts), the
- * engine (db.ts), the tools (orchMcp.ts, orch.ts) and the mirror (mirror.ts)
+ * engine (db.ts), the tools (orchMcp.ts, orch.ts) and the file import (tableImport.ts)
  * can be built against it at once.
  */
 
@@ -19,7 +19,7 @@ export type ColumnKind = "text" | "integer" | "real" | "money" | "date" | "boole
 
 export type ColumnSpec = {
   kind: ColumnKind;
-  /** Masked in every result a model reads (db_query, journal, write results); real in reports and the mirror. */
+  /** Masked in every result a model reads (db_query, journal, write results); real in reports. */
   sensitive?: boolean;
   /** Must be present and not null when a row is inserted or imported. */
   required?: boolean;
@@ -187,17 +187,17 @@ export interface ProjectDb {
   describe(): SchemaDescription;
   /** SELECT or WITH only, on a read-only connection, at most `limit` rows (default 200, at most 1000), sensitive columns masked. */
   query(sql: string, params?: Value[], limit?: number): QueryResult;
-  /** The same SELECT with real values, for the renderer and the mirror only: never for a model. */
+  /** The same SELECT with real values, for the renderer only: never for a model. */
   queryRaw(sql: string, params?: Value[], limit?: number): QueryResult;
   /** One named mutation in one transaction, journaled. */
   write(mutation: string, args: Args, by: string): WriteResult;
-  /** A journaled bulk insert into one table, each row validated against its columns (sheet_import uses it). */
+  /** A journaled bulk insert into one table, each row validated against its columns (file_import uses it). */
   /** Rows may carry booleans and parsed JSON for those column kinds; every value is checked as an insert is. */
   importRows(table: string, rows: Record<string, unknown>[], by: string): WriteResult;
   /** Reverses one journal entry within UNDO_DAYS, refusing one already undone or whose rows changed since. */
   undo(journal: number, by: string): UndoResult;
   journal(limit?: number): JournalEntry[];
-  /** Every table in full, unmasked: for the mirror and the renderer only, never for a model. */
+  /** Every table in full, unmasked: for the renderer only, never for a model. */
   tables(): Record<string, Row[]>;
   close(): void;
 }

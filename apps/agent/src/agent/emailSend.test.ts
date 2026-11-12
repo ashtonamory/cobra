@@ -7,8 +7,7 @@ import { join } from "node:path";
 import { acceptDraft, addImage, EmailFileError, emailFolders, listTemplates, readDraft, readImage, readVersion, saveDraft } from "./emailFiles.ts";
 import { EmailQueue, RETRY_AFTER_MS, SEND_GAP_MS } from "./emailQueue.ts";
 import { sendNext, showSent, type SendDeps } from "./emailSend.ts";
-import { MailSendError, gmailFailure, type MailAdapter } from "./mailAdapter.ts";
-import { GmailRefusal, GmailUnreachable } from "./gmail.ts";
+import { MailSendError, NO_SENDER, noMailboxAdapter, type MailAdapter } from "./mailAdapter.ts";
 import type { MailMessage } from "./mime.ts";
 
 const PNG = (() => {
@@ -248,13 +247,16 @@ test("late jobs and cancel", () => {
   assert.deepEqual(t.queue.counts(), { queued: 0, sending: 0, sent: 0, failed: 0, unsure: 0, cancelled: 1 });
 });
 
-test("gmailFailure: busy and rate limits retry, cut-offs are unsure, the rest is hard", () => {
-  assert.equal(gmailFailure(new GmailRefusal(429, "x")), "retry");
-  assert.equal(gmailFailure(new GmailRefusal(503, "x")), "retry");
-  assert.equal(gmailFailure(new GmailRefusal(403, "Gmail refused: userRateLimitExceeded")), "retry");
-  assert.equal(gmailFailure(new GmailRefusal(400, "Invalid To header")), "hard");
-  assert.equal(gmailFailure(new GmailUnreachable("timeout")), "unsure");
-  assert.equal(gmailFailure(new Error("too big")), "hard");
+test("a Space with no mailbox sends nothing: its jobs wait, and the wait says the step to take", async () => {
+  const t = setup();
+  t.job();
+  const none = noMailboxAdapter();
+  await assert.rejects(none.account(), (caught: unknown) => caught instanceof MailSendError && caught.how === "hard" && caught.message === NO_SENDER);
+  await assert.rejects(none.send({ to: ["a@example.com"], subject: "s", text: "t" }), MailSendError);
+  const outcome = await sendNext({ ...t.deps, adapter: none });
+  assert.deepEqual(outcome, { wait: "account", why: NO_SENDER });
+  assert.deepEqual(t.sent, [], "nothing went");
+  assert.equal(t.queue.counts().queued, 1, "the job waits for a mailbox");
 });
 
 test("right before a send, a stopped address fails the job and nothing goes", async () => {

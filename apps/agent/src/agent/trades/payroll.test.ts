@@ -168,7 +168,7 @@ test("every mutation describes itself and its arguments, and a rows argument say
     "employee_end",
     "period_add",
     "timesheet_set",
-    "timesheet_import",
+    "timefile_import",
     "pay_run_create",
     "pay_item_adjust",
     "pay_run_review",
@@ -318,26 +318,26 @@ test("timesheet_set upserts one sheet per employee and period and refuses what c
   ctx.refuses("timesheet_set", { employee_id: ada, period_id: period, regular_hours: 1 }, /pay period 2026-10-05 to 2026-10-18 is closed/);
 });
 
-test("timesheet_import resolves names and ids, refuses an unknown name by name, and keeps nothing from a bad batch", () => {
+test("timefile_import resolves names and ids, refuses an unknown name by name, and keeps nothing from a bad batch", () => {
   const { ctx, ada, bob, cy, period } = setUp();
-  ctx.refuses("timesheet_import", { period_id: period, source: "sheet", rows: [] }, /rows must be a list with at least one row/);
-  ctx.refuses("timesheet_import", { period_id: period, rows: [{ employee: "Ada Lovelace", regular_hours: 1 }] }, /source is required/);
+  ctx.refuses("timefile_import", { period_id: period, source: "sheet", rows: [] }, /rows must be a list with at least one row/);
+  ctx.refuses("timefile_import", { period_id: period, rows: [{ employee: "Ada Lovelace", regular_hours: 1 }] }, /source is required/);
   ctx.refuses(
-    "timesheet_import",
+    "timefile_import",
     { period_id: period, source: "sheet", rows: [{ employee: "Ada Lovelace", regular_hours: 70 }, { employee: "Dan Nobody", regular_hours: 10 }] },
     /row 2: no current employee named Dan Nobody/,
   );
   assert.equal(ctx.count("timesheets"), 0, "the first row did not stay");
-  ctx.refuses("timesheet_import", { period_id: period, source: "sheet", rows: [{ employee: "Ada Lovelace" }] }, /row 1 \(Ada Lovelace\) has no regular_hours/);
-  ctx.refuses("timesheet_import", { period_id: period, source: "sheet", rows: [{ regular_hours: 1 }] }, /row 1 names no employee/);
-  ctx.refuses("timesheet_import", { period_id: period, source: "sheet", rows: [{ employee: "Ada Lovelace", regular_hours: -3 }] }, /regular_hours cannot be negative/);
+  ctx.refuses("timefile_import", { period_id: period, source: "sheet", rows: [{ employee: "Ada Lovelace" }] }, /row 1 \(Ada Lovelace\) has no regular_hours/);
+  ctx.refuses("timefile_import", { period_id: period, source: "sheet", rows: [{ regular_hours: 1 }] }, /row 1 names no employee/);
+  ctx.refuses("timefile_import", { period_id: period, source: "sheet", rows: [{ employee: "Ada Lovelace", regular_hours: -3 }] }, /regular_hours cannot be negative/);
   // Someone who left before the period is not current for it.
   ctx.run("employee_end", { id: cy, end_date: "2026-10-04" });
-  ctx.refuses("timesheet_import", { period_id: period, source: "sheet", rows: [{ employee: "Cy Twombly", regular_hours: 5 }] }, /no current employee named Cy Twombly/);
-  ctx.refuses("timesheet_import", { period_id: period, source: "sheet", rows: [{ employee: String(cy), regular_hours: 5 }] }, /no current employee named 3/);
+  ctx.refuses("timefile_import", { period_id: period, source: "sheet", rows: [{ employee: "Cy Twombly", regular_hours: 5 }] }, /no current employee named Cy Twombly/);
+  ctx.refuses("timefile_import", { period_id: period, source: "sheet", rows: [{ employee: String(cy), regular_hours: 5 }] }, /no current employee named 3/);
 
   assert.equal(
-    ctx.run("timesheet_import", {
+    ctx.run("timefile_import", {
       period_id: period,
       source: "sheet",
       rows: [
@@ -351,7 +351,7 @@ test("timesheet_import resolves names and ids, refuses an unknown name by name, 
   assert.equal(ctx.get("SELECT source FROM timesheets WHERE employee_id = ?", [ada])!.source, "sheet");
   assert.equal(ctx.get("SELECT overtime_hours FROM timesheets WHERE employee_id = ?", [ada])!.overtime_hours, 4);
   // Importing again upserts: one sheet per employee per period, still.
-  assert.equal(ctx.run("timesheet_import", { period_id: period, source: "file", rows: [{ employee: "Ada Lovelace", regular_hours: 72 }] }), "1 timesheet for 2026-10-05 to 2026-10-18");
+  assert.equal(ctx.run("timefile_import", { period_id: period, source: "file", rows: [{ employee: "Ada Lovelace", regular_hours: 72 }] }), "1 timesheet for 2026-10-05 to 2026-10-18");
   assert.equal(ctx.count("timesheets"), 2);
   const sheet = ctx.get("SELECT * FROM timesheets WHERE employee_id = ?", [ada])!;
   assert.equal(sheet.regular_hours, 72);

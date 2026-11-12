@@ -11,7 +11,7 @@ process.env.COBRA_AGENT_CONFIG_DIR = join(STATE, "config");
 const taint = await import("./taint.ts");
 const { judgeSystem, JUDGE_SYSTEM_ESCALATE } = await import("./judge.ts");
 const { readsWeb } = await import("./gate.ts");
-const { receiptNotice, DRIVE_CONSENT } = await import("./actionTrust.ts");
+const { receiptNotice } = await import("./actionTrust.ts");
 
 const NOW = Date.parse("2026-10-29T15:00:00Z");
 
@@ -107,10 +107,10 @@ test("what taints a Worker: a web read that may run, or an internet call the jud
   assert.equal(readsWeb("Bash", allow("judge:install")), false);
 });
 
-test("a Drive save the audit read first says so on its receipt", () => {
-  const base = { state: "done" as const, title: "Save leads.csv", results: [{ ok: true, message: "saved" }], action: { projectName: "Northwind prospecting" } as never };
-  assert.match(receiptNotice({ ...base, trusted: { key: DRIVE_CONSENT, grantedAt: "x" } }).body, /connected Google: saved/);
-  assert.match(receiptNotice({ ...base, trusted: { key: DRIVE_CONSENT, grantedAt: "x", audited: "clean" } }).body, /connected Google, checked for planted content first: saved/);
+test("a trusted run the audit read first says so on its receipt", () => {
+  const base = { state: "done" as const, title: "Send the roster", results: [{ ok: true, message: "sent" }], action: { projectName: "Northwind prospecting" } as never };
+  assert.equal(receiptNotice({ ...base, trusted: { key: "k", grantedAt: "x" } }).body, "Done on trust: sent.");
+  assert.equal(receiptNotice({ ...base, trusted: { key: "k", grantedAt: "x", audited: "clean" } }).body, "Done on trust, checked for planted content first: sent.");
 });
 
 test("a Foreman's last report carries its taint past a fresh conversation, until the new one ends a turn", () => {

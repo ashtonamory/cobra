@@ -25,12 +25,14 @@ const parsed = (raw: unknown, installed?: Parameters<typeof parseDefinition>[2])
 test("a definition is checked: names, kinds, refs, required fields, scripts", () => {
   const ok = parsed(DOG_WALKING);
   assert.equal(ok.id, "dog-walking");
-  assert.deepEqual(ok.reads, ["calendar"]);
+  assert.deepEqual(ok.reads, ["mail"]);
   const bad = (change: Record<string, unknown>) => parseDefinition({ ...DOG_WALKING, ...change }, SHIPPED) as string;
   assert.match(bad({ id: "billing" }), /a trade Cobra ships/);
   assert.match(bad({ id: "Dog Walking" }), /lower case/);
   assert.match(bad({ brief: "x".repeat(4001) }), /at most 4000/);
-  assert.match(bad({ reads: ["drive"] }), /calendar, mail/);
+  assert.match(bad({ reads: ["drive"] }), /reads lists mail, or is left out/);
+  // A calendar is no read of Cobra's own: it comes through a connector, so it belongs in needs.
+  assert.match(bad({ reads: ["calendar", "mail"] }), /A calendar comes through the person's Google Calendar connector, so name it in needs/);
   assert.match(bad({ tables: { walks: { describe: "x", columns: { on: { kind: "date" } } } } }), /column walks\.on: "on" is a word SQL keeps/);
   assert.match(bad({ tables: { select: DOG_WALKING.tables.owners } }), /word SQL keeps/);
   assert.match(bad({ tables: { owners: { describe: "x", columns: { id: { kind: "text" } } } } }), /already has id/);

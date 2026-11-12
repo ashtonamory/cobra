@@ -18,21 +18,23 @@ describe("an email", () => {
   it("To, Cc, Subject, the text and the attachments", () => {
     const v = aa.actionView(approval({
       channel: "email", project: "p", projectName: "p", summary: "Pay stubs",
-      email: { to: ["ann@example.com", "bo@example.com"], cc: ["books@example.com"], subject: "Week 42", text: "Hi Ann,\nAttached.",
+      email: { from: { box: "box_1", address: "owner@example.com", mailbox: "Zoho Mail" }, to: ["ann@example.com", "bo@example.com"], cc: ["books@example.com"], subject: "Week 42", text: "Hi Ann,\nAttached.",
         attachments: [file("out/stubs.pdf", 182_000), file("summary.csv", 900)] },
     }))!;
     expect(v.channel).toBe("email");
     expect(v.word).toBe("EMAIL");
-    expect(v.fields).toEqual([["To", "ann@example.com, bo@example.com"], ["Cc", "books@example.com"], ["Subject", "Week 42"]]);
+    expect(v.fields).toEqual([["From", "owner@example.com (Zoho Mail)"], ["To", "ann@example.com, bo@example.com"], ["Cc", "books@example.com"], ["Subject", "Week 42"]]);
     expect([v.text, v.folded, v.preview]).toEqual(["Hi Ann,\nAttached.", false, "Hi Ann,"]);
     expect(v.files).toEqual([{ name: "stubs.pdf", path: "out/stubs.pdf", size: "178 KB" }, { name: "summary.csv", path: "", size: "900 B" }]);
-    expect(aa.allowLine(v)).toBe("Allow sends exactly this from your Gmail.");
+    expect(aa.allowLine(v)).toBe("Allow sends exactly this from that mailbox.");
   });
 
   it("no Cc row without one; a long text opens folded", () => {
     const text = ["a", "b", "c", "d", "e"].join("\n");
     const v = aa.actionView(approval({ channel: "email", summary: "s", email: { to: ["a@b.c"], subject: "", text } }))!;
     expect(v.fields.map(([k]) => k)).toEqual(["To", "Subject"]);
+    // A card that names no mailbox promises none.
+    expect(aa.allowLine(v)).toBe("Allow sends exactly this.");
     expect(v.fields[1][1]).toBe("(no subject)");
     expect(v.folded).toBe(true);
     expect(aa.actionView(approval({ channel: "email", summary: "s", email: { to: ["a@b.c"], subject: "x", text: "y".repeat(400) } }))!.folded).toBe(true);
@@ -40,19 +42,6 @@ describe("an email", () => {
 });
 
 describe("files", () => {
-  it("to your Google Drive's Cobra/<project>", () => {
-    const v = aa.actionView(approval({
-      channel: "file", summary: "Report",
-      files: { to: "drive", label: "your Google Drive", path: "Cobra/paws", items: [file("out/report.pdf", 2_400_000)], text: "For your records." },
-    }))!;
-    expect(v.word).toBe("FILES");
-    expect(v.fields).toEqual([["To", "Your Google Drive, in Cobra/paws"]]);
-    expect(v.filesLabel).toBe("Files");
-    expect(v.files[0].size).toBe("2.3 MB");
-    expect(v.text).toBe("For your records.");
-    expect(aa.allowLine(v)).toBe("Allow puts these files in your Drive.");
-  });
-
   it("to a local folder, by its label and path", () => {
     const v = aa.actionView(approval({
       channel: "file", summary: "Copy",
@@ -63,9 +52,15 @@ describe("files", () => {
     expect(aa.allowLine(v)).toBe("Allow copies these files there.");
   });
 
-  it("a folder keyed drive with an absolute path is a local folder", () => {
+  it("a folder is named by its label and path, whatever its key; a text and its size are kept", () => {
     expect(aa.whereWords({ to: "drive", label: "Drive", path: "/mnt/drive" })).toBe("Drive (/mnt/drive)");
     expect(aa.whereWords({ to: "x", label: "", path: "C:\\Exports" })).toBe("C:\\Exports");
+    expect(aa.whereWords({ to: "x" })).toBe("A folder on this computer");
+    const v = aa.actionView(approval({ channel: "file", summary: "Report", files: { to: "books", label: "Bookkeeper", path: "/home/me/Books", items: [file("out/report.pdf", 2_400_000)], text: "For your records." } }))!;
+    expect(v.word).toBe("FILES");
+    expect(v.filesLabel).toBe("Files");
+    expect(v.files[0].size).toBe("2.3 MB");
+    expect(v.text).toBe("For your records.");
   });
 });
 

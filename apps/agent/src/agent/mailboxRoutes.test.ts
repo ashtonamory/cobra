@@ -17,7 +17,7 @@ test("phase 7: the desk adds a box, points a Space at it, and never sees the pas
   assert.equal((await call("/email/mailboxes", "GET", null, "foreman")).status, 403);
   const empty = (await call("/email/mailboxes", "GET", null)).body as { boxes: unknown[]; providers: { id: string }[]; spaces: { box: string }[] };
   assert.deepEqual(empty.providers.map((p) => p.id), ["icloud", "zoho"]);
-  assert.equal(empty.spaces[0]!.box, "gmail");
+  assert.equal(empty.spaces[0]!.box, "none");
 
   const added = await call("/email/mailboxes", "POST", { provider: "icloud", address: "studio@icloud.com", password: "abcd-efgh-ijkl-mnop" });
   assert.equal(added.status, 200);
@@ -30,7 +30,7 @@ test("phase 7: the desk adds a box, points a Space at it, and never sees the pas
   assert.equal(pointed.spaces[0]!.box, id);
   assert.deepEqual(pointed.boxes[0]!.spaces, ["s1"]);
   assert.equal((await call("/email/mailboxes/remove", "POST", { id })).status, 409, "a Space still sends from it");
-  await call("/email/mailboxes/space", "POST", { space: "s1", box: "gmail" });
+  await call("/email/mailboxes/space", "POST", { space: "s1", box: "none" });
   assert.equal(((await call("/email/mailboxes/remove", "POST", { id })).body as { boxes: unknown[] }).boxes.length, 0);
 });
 

@@ -29,9 +29,7 @@ function liveDeps(dir: string, spaces: string): DbDeps {
     schemaFor: () => SPACE_SCHEMA,
     seat: (id) => seatOf(id, spaces)?.role ?? null,
     open: (id, schema) => openProjectDb(id, schema, dir, spaces),
-    scheduleMirror: () => {},
-    mirrorStatus: async () => ({ project: "x", spreadsheetId: null, url: null, lastPushAt: null, lastError: null }) as never,
-    importSheet: async () => ({ rows: 0, journal: 0 }) as never,
+    importTable: async () => ({ rows: 0, journal: 0 }) as never,
     render: async () => ({ files: [] }) as never,
   };
 }
@@ -141,7 +139,12 @@ test("a seat imports rows only into the tables it owns", async () => {
   const deps = liveDeps(dir, spaces);
   openSpace(maya, "omarchy", spaces);
   registerSeat("maya-s-soccer", "dues", "money", spaces);
-  const body = { tab: "Roster", table: "people", mapping: { Name: "name" } };
+  const { writeFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const file = join(dir, "roster.csv");
+  writeFileSync(file, "Name\nDana\n");
+  deps.importRoots = async () => [dir];
+  const body = { file, table: "people", mapping: { Name: "name" } };
   const refused = await call(deps, "/orch/db/import", body, project("dues"));
   assert.equal(refused.status, 403);
   assert.match((refused.body as { error: string }).error, /the people table belongs to another seat/);

@@ -151,14 +151,13 @@ import { answer as answerApproval, loadApprovals, publicView, runLand, runMerge,
 import { actionNews, liveActionDeps, runAction } from "./actions.ts";
 import { liveDbDeps } from "./dbRoutes.ts";
 import { markDocumentsSent } from "./sentFiles.ts";
-import { DRIVE_CONSENT, receiptNotice } from "./actionTrust.ts";
+import { receiptNotice } from "./actionTrust.ts";
 import { afterAnswer, handleTrustPerson, liveTrustDeps, PERSON_TRUST_POSTS, PERSON_TRUST_ROUTES, settleTrustCard, trustedApproval } from "./trustRoutes.ts";
 import { liveMcpDeps, loginCache, mcpConnect, mcpDisconnect, mcpStatus, mcpToggle, mcpVerifyRequest, readAccount, runMcpVerify } from "./mcpRoutes.ts";
 import { handlePerson, livePersonDeps, PERSON_KINDS, PERSON_POSTS, PERSON_ROUTES } from "./personRoutes.ts";
 import { handleNotebook, NOTEBOOK_ROUTES, TICKS_PATH } from "./notebook.ts";
 import { CLOUDFLARE_ROUTES, cloudflareHere, handleCloudflare } from "./cloudflare.ts";
 import { openProjectDb, spaceDataPath } from "./db.ts";
-import { scheduleMirror } from "./mirror.ts";
 import { STATE_DIR } from "./paths.ts";
 import { liveFetchJson, priceSpaces, type PriceDeps } from "./prices.ts";
 import { PULL_EVERY_MS, sitePuller, type PullNotice } from "./sitePull.ts";
@@ -753,6 +752,9 @@ function sendsMorning(): boolean {
 function orgDeps(): OrgDeps {
   return liveOrgDeps({ home: sendsMorning, approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) }, notify: notifyApproval, tell: tellLine, log: (line) => console.log(`[${SERVICE}] ${line}`) });
 }
+/** What follows a write to a Space's store: nothing now. The modules keep the hook so a follow-up has one place to go. */
+const noFollowUp = (_space: string): void => undefined;
+
 /** Receipts added in the desk app (receipts.ts): read here, proposed in the Space's Money, one card to allow. */
 function receiptDeps(): ReceiptDeps {
   return {
@@ -761,9 +763,7 @@ function receiptDeps(): ReceiptDeps {
     read: liveRead,
     approvals: { load: () => loadApprovals(), save: (list) => saveApprovals(list) },
     notify: notifyApproval,
-    stored: (space) => void websiteOpens(`space-${space}`).then((opens) => {
-      if (opens.projectId !== LEAD_SESSION) scheduleMirror(opens.projectId, SPACE_SCHEMA);
-    }),
+    stored: noFollowUp,
     log: (line) => console.log(`[${SERVICE}] ${line}`),
     now: Date.now,
   };
@@ -1088,10 +1088,7 @@ function carryOutAction(approval: StoredApproval): void {
       const opens = { projectId: action.project, session: project?.session ?? action.project, path: project?.path ?? "" };
       notices.record({ kind: "receipt", projectId: opens.projectId, session: opens.session, title: notice.title, body: notice.body });
       // In What Cobra did too (decided.ts): sent is sent, so its Undo takes back the trust that sent it, and the next one asks.
-      const undo: DecidedUndo =
-        done.trusted.key === DRIVE_CONSENT
-          ? { kind: "none", why: "It is in your Google Drive; delete it there if you do not want it." }
-          : { kind: "trust", key: done.trusted.key };
+      const undo: DecidedUndo = { kind: "trust", key: done.trusted.key };
       const entry = recordDecided({ kind: "action", title: notice.title, body: notice.body, approval: done.id, project: action.project, undo });
       const tokens = await loadPushTokens();
       if (tokens.length === 0) return;
@@ -3037,7 +3034,7 @@ const server = http.createServer((request, response) => {
         return sendJson(response, reply.status, reply.body);
       }
 
-      // The account's Google connection as this computer uses it, and a project's records: journal, Undo, sheet (personRoutes.ts). A phone's or desk's key only.
+      // Google's connectors as this computer's agents see them, and a project's records: journal and Undo (personRoutes.ts). A desk's key only.
       if (PERSON_ROUTES.has(route)) {
         const body = PERSON_POSTS.has(route) && request.method === "POST" ? await readBody(request).catch(() => "") : "";
         const here = async () => (await loadRegistry(process.env.COBRA_PROJECTS ?? DEFAULT_CONFIG_PATH)).projects.filter((project) => project.machine === os.hostname());
@@ -4066,10 +4063,7 @@ const pullSites = sitePuller({
   fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(60_000) }),
   // The Space's one store, opened by its key (the file its seats share), only when the Space is open here.
   store: (space) => (readSpace(space) ? openProjectDb(`space-${space}`, SPACE_SCHEMA) : null),
-  stored: (space) =>
-    void websiteOpens(`space-${space}`).then((opens) => {
-      if (opens.projectId !== LEAD_SESSION) scheduleMirror(opens.projectId, SPACE_SCHEMA);
-    }),
+  stored: noFollowUp,
   notify: websiteNotify,
   log: (line) => console.log(`[${SERVICE}] ${line}`),
   now: Date.now,
@@ -4086,10 +4080,7 @@ const pullForms = formPuller({
   grant: () => cloudflare.grant(),
   fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(60_000) }),
   store: formStore,
-  stored: (space) =>
-    void websiteOpens(`space-${space}`).then((opens) => {
-      if (opens.projectId !== LEAD_SESSION) scheduleMirror(opens.projectId, SPACE_SCHEMA);
-    }),
+  stored: noFollowUp,
   notify: websiteNotify,
   log: (line) => console.log(`[${SERVICE}] ${line}`),
 });

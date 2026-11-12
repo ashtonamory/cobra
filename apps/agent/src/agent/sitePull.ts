@@ -83,7 +83,7 @@ export type PullDeps = {
   fetch: Fetch;
   /** The Space's store, for the agent's own writes; null when the Space is not open on this computer. The caller closes it. */
   store: (space: string) => ProjectDb | null;
-  /** After writes to a Space's store: its sheet is pushed (mirror.ts). */
+  /** After writes to a Space's store: the place for a follow-up (index.ts gives none now). */
   stored: (space: string) => void;
   notify: (notice: PullNotice) => Promise<void>;
   log: (line: string) => void;

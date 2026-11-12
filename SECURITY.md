@@ -58,8 +58,8 @@ by an attacker. These are the protections that are in place now:
   loopback and HTTPS.
 - **Append-only audit log.** Every action is appended to one log in which
   each line carries the hash of the line before it: each card asked and who
-  answered it (you, trust, Instinct or the judge), each email, file, Drive
-  save, merge, website and money record that went out, each key made,
+  answered it (you, trust, Instinct or the judge), each email, file copy,
+  merge, website and money record that went out, each key made,
   rotated or removed, each vault change, and each policy decision. It keeps
   ids, counts, recipients' domains, amounts and hashes, never a message, a
   secret or a password, and it is redacted before it is hashed. Writing it
@@ -78,8 +78,8 @@ by an attacker. These are the protections that are in place now:
 - **Taint always asks.** Once an agent reads text from outside (a web
   page, an email, a calendar invite, what someone sent through a website
   form, what a connector's tool gave back), every action after it that
-  sends, spends, deletes or publishes is a card, even where trust, Drive
-  consent, merge on green or Instinct would have let it run alone. The card
+  sends, spends, deletes or publishes is a card, even where trust, merge
+  on green or Instinct would have let it run alone. The card
   says what was read. The taint lasts the conversation, since what was read
   stays in front of the model: only a fresh conversation ends it (New
   conversation, a restart, the Lead's rotation after two quiet hours, an

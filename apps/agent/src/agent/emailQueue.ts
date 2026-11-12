@@ -245,7 +245,7 @@ export class EmailQueue {
     return { job: jobOf(due) };
   }
 
-  /** The newest send in a Gmail thread since a time, with its job's approval: what a reply belongs to (emailReplies.ts). */
+  /** The newest send in a mail thread since a time, with its job's approval: what a reply belongs to (emailReplies.ts). */
   sentInThread(thread: string, since: Date): { sendId: number; to: string; personId: number | null; subject: string; approval: string | null } | null {
     const row = this.db
       .prepare("SELECT s.id AS id, s.to_email AS to_email, s.person_id AS person_id, s.subject AS subject, j.approval AS approval FROM email_sends s LEFT JOIN email_jobs j ON j.id = s.job_id WHERE s.thread_id = ? AND s.sent_at >= ? ORDER BY s.sent_at DESC LIMIT 1")

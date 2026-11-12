@@ -1,8 +1,7 @@
 /**
- * Reply summaries: with Mail on, every
- * 30 minutes the agent looks at the sending account's inbox for the last 3
- * days, not from the owner, and keeps only messages in a thread the ledger
- * sent in the last 30 days (Gmail's thread, or for an iCloud or Zoho box the
+ * Reply summaries: every 30 minutes the agent looks at each sending
+ * mailbox's inbox for the last 3 days, not from the owner, and keeps only
+ * messages that answer one the ledger sent in the last 30 days (by the
  * Message-IDs the reply names), from the address it was sent to. Each is read
  * once (its new words, the quoted email cut off), summed up in one sentence
  * (Haiku with no tools on the computer's own sign-in; the first words when no
@@ -28,7 +27,7 @@ export const REPLY_SYSTEM = [
 export type SentThread = { space: string; sendId: number; to: string; personId: number | null; subject: string; approval: string | null };
 
 export type ReplyDeps = {
-  /** Gmail gives a thread; an IMAP box gives the Message-IDs the reply names (In-Reply-To, References). */
+  /** An IMAP box gives the Message-IDs the reply names (In-Reply-To, References); `thread` is for a mailbox that keeps threads, and empty otherwise. */
   search: (query: string) => Promise<{ id: string; thread: string; refs?: string[]; from: string; subject: string }[]>;
   read: (id: string) => Promise<{ text: string }>;
   /** The newest send in this thread, or with one of these Message-IDs, since `since`, in any Space here. */
