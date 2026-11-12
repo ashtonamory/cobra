@@ -1,11 +1,17 @@
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { hostname } from "node:os";
 import { join } from "node:path";
+
+import { seatKey } from "../../../../packages/contracts/src/org.ts";
 
 import type { ApprovalSpecialistAttach, Project } from "@cobra/contracts";
 
 import { allower, makeApproval, settle, type StoredApproval } from "./approvals.ts";
 import { crewFor } from "./crew.ts";
+import { loadOrg } from "./orgRoutes.ts";
+import { readSpace } from "./spaces.ts";
 import { STATE_DIR } from "./paths.ts";
 import { writePrivateFile } from "./private.ts";
 import { isAttachable, isRepository, readSpecialist, REPOS_MAX, setAttached, type SpecialistRecord } from "./specialists.ts";
@@ -29,6 +35,12 @@ import { isAttachable, isRepository, readSpecialist, REPOS_MAX, setAttached, typ
  * this kind herself (instinctActs.ts lists what she may; it is not there).
  * specialist_detach only takes access away, so it applies at once.
  *
+ * Across Spaces it is allowed and said: the card, and the person's own
+ * route before it attaches, carry a warning when the specialist works in a
+ * Space that keeps people's details on this computer and the project has a
+ * copy online, or when the two belong to different Spaces (warningsFor).
+ * Never a refusal: the person decides.
+ *
  * Its reads change at the specialist's next conversation (foreman.ts reads
  * the list at each start); where its Workers may live changes at once.
  */
@@ -37,12 +49,74 @@ export const SPECIALIST_ATTACH = "specialist-attach";
 /** The Lead's attach proposals not yet answered, each by its approval's id. */
 export const ATTACH_PROPOSALS_DIR = join(STATE_DIR, "specialist-attach-proposals");
 
-/** What a card was made from: the specialist and the repository, by project id. */
-export type AttachProposal = { id: string; repo: string };
+/** What a card was made from: the specialist and the repository, by project id, and the warnings it showed, word for word. */
+export type AttachProposal = { id: string; repo: string; warnings?: string[] };
 
-/** The hash Allow checks: the card attaches exactly this pair, or nothing. */
+/** The hash Allow checks: the card attaches exactly this pair, having shown exactly these warnings, or nothing. */
 export function attachHash(proposal: AttachProposal): string {
-  return createHash("sha256").update(JSON.stringify({ id: proposal.id, repo: proposal.repo })).digest("hex");
+  return createHash("sha256").update(JSON.stringify({ id: proposal.id, repo: proposal.repo, warnings: proposal.warnings ?? [] })).digest("hex");
+}
+
+/** Where a project stands, as a warning needs it: its Space, whether that Space keeps people's details here, and whether the folder has a copy online. */
+export type AttachPlace = { space?: { id: string; name: string }; sensitive: boolean; online: boolean };
+
+export type AttachWarning = { kind: "sensitive-online" | "other-space"; text: string };
+
+/**
+ * What the person is told before a specialist is attached across Spaces.
+ * Attached, its Workers open changes in the project, and a change in a
+ * project with a copy online leaves this computer once it is published: so a
+ * specialist that holds a sensitive Space's details says so first.
+ */
+export function warningsFor(name: string, specialist: AttachPlace, project: AttachPlace): AttachWarning[] {
+  const warnings: AttachWarning[] = [];
+  if (specialist.sensitive && specialist.space && project.online) {
+    warnings.push({
+      kind: "sensitive-online",
+      text: `${name} works in ${specialist.space.name}, which keeps people's details on this computer. This project has a copy online, so anything ${name} writes there can leave this computer. Check each change before you publish it.`,
+    });
+  }
+  if (project.space && specialist.space?.id !== project.space.id) {
+    warnings.push({
+      kind: "other-space",
+      text: specialist.space ? `${name} works for ${specialist.space.name}, and this project belongs to ${project.space.name}: they are different Spaces.` : `This project belongs to ${project.space.name}, and ${name} is not part of it.`,
+    });
+  }
+  return warnings;
+}
+
+/**
+ * Where a project stands, from what the computer keeps: its seat in My
+ * Organization names its Space (a retired seat names none), the Space's own
+ * record says whether it is sensitive, and the folder says whether it has a
+ * copy online.
+ */
+export async function placeOf(
+  project: Pick<Project, "id" | "path">,
+  readers: { company: (id: string) => { id: string; name: string } | undefined; sensitive: (space: string) => boolean; online: (path: string) => Promise<boolean> },
+): Promise<AttachPlace> {
+  const space = readers.company(project.id);
+  return { ...(space ? { space } : {}), sensitive: space ? readers.sensitive(space.id) : false, online: await readers.online(project.path) };
+}
+
+function livePlace(project: Project): Promise<AttachPlace> {
+  const org = loadOrg();
+  return placeOf(project, {
+    company: (id) => {
+      const seat = org.seats[seatKey(hostname(), id)];
+      const company = seat && !seat.retired ? org.companies.find((candidate) => candidate.id === seat.company) : undefined;
+      return company ? { id: company.id, name: company.name } : undefined;
+    },
+    sensitive: (space) => readSpace(space)?.sensitive === true,
+    online: hasRemote,
+  });
+}
+
+/** Whether a folder's repository has any remote: a copy online. A folder that cannot be read as one has none. */
+export function hasRemote(path: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    execFile("git", ["-C", path, "remote"], { timeout: 5000 }, (error, stdout) => resolve(!error && String(stdout).trim() !== ""));
+  });
 }
 
 export function keepAttachProposal(approvalId: string, proposal: AttachProposal, dir = ATTACH_PROPOSALS_DIR): void {
@@ -57,7 +131,9 @@ export function takeAttachProposal(approvalId: string, dir = ATTACH_PROPOSALS_DI
   try {
     const parsed = JSON.parse(readFileSync(path, "utf8")) as AttachProposal;
     rmSync(path, { force: true });
-    return typeof parsed?.id === "string" && typeof parsed.repo === "string" ? parsed : null;
+    if (typeof parsed?.id !== "string" || typeof parsed.repo !== "string") return null;
+    const warnings = Array.isArray(parsed.warnings) ? parsed.warnings.filter((warning): warning is string => typeof warning === "string") : [];
+    return { id: parsed.id, repo: parsed.repo, ...(warnings.length ? { warnings } : {}) };
   } catch {
     return null;
   }
@@ -74,7 +150,10 @@ export type AttachDeps = {
   /** The projects on this computer. */
   projects: () => Promise<readonly Project[]>;
   read: (id: string) => SpecialistRecord | null;
-  apply: (id: string, repo: string, attach: boolean, known: ReadonlySet<string>, by: SpecialistRecord["updatedBy"], actor: string) => SpecialistRecord;
+  /** `warned`: the kinds of warning the person saw first, for the audit line. */
+  apply: (id: string, repo: string, attach: boolean, known: ReadonlySet<string>, by: SpecialistRecord["updatedBy"], actor: string, warned?: readonly string[]) => SpecialistRecord;
+  /** Where a project stands (its Space, sensitive or not, a copy online or not). Left out, nothing is known and nothing is warned. */
+  place?: (project: Project) => Promise<AttachPlace>;
   keep: (approvalId: string, proposal: AttachProposal) => void;
   take: (approvalId: string) => AttachProposal | null;
   crew: (project: Project) => { name: string } | undefined;
@@ -83,11 +162,12 @@ export type AttachDeps = {
   now: () => number;
 };
 
-export function liveAttachDeps(input: Pick<AttachDeps, "approvals" | "notify" | "tell" | "log" | "projects" | "workers">): AttachDeps {
+export function liveAttachDeps(input: Pick<AttachDeps, "approvals" | "notify" | "tell" | "log" | "projects" | "workers" | "place">): AttachDeps {
   return {
     ...input,
+    place: input.place ?? livePlace,
     read: (id) => readSpecialist(id),
-    apply: (id, repo, attach, known, by, actor) => setAttached(id, repo, attach, known, by, actor),
+    apply: (id, repo, attach, known, by, actor, warned) => setAttached(id, repo, attach, known, by, actor, Date.now(), undefined, warned),
     keep: (id, proposal) => keepAttachProposal(id, proposal),
     take: (id) => takeAttachProposal(id),
     crew: (project) => crewFor([project])[project.id],
@@ -132,14 +212,32 @@ function refusal(deps: Pick<AttachDeps, "read">, pair: Pair): AttachOutcome | nu
   return null;
 }
 
-/** POST /specialists/attach {id, project}: the person's own act, at once. */
+const NOWHERE: AttachPlace = { sensitive: false, online: false };
+
+/** The warnings for a pair, worked out now. */
+async function warningsOf(deps: Pick<AttachDeps, "place">, name: string, specialist: Project, repo: Project): Promise<AttachWarning[]> {
+  if (!deps.place) return [];
+  return warningsFor(name, await deps.place(specialist).catch(() => NOWHERE), await deps.place(repo).catch(() => NOWHERE));
+}
+
+/**
+ * POST /specialists/attach {id, project, confirmed?}: the person's own act,
+ * so no card. With a warning to give, the first call attaches nothing and
+ * answers {confirm: true, warnings}; the desk shows them and sends it again
+ * with confirmed: true. With none, it attaches at once.
+ */
 export async function attachByPerson(deps: AttachDeps, raw: unknown, actor: string): Promise<AttachOutcome> {
   const pair = await pairOf(deps, raw, { specialist: "id", repo: "project" });
   if (isOutcome(pair)) return pair;
   const refused = refusal(deps, pair);
   if (refused) return refused;
-  const record = deps.apply(pair.specialist.id, pair.repo.id, true, new Set(pair.repositories.map((project) => project.id)), "person", actor);
-  deps.log(`specialist ${pair.specialist.id}: attached to ${pair.repo.id} by the person`);
+  const warnings = await warningsOf(deps, pair.name, pair.specialist, pair.repo);
+  const kinds = warnings.map((warning) => warning.kind);
+  if (warnings.length > 0 && (raw as { confirmed?: unknown } | null)?.confirmed !== true) {
+    return { status: 200, body: { confirm: true, specialist: pair.specialist.id, name: pair.name, project: pair.repo.id, warnings: warnings.map((warning) => warning.text), kinds } };
+  }
+  const record = deps.apply(pair.specialist.id, pair.repo.id, true, new Set(pair.repositories.map((project) => project.id)), "person", actor, kinds);
+  deps.log(`specialist ${pair.specialist.id}: attached to ${pair.repo.id} by the person${kinds.length ? ` (warned: ${kinds.join(", ")})` : ""}`);
   return { status: 200, body: { specialist: pair.specialist.id, name: pair.name, project: pair.repo.id, repos: record.repos ?? [], note: APPLIES } };
 }
 
@@ -166,7 +264,7 @@ export async function detach(deps: AttachDeps, raw: unknown, by: SpecialistRecor
 /** The card in words: who, which project, where it is, and what Allow gives. */
 export function describeAttach(proposal: AttachProposal, who: { name: string }, repo: Pick<Project, "name" | "path">): { attach: ApprovalSpecialistAttach; title: string; body: string } {
   return {
-    attach: { id: proposal.id, name: who.name, repo: { id: proposal.repo, name: repo.name, path: repo.path }, sha256: attachHash(proposal) },
+    attach: { id: proposal.id, name: who.name, repo: { id: proposal.repo, name: repo.name, path: repo.path }, ...(proposal.warnings?.length ? { warnings: proposal.warnings } : {}), sha256: attachHash(proposal) },
     title: `Attach ${who.name} to ${repo.name}?`,
     body: [
       `Cobra wants to attach ${who.name} to your project ${repo.name}.`,
@@ -174,6 +272,8 @@ export function describeAttach(proposal: AttachProposal, who: { name: string }, 
       "Folder:",
       repo.path,
       "",
+      // Before what Allow gives: the person reads the caution first.
+      ...(proposal.warnings?.length ? ["Before you allow it:", ...proposal.warnings.map((warning) => `- ${warning}`), ""] : []),
       `If you allow it, ${who.name} can read this project's files and start Workers that change them. Every change still comes to you before it is published.`,
       "",
       `${who.name} gets nothing else of this project: not its records, its routines or its memory. ${APPLIES} You can detach it at any time.`,
@@ -187,7 +287,8 @@ export async function proposeAttach(deps: AttachDeps, requestedBy: string, raw: 
   if (isOutcome(pair)) return pair;
   const refused = refusal(deps, pair);
   if (refused) return refused;
-  const proposal: AttachProposal = { id: pair.specialist.id, repo: pair.repo.id };
+  const warnings = await warningsOf(deps, pair.name, pair.specialist, pair.repo);
+  const proposal: AttachProposal = { id: pair.specialist.id, repo: pair.repo.id, ...(warnings.length ? { warnings: warnings.map((warning) => warning.text) } : {}) };
   const words = describeAttach(proposal, { name: pair.name }, pair.repo);
   const now = deps.now();
   const approval = makeApproval({ kind: SPECIALIST_ATTACH, title: words.title, body: words.body, requestedBy, attach: words.attach }, now);
@@ -234,8 +335,12 @@ export async function settleAttachApproval(deps: AttachDeps, approval: StoredApp
     const known = new Set(repositories.map((project) => project.id));
     const there = repositories.find((project) => project.id === repo.id);
     // The card named a folder: a project re-made elsewhere under the same id is not what the person read.
-    if (!known.has(id) || !there || !isAttachable(there) || there.path !== repo.path) throw new Error("the specialist or the project is no longer on this computer as the card showed it");
-    deps.apply(id, repo.id, true, known, "lead", actor);
+    const who = repositories.find((project) => project.id === id);
+    if (!who || !there || !isAttachable(there) || there.path !== repo.path) throw new Error("the specialist or the project is no longer on this computer as the card showed it");
+    // Worked out again: a Space made sensitive, or a copy put online, since the card was made is not what the person read.
+    const current = await warningsOf(deps, name, who, there);
+    if (JSON.stringify(current.map((warning) => warning.text)) !== JSON.stringify(proposal.warnings ?? [])) throw new Error("what the card warned about has changed since it was made: specialist_attach it again for a new card");
+    deps.apply(id, repo.id, true, known, "lead", actor, current.map((warning) => warning.kind));
     deps.tell("lead", `${allower(approval)} allowed it: ${name} (${id}) is attached to ${repo.name} (${repo.id}) and may start Workers there now. ${APPLIES}`);
     deps.log(`specialist ${id}: attached to ${repo.id}`);
     return result(true, `Attached ${name} to ${repo.name}.`);

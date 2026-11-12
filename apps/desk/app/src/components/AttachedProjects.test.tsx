@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AttachedList } from "./AttachedProjects.tsx";
-import { ATTACH_MAX, attachChoices, attachedTo, rosterOf } from "../lib/specialistProjects.ts";
+import { ATTACH_MAX, attachChoices, attachedTo, attachWarnings, rosterOf } from "../lib/specialistProjects.ts";
 
 const answer = {
   specialists: [
@@ -73,5 +73,34 @@ describe("a specialist hired on its own", () => {
     expect(html).toContain("No project yet. Attach Rosa to a project you already have");
     expect(html).not.toContain("Only its own project.");
     expect(html).not.toContain("Also works on");
+  });
+});
+
+describe("a warning before the person's own attach", () => {
+  const roster = rosterOf(answer);
+  const warning = "Rosa works for Happy Tails, and this project belongs to Paws & Co.: they are different Spaces.";
+
+  it("reads the agent's warnings from an answer that attached nothing, and nothing from one that attached", () => {
+    expect(attachWarnings({ confirm: true, warnings: [warning, "", 3] })).toEqual([warning]);
+    expect(attachWarnings({ specialist: "invoicing", project: "website", repos: ["website"] })).toBeNull();
+    expect(attachWarnings({ confirm: true, warnings: [] })).toBeNull();
+    expect(attachWarnings({ warnings: [warning] })).toBeNull();
+    expect(attachWarnings(null)).toBeNull();
+  });
+
+  it("shows the agent's words and waits for Attach anyway or Cancel", () => {
+    const html = renderToStaticMarkup(<AttachedList roster={roster} id="invoicing" name="Rosa" picking={false} busy={false} ask={{ project: "website", warnings: [warning] }} {...none} />);
+    expect(html).toContain("Before you attach Rosa to Website");
+    expect(html).toContain("Rosa works for Happy Tails, and this project belongs to Paws &amp; Co.: they are different Spaces.");
+    expect(html).toContain("Attach anyway");
+    expect(html).toContain("Cancel");
+    // The question takes the place of the picker: one thing to answer at a time.
+    expect(html).not.toContain("Attach a project…");
+  });
+
+  it("asks nothing when there is no warning", () => {
+    const html = renderToStaticMarkup(<AttachedList roster={roster} id="invoicing" name="Rosa" picking={false} busy={false} {...none} />);
+    expect(html).not.toContain("Attach anyway");
+    expect(html).toContain("Attach a project…");
   });
 });

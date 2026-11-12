@@ -47,6 +47,12 @@ by an attacker. These are the protections that are in place now:
   neither in a conversation that read text from outside, and a specialist
   cannot attach itself. Its Workers may live there from the moment you
   allow it; its own reads of the files change at its next conversation.
+  Attaching across Spaces is allowed, with a warning and never a refusal:
+  when the specialist works in a Space that keeps people's details on this
+  computer and the project has a copy online, or when the two belong to
+  different Spaces, the card says so before what Allow gives, and the desk
+  shows the same words and asks you to confirm. The card's hash covers the
+  warnings, and they are worked out again when you allow it.
 - **Contained Workers.** Workers run in Cobra's sandbox, with no access to
   your home directory outside their project and no network but their line
   to the agent: under bubblewrap on Linux, under a `sandbox-exec` profile

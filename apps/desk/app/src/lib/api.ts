@@ -213,7 +213,8 @@ export const crew = (m: M, project: string, change: Dict) => post(m, "/crew", { 
 /** The roster (agent specialists.ts): each project's specialist, with the projects it is attached to. */
 export const specialists = (m: M) => get(m, "/specialists", 8);
 /** Attach a specialist to a project the person already has, or take it off (agent specialistAttach.ts): the person's own act, no card. */
-export const specialistAttach = (m: M, id: string, project: string) => post(m, "/specialists/attach", { id, project }, 10);
+/** `confirmed`: the person read the agent's warning (its first answer was {confirm: true, warnings}) and said to go on. */
+export const specialistAttach = (m: M, id: string, project: string, confirmed = false) => post(m, "/specialists/attach", { id, project, ...(confirmed ? { confirmed: true } : {}) }, 10);
 export const specialistDetach = (m: M, id: string, project: string) => post(m, "/specialists/detach", { id, project }, 10);
 
 export const trust = (m: M, project?: string) => get(m, project ? `/trust?project=${q(project)}` : "/trust", 10);

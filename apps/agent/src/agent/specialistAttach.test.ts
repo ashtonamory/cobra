@@ -217,3 +217,111 @@ test("a record with a list that is not one is not read", async () => {
   writePrivateFile(path, JSON.stringify({ specialists: { a: { ...base, repos: "shop" }, b: { ...base, repos: Array.from({ length: 9 }, (_, n) => `r${n}`) }, c: { ...base, repos: ["shop"] } } }));
   assert.deepEqual(Object.keys(specialists.loadSpecialists(path).specialists), ["c"]);
 });
+
+// --- warnings across Spaces --------------------------------------------------
+
+type AttachPlace = import("./specialistAttach.ts").AttachPlace;
+const TAILS = { id: "happy-tails", name: "Happy Tails" };
+const PAWS = { id: "paws", name: "Paws & Co." };
+const SENSITIVE_ONLINE =
+  "Rosa works in Happy Tails, which keeps people's details on this computer. This project has a copy online, so anything Rosa writes there can leave this computer. Check each change before you publish it.";
+const OTHER_SPACE = "Rosa works for Happy Tails, and this project belongs to Paws & Co.: they are different Spaces.";
+
+/** A harness whose projects stand where `places` says; the kinds each attach was warned with are kept. */
+function placed(places: Record<string, AttachPlace>) {
+  const h = harness();
+  const warned: Array<readonly string[]> = [];
+  const apply = h.deps.apply;
+  h.deps.place = async (target) => places[target.id] ?? { sensitive: false, online: false };
+  h.deps.apply = (id, repo, on, known, by, actor, kinds) => {
+    if (on) warned.push(kinds ?? []);
+    return apply(id, repo, on, known, by, actor);
+  };
+  return { ...h, warned, places };
+}
+
+test("the warnings: a sensitive Space with a copy online, another Space's project, both, or none", () => {
+  const here = { sensitive: false, online: false };
+  assert.deepEqual(attach.warningsFor("Rosa", here, here), []);
+  // A copy online alone, or a sensitive Space alone, is nothing to say.
+  assert.deepEqual(attach.warningsFor("Rosa", { space: TAILS, sensitive: false, online: false }, { space: TAILS, sensitive: false, online: true }), []);
+  assert.deepEqual(attach.warningsFor("Rosa", { space: TAILS, sensitive: true, online: false }, { space: TAILS, sensitive: true, online: false }), []);
+  assert.deepEqual(attach.warningsFor("Rosa", { space: TAILS, sensitive: true, online: false }, { sensitive: false, online: true }), [{ kind: "sensitive-online", text: SENSITIVE_ONLINE }]);
+  assert.deepEqual(attach.warningsFor("Rosa", { space: TAILS, sensitive: false, online: false }, { space: PAWS, sensitive: false, online: false }), [{ kind: "other-space", text: OTHER_SPACE }]);
+  assert.deepEqual(
+    attach.warningsFor("Rosa", { space: TAILS, sensitive: true, online: false }, { space: PAWS, sensitive: false, online: true }).map((warning) => warning.kind),
+    ["sensitive-online", "other-space"],
+  );
+  // A specialist in no Space, attached to a Space's project.
+  assert.deepEqual(attach.warningsFor("Rosa", here, { space: PAWS, sensitive: false, online: false }), [{ kind: "other-space", text: "This project belongs to Paws & Co., and Rosa is not part of it." }]);
+  // The person's words only.
+  for (const text of [SENSITIVE_ONLINE, OTHER_SPACE]) assert.doesNotMatch(text, /Foreman|Worker|repo|remote|pull request/);
+});
+
+test("where a project stands is read from its seat, its Space's record and its folder", async () => {
+  const readers = {
+    company: (id: string) => (id === "invoicing" ? TAILS : undefined),
+    sensitive: (space: string) => space === "happy-tails",
+    online: async (path: string) => path === "/p/shop",
+  };
+  assert.deepEqual(await attach.placeOf({ id: "invoicing", path: "/p/invoicing" }, readers), { space: TAILS, sensitive: true, online: false });
+  assert.deepEqual(await attach.placeOf({ id: "shop", path: "/p/shop" }, readers), { sensitive: false, online: true });
+  // A folder that is no repository has no copy online.
+  assert.equal(await attach.hasRemote(join(ROOT, "no-such-folder")), false);
+});
+
+test("the person's own attach with a warning attaches nothing until they confirm; with none it attaches at once", async () => {
+  const h = placed({ invoicing: { space: TAILS, sensitive: true, online: false }, shop: { space: PAWS, sensitive: false, online: true } });
+  const first = await attach.attachByPerson(h.deps, { id: "invoicing", project: "shop" }, "person:desk_1");
+  assert.equal(first.status, 200);
+  assert.equal(first.body.confirm, true);
+  assert.deepEqual(first.body.warnings, [SENSITIVE_ONLINE, OTHER_SPACE]);
+  assert.deepEqual(first.body.kinds, ["sensitive-online", "other-space"]);
+  assert.deepEqual(h.repos("invoicing"), [], "nothing is attached before they confirm");
+  // Only the word true confirms.
+  assert.equal((await attach.attachByPerson(h.deps, { id: "invoicing", project: "shop", confirmed: "yes" }, "person:desk_1")).body.confirm, true);
+  const done = await attach.attachByPerson(h.deps, { id: "invoicing", project: "shop", confirmed: true }, "person:desk_1");
+  assert.equal(done.body.confirm, undefined);
+  assert.deepEqual(h.repos("invoicing"), ["shop"]);
+  assert.deepEqual(h.warned, [["sensitive-online", "other-space"]], "the audit line gets the kinds, never the words");
+  // Nothing to warn about: no extra step.
+  const plain = await attach.attachByPerson(h.deps, { id: "invoicing", project: "website" }, "person:desk_1");
+  assert.equal(plain.body.confirm, undefined);
+  assert.deepEqual(h.repos("invoicing"), ["shop", "website"]);
+  assert.deepEqual(h.warned[1], []);
+});
+
+test("the Lead's card shows the warnings before what Allow gives, and binds them", async () => {
+  const h = placed({ invoicing: { space: TAILS, sensitive: true, online: false }, shop: { space: PAWS, sensitive: false, online: true } });
+  const asked = await attach.proposeAttach(h.deps, "lead_laptop_____", { specialist: "Rosa", project: "shop" });
+  assert.equal(asked.status, 202);
+  const card = h.notified[0]!;
+  assert.ok(card.body.includes(`Before you allow it:\n- ${SENSITIVE_ONLINE}\n- ${OTHER_SPACE}\n`));
+  assert.ok(card.body.indexOf("Before you allow it:") < card.body.indexOf("If you allow it"));
+  assert.deepEqual(card.attach?.warnings, [SENSITIVE_ONLINE, OTHER_SPACE]);
+  assert.notEqual(card.attach?.sha256, attach.attachHash({ id: "invoicing", repo: "shop" }), "the hash covers the warnings");
+  const allowed = await h.answer(String(asked.body.approval), "allowed");
+  assert.equal(allowed.results?.[0]?.ok, true);
+  assert.deepEqual(h.repos("invoicing"), ["shop"]);
+  assert.deepEqual(h.warned, [["sensitive-online", "other-space"]]);
+
+  // A card with nothing to warn about says nothing of it.
+  const plain = await attach.proposeAttach(h.deps, "lead_laptop_____", { specialist: "Rosa", project: "website" });
+  const quiet = h.notified.find((approval) => approval.id === plain.body.approval)!;
+  assert.doesNotMatch(quiet.body, /Before you allow it/);
+  assert.equal(quiet.attach?.warnings, undefined);
+});
+
+test("warnings that changed after the card was made attach nothing: the person did not read them", async () => {
+  const places: Record<string, AttachPlace> = { invoicing: { space: TAILS, sensitive: true, online: false }, shop: { sensitive: false, online: false } };
+  const h = placed(places);
+  const asked = await attach.proposeAttach(h.deps, "lead_laptop_____", { specialist: "Rosa", project: "shop" });
+  assert.doesNotMatch(h.notified[0]!.body, /Before you allow it/);
+  // The project got a copy online while the card waited.
+  places.shop = { sensitive: false, online: true };
+  const stale = await h.answer(String(asked.body.approval), "allowed");
+  assert.equal(stale.results?.[0]?.ok, false);
+  assert.match(String(stale.results?.[0]?.message), /changed since it was made/);
+  assert.deepEqual(h.repos("invoicing"), []);
+  assert.match(h.told.at(-1)![1], /could not be done/);
+});

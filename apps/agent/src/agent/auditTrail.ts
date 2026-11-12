@@ -341,7 +341,7 @@ export function auditWords(record: AuditRecord): string {
     case "specialist.attach":
     case "specialist.detach": {
       const on = record.kind === "specialist.attach";
-      return `${who} ${on ? "attached" : "detached"} ${record.subject?.project ?? "a specialist"} ${on ? "to" : "from"} the project ${str(d.repo) || "(unnamed)"}${on && str(d.by) === "lead" ? ", as Cobra proposed and you allowed" : ""}`;
+      return `${who} ${on ? "attached" : "detached"} ${record.subject?.project ?? "a specialist"} ${on ? "to" : "from"} the project ${str(d.repo) || "(unnamed)"}${on && str(d.by) === "lead" ? ", as Cobra proposed and you allowed" : ""}${on && str(d.warned) ? `, after a warning (${str(d.warned)})` : ""}`;
     }
     case "key.minted":
       return `${who} made a key for ${str(d.keyKind) || "a caller"} ${str(d.name) || record.subject?.target || ""}`.trim();

@@ -223,6 +223,8 @@ export function setAttached(
   actor: string,
   now = Date.now(),
   path = SPECIALISTS_PATH,
+  /** The kinds of warning the person saw before attaching (specialistAttach.ts warningsFor), for the audit line. */
+  warned: readonly string[] = [],
 ): SpecialistRecord {
   if (attach && repo === id) throw new Error("a specialist already works on its own project");
   const file = loadSpecialists(path);
@@ -240,7 +242,7 @@ export function setAttached(
   };
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
   writePrivateFile(path, `${JSON.stringify({ specialists: { ...file.specialists, [id]: next } }, null, 2)}\n`);
-  audit(attach ? "specialist.attach" : "specialist.detach", { actor, subject: { project: id }, detail: { by, repo, attached: repos.length } });
+  audit(attach ? "specialist.attach" : "specialist.detach", { actor, subject: { project: id }, detail: { by, repo, attached: repos.length, ...(attach && warned.length ? { warned: [...warned].sort().join(",") } : {}) } });
   return next;
 }
 

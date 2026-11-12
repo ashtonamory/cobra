@@ -79,6 +79,8 @@ export const ApprovalSpecialistAttach = z.object({
   id: z.string(),
   name: z.string(),
   repo: z.object({ id: z.string(), name: z.string(), path: z.string() }),
+  /** What the card warns about, in words (a sensitive Space and a copy online; another Space's project). Absent: nothing. */
+  warnings: z.array(z.string()).optional(),
   sha256: z.string(),
 });
 export type ApprovalSpecialistAttach = z.infer<typeof ApprovalSpecialistAttach>;
